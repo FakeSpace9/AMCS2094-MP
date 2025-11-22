@@ -1,0 +1,154 @@
+package com.example.miniproject.screen
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
+
+@Composable
+fun HomeScreen(navController: NavController) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+    ) {
+        item { TopBar() }
+        item { MenuTabs() }
+        item { SalesBanner() }
+
+        item {
+            ProductSection(title = "New Arrival →")
+        }
+
+        item {
+            ProductSection(title = "Superman Collab →")
+        }
+    }
+}
+
+@Composable
+fun TopBar() {
+    Spacer(modifier = Modifier.height(16.dp))
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(60.dp)
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text("≡", fontSize = 28.sp)
+        Spacer(modifier = Modifier.weight(1f))
+        Text("Shop Name", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.weight(1f))
+        Icon(Icons.Default.ShoppingCart, contentDescription = "Cart")
+        Spacer(modifier = Modifier.width(12.dp))
+        Icon(Icons.Default.Search, contentDescription = "Cart")
+    }
+}
+
+@Composable
+fun MenuTabs() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        Text("New Arrivals ▼")
+        Text("Categories ▼")
+        Text("Sales ▼")
+    }
+}
+
+@Composable
+fun SalesBanner() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(180.dp)
+            .background(Color(0xFFECECEC)),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("Sales Banner Here", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+fun ProductSection(title: String) {
+    Column(modifier = Modifier.padding(16.dp)) {
+        Text(title, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            repeat(3) {
+                ProductCard()
+            }
+        }
+    }
+}
+
+@Composable
+fun ProductCard() {
+    Column(
+        modifier = Modifier
+            .width(100.dp)
+            .background(Color(0xFFE0E0E0), RoundedCornerShape(8.dp))
+            .padding(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .size(70.dp)
+                .background(Color.LightGray, RoundedCornerShape(6.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("PIC")
+        }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Text("Details . . .", fontSize = 12.sp)
+        Text("RM 800", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Preview(
+    showBackground = true,
+    showSystemUi = true
+)
+@Composable
+private fun Preview() {
+    HomeScreen(navController = NavHostController(LocalContext.current))
+
+    
+}
