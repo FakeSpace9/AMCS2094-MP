@@ -1,5 +1,6 @@
 package com.example.miniproject.screen
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -26,6 +27,8 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,11 +40,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
+import com.example.miniproject.viewmodel.LoginState
+import com.example.miniproject.viewmodel.LoginViewModel
 import kotlinx.coroutines.launch
 
 
 @Composable
-fun HomeScreenWithDrawer(navController: NavController) {
+fun HomeScreenWithDrawer(navController: NavController, viewModel: LoginViewModel) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
@@ -49,7 +54,7 @@ fun HomeScreenWithDrawer(navController: NavController) {
         drawerState = drawerState,
         scrimColor = Color.Black.copy(alpha = 0.5f), // half transparent background
         drawerContent = {
-            DrawerMenu(navController = navController)
+            DrawerMenu(navController = navController, viewModel = viewModel)
         }
     ) {
         HomeScreen(
@@ -79,7 +84,9 @@ fun HomeScreen(navController: NavController, onMenuClick: () -> Unit) {
 
 
 @Composable
-fun DrawerMenu(navController: NavController) {
+fun DrawerMenu(navController: NavController, viewModel: LoginViewModel) {
+    val loginState by viewModel.loginState.collectAsState()
+    val context = LocalContext.current
     Column(
         modifier = Modifier
             .width(260.dp)
@@ -92,12 +99,20 @@ fun DrawerMenu(navController: NavController) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text("Menu", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            val isLoggedIn = loginState is LoginState.Success
+            val buttonText = if (isLoggedIn) "Logout" else "Login"
             Text(
-                "Login",
+                text = buttonText,
                 fontSize = 18.sp,
                 modifier = Modifier.clickable {
-                    navController.navigate("Login")
-                })
+                    if (isLoggedIn) {
+                        //loginViewModel.logout()  // You need to implement logout
+                        Toast.makeText(context, "Logged out", Toast.LENGTH_SHORT).show()
+                    } else {
+                        navController.navigate("Login")
+                    }
+                }
+            )
 
         }
         Spacer(Modifier.height(20.dp))
@@ -205,13 +220,3 @@ fun ProductCard() {
     }
 }
 
-@Preview(
-    showBackground = true,
-    showSystemUi = true
-)
-@Composable
-private fun Preview() {
-    HomeScreenWithDrawer(navController = NavHostController(LocalContext.current))
-
-
-}

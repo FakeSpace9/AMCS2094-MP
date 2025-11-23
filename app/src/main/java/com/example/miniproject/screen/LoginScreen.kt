@@ -1,3 +1,4 @@
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -6,14 +7,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,12 +31,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
+import com.example.miniproject.viewmodel.LoginState
+import com.example.miniproject.viewmodel.LoginViewModel
 
 @Composable
-fun LoginScreen(navController: NavController) {
-
+fun LoginScreen(navController: NavController,viewModel: LoginViewModel) {
+    val loginState by viewModel.loginState.collectAsState()
     // States
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -93,21 +101,60 @@ fun LoginScreen(navController: NavController) {
 
         // Continue Button
         Button(
-            onClick = { /* TODO: Handle login */ },
+            onClick = { viewModel.login(email, password) },
+            enabled = loginState !is LoginState.Loading,
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFECECEC) // Light gray like your mockup
+                containerColor = Color(0xFFECECEC)
             ),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp)
         ) {
-            Text(
-                text = "Continue",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Gray
-            )
+            if (loginState is LoginState.Loading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(22.dp),
+                    strokeWidth = 3.dp,
+                    color = Color.Gray
+                )
+            } else {
+                Text(
+                    text = "Continue",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Gray
+                )
+            }
         }
+
+        val context = LocalContext.current
+        // Navigation based on role
+        LaunchedEffect(loginState) {
+            when (loginState) {
+                is LoginState.Success -> {
+                    val user = (loginState as LoginState.Success).user
+                    if (user.role == "admin") {
+                        navController.navigate("admin_home") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    } else {
+                        navController.navigate("home") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    }
+                }
+
+                is LoginState.Error -> {
+                    Toast.makeText(
+                        context,
+                        (loginState as LoginState.Error).message,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+
+                else -> Unit
+            }
+        }
+
 
         Spacer(modifier = Modifier.height(20.dp))
 
@@ -158,14 +205,4 @@ fun LoginScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(40.dp))
     }
-}
-
-@Preview(
-    showBackground = true,
-    showSystemUi = true
-)
-@Composable
-private fun Screen() {
-    LoginScreen(navController = NavHostController(LocalContext.current))
-
 }
