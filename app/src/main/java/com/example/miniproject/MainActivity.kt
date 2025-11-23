@@ -22,6 +22,7 @@ import com.example.miniproject.screen.HomeScreenWithDrawer
 import com.example.miniproject.screen.SignupScreen
 import com.example.miniproject.ui.theme.MiniProjectTheme
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,7 +42,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun App(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
-    val signupRepository = SignupRepository(FirebaseAuth.getInstance())
+    val signupRepository = SignupRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
 
     // Create ViewModel with Factory
     val signupViewModel: SignupViewModel = viewModel(

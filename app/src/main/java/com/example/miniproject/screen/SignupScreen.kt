@@ -118,7 +118,7 @@ fun SignupScreen(navController: NavController,viewModel: SignupViewModel) {
                 } else if (password != confirmPassword) {
                     Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
                 } else {
-                    viewModel.signup(email, password) // Trigger Firebase signup
+                    viewModel.signup(email, password,name) // Trigger Firebase signup
                 }
             },
             modifier = Modifier
@@ -146,7 +146,7 @@ fun SignupScreen(navController: NavController,viewModel: SignupViewModel) {
             when (signupState) {
                 is SignupState.Success -> {
                     Toast.makeText(context, "Signup Successful", Toast.LENGTH_SHORT).show()
-                    // Optionally navigate to home screen here
+                    navController.popBackStack()
                 }
                 is SignupState.Error -> {
                     Toast.makeText(

@@ -1,3 +1,4 @@
+import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.miniproject.data.SignupRepository
@@ -18,10 +19,10 @@ class SignupViewModel(private val repository: SignupRepository) : ViewModel() {
     private val _signupState = MutableStateFlow<SignupState>(SignupState.Idle)
     val signupState: StateFlow<SignupState> = _signupState
 
-    fun signup(email: String, password: String) {
+    fun signup(email: String, password: String,name: String) {
         viewModelScope.launch {
             _signupState.value = SignupState.Loading
-            val result = repository.signup(email, password)
+            val result = repository.signup(email, password,name)
             _signupState.value = if (result.isSuccess && result.getOrNull() != null) {
                 SignupState.Success(result.getOrNull()!!)
             } else {
