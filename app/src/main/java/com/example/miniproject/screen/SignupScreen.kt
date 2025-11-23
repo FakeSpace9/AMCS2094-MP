@@ -1,5 +1,7 @@
 package com.example.miniproject.screen
 
+import SignupState
+import SignupViewModel
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -8,12 +10,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -25,14 +31,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.NavHostController
 
 @Composable
-fun SignupScreen(navController: NavController) {
+fun SignupScreen(navController: NavController,viewModel: SignupViewModel) {
+    val signupState by viewModel.signupState.collectAsState()
     val context = LocalContext.current
 
     var name by remember { mutableStateOf("") }
@@ -103,6 +108,9 @@ fun SignupScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(24.dp))
 
         // Signup Button
+        val signupState by viewModel.signupState.collectAsState()
+
+// Button with loading
         Button(
             onClick = {
                 if (name.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
@@ -110,29 +118,47 @@ fun SignupScreen(navController: NavController) {
                 } else if (password != confirmPassword) {
                     Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
                 } else {
-                    Toast.makeText(context, "Signup Successful", Toast.LENGTH_SHORT).show()
-                    // Add your signup logic here
+                    viewModel.signup(email, password) // Trigger Firebase signup
                 }
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
+            enabled = signupState != SignupState.Loading, // disable while loading
             colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF573BFF) // Purple
-                    ),
+                containerColor = Color(0xFF573BFF) // Purple
+            ),
         ) {
-            Text("Sign Up", fontSize = 18.sp)
+            if (signupState == SignupState.Loading) {
+                // Show a CircularProgressIndicator inside the button
+                CircularProgressIndicator(
+                    color = Color.White,
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text("Sign Up", fontSize = 18.sp)
+            }
         }
+
+// Observe signupState to show toast messages
+        LaunchedEffect(signupState) {
+            when (signupState) {
+                is SignupState.Success -> {
+                    Toast.makeText(context, "Signup Successful", Toast.LENGTH_SHORT).show()
+                    // Optionally navigate to home screen here
+                }
+                is SignupState.Error -> {
+                    Toast.makeText(
+                        context,
+                        (signupState as SignupState.Error).message,
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+                else -> {}
+            }
+        }
+
     }
 }
 
-
-@Preview(
-    showBackground = true,
-    showSystemUi = true
-)
-@Composable
-private fun Signup() {
-    SignupScreen(navController = NavHostController(LocalContext.current))
-
-}

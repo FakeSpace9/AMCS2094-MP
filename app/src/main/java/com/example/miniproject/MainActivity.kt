@@ -1,6 +1,8 @@
 package com.example.miniproject
 
 import LoginScreen
+import SignupViewModel
+import SignupViewModelFactory
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,12 +13,15 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.miniproject.data.SignupRepository
 import com.example.miniproject.screen.HomeScreenWithDrawer
 import com.example.miniproject.screen.SignupScreen
 import com.example.miniproject.ui.theme.MiniProjectTheme
+import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,6 +41,12 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun App(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
+    val signupRepository = SignupRepository(FirebaseAuth.getInstance())
+
+    // Create ViewModel with Factory
+    val signupViewModel: SignupViewModel = viewModel(
+        factory = SignupViewModelFactory(signupRepository)
+    )
     NavHost(navController = navController, startDestination = "home") {
         composable("home") {
             HomeScreenWithDrawer(navController = navController)
@@ -45,7 +56,7 @@ fun App(modifier: Modifier = Modifier) {
             LoginScreen(navController = navController)
         }
         composable(route = "Signup"){
-            SignupScreen(navController = navController)
+            SignupScreen(navController = navController,viewModel = signupViewModel)
         }
     }
 }
