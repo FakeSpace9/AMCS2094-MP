@@ -14,8 +14,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.miniproject.screen.HomeScreen
 import com.example.miniproject.screen.HomeScreenWithDrawer
+import com.example.miniproject.screen.SignupScreen
 import com.example.miniproject.ui.theme.MiniProjectTheme
 
 class MainActivity : ComponentActivity() {
@@ -44,7 +44,9 @@ fun App(modifier: Modifier = Modifier) {
         composable("Login"){
             LoginScreen(navController = navController)
         }
-
+        composable(route = "Signup"){
+            SignupScreen(navController = navController)
+        }
     }
 }
 

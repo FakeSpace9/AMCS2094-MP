@@ -1,19 +1,26 @@
-package com.example.miniproject.data
-
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.miniproject.data.dao.UserDao
+import com.example.miniproject.data.entity.UserEntity
 
+@Database(
+    entities = [
+        UserEntity::class,
 
-@Database(entities = [UserDao::class], version = 1, exportSchema = false)
+    ],
+    version = 1,
+    exportSchema = false
+)
 abstract class AppDatabase : RoomDatabase() {
+
     abstract fun userDao(): UserDao
 
 
     companion object {
-        @Volatile private var INSTANCE: AppDatabase? = null
+        @Volatile
+        private var INSTANCE: AppDatabase? = null
 
         fun getInstance(context: Context): AppDatabase =
             INSTANCE ?: synchronized(this) {

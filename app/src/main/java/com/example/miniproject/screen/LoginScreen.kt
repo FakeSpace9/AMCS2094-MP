@@ -129,7 +129,7 @@ fun LoginScreen(navController: NavController) {
 
         // Sign Up Button
         Button(
-            onClick = { navController.navigate("signup") },
+            onClick = { navController.navigate("Signup") },
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF573BFF) // Purple
             ),
