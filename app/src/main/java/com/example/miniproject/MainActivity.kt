@@ -1,5 +1,6 @@
 package com.example.miniproject
 
+import LoginScreen
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -14,6 +15,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.miniproject.screen.HomeScreen
+import com.example.miniproject.screen.HomeScreenWithDrawer
 import com.example.miniproject.ui.theme.MiniProjectTheme
 
 class MainActivity : ComponentActivity() {
@@ -36,8 +38,11 @@ fun App(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "home") {
         composable("home") {
-            HomeScreen(navController = navController)
+            HomeScreenWithDrawer(navController = navController)
 
+        }
+        composable("Login"){
+            LoginScreen(navController = navController)
         }
 
     }

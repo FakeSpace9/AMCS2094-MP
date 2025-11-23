@@ -1,11 +1,13 @@
 package com.example.miniproject.screen
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -15,11 +17,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,30 +37,83 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
+import kotlinx.coroutines.launch
+
 
 @Composable
-fun HomeScreen(navController: NavController) {
+fun HomeScreenWithDrawer(navController: NavController) {
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        scrimColor = Color.Black.copy(alpha = 0.5f), // half transparent background
+        drawerContent = {
+            DrawerMenu(navController = navController)
+        }
+    ) {
+        HomeScreen(
+            navController = navController,
+            onMenuClick = {
+                scope.launch { drawerState.open() }
+            }
+        )
+    }
+}
+
+@Composable
+fun HomeScreen(navController: NavController, onMenuClick: () -> Unit) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
-        item { TopBar() }
+        item { TopBar(onMenuClick) }
         item { MenuTabs() }
         item { SalesBanner() }
 
-        item {
-            ProductSection(title = "New Arrival →")
-        }
-
-        item {
-            ProductSection(title = "Superman Collab →")
-        }
+        item { ProductSection(title = "New Arrival →") }
+        item { ProductSection(title = "Superman Collab →") }
     }
 }
 
+
 @Composable
-fun TopBar() {
+fun DrawerMenu(navController: NavController) {
+    Column(
+        modifier = Modifier
+            .width(260.dp)
+            .fillMaxHeight()
+            .background(Color.White)
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text("Menu", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Text(
+                "Login",
+                fontSize = 18.sp,
+                modifier = Modifier.clickable {
+                    navController.navigate("Login")
+                })
+
+        }
+        Spacer(Modifier.height(20.dp))
+
+        Text("New Arrivals")
+        Spacer(Modifier.height(12.dp))
+        Text("Categories")
+        Spacer(Modifier.height(12.dp))
+        Text("Sales")
+        Spacer(Modifier.height(12.dp))
+    }
+}
+
+
+@Composable
+fun TopBar(onMenuClick: () -> Unit) {
     Spacer(modifier = Modifier.height(16.dp))
     Row(
         modifier = Modifier
@@ -62,7 +122,10 @@ fun TopBar() {
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text("≡", fontSize = 28.sp)
+        Icon(
+            Icons.Default.Menu,
+            contentDescription = "Menu",
+            modifier = Modifier.clickable { onMenuClick() })
         Spacer(modifier = Modifier.weight(1f))
         Text("Shop Name", fontSize = 20.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.weight(1f))
@@ -148,7 +211,7 @@ fun ProductCard() {
 )
 @Composable
 private fun Preview() {
-    HomeScreen(navController = NavHostController(LocalContext.current))
+    HomeScreenWithDrawer(navController = NavHostController(LocalContext.current))
 
-    
+
 }
