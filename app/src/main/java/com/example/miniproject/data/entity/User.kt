@@ -7,5 +7,6 @@ data class UserEntity(
     @PrimaryKey val email: String,
     val name: String,
     val role: String,
-    val uid: String
+    val uid: String,
+    val isLoggedIn: Boolean
 )

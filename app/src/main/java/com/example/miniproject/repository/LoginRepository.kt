@@ -37,12 +37,14 @@ class LoginRepository(
                 return Result.failure(Exception("User data not found in Firestore"))
             }
 
+            userDao.logoutAllUsers()
             // Convert Firestore -> local Room entity
             val userEntity = UserEntity(
                 uid = uid,
                 email = snapshot.getString("email") ?: "",
                 name = snapshot.getString("name") ?: "",
-                role = snapshot.getString("role") ?: "customer"
+                role = snapshot.getString("role") ?: "",
+                isLoggedIn = true
             )
 
             // 3. Save to Room local database

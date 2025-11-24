@@ -13,6 +13,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
@@ -22,13 +27,17 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.miniproject.data.AuthPreferences
 import com.example.miniproject.data.SignupRepository
+import com.example.miniproject.repository.UserRepository
 import com.example.miniproject.screen.AdminHomeScreen
 import com.example.miniproject.screen.AdminSignupScreen
 import com.example.miniproject.screen.HomeScreenWithDrawer
 import com.example.miniproject.screen.SignupScreen
+import com.example.miniproject.screen.SplashScreen
 import com.example.miniproject.ui.theme.MiniProjectTheme
 import com.example.miniproject.viewmodel.LoginViewModel
 import com.example.miniproject.viewmodel.LoginViewModelFactory
+import com.example.miniproject.viewmodel.UserViewModel
+import com.example.miniproject.viewmodel.UserViewModelFactory
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -61,35 +70,63 @@ fun App(modifier: Modifier = Modifier) {
         firestore = FirebaseFirestore.getInstance(),
         userDao = AppDatabase.getInstance(currentContext).userDao()
     )
+    val userRepository = UserRepository(
+        userDao = AppDatabase.getInstance(currentContext).userDao()
+    )
 
     // Create ViewModel with Factory
     val signupViewModel: SignupViewModel = viewModel(
         factory = SignupViewModelFactory(signupRepository)
     )
     val loginViewModel: LoginViewModel = viewModel(
-        factory = LoginViewModelFactory(loginRepository,authPrefs)
+        factory = LoginViewModelFactory(loginRepository, authPrefs)
     )
-    LaunchedEffect(Unit) {
-        loginViewModel.checkAutoLogin()
+    val userViewModel: UserViewModel = viewModel(
+        factory = UserViewModelFactory(userRepository)
+    )
+
+
+    val currentUser by userViewModel.currentUser.collectAsState()
+    LaunchedEffect(currentUser) {
+        currentUser?.let { user ->
+            if (user.role.lowercase() == "admin") {
+                navController.navigate("admin_home") {
+                    popUpTo("home") { inclusive = true } // optional: clears back stack
+                }
+            } else {
+                navController.navigate("home") {
+                    popUpTo("home") { inclusive = true } // optional: clears back stack
+                }
+            }
+        }
     }
-    NavHost(navController = navController, startDestination = "home") {
+    LaunchedEffect(Unit) {
+        loginViewModel.checkAutoLogin() // restore login
+        userViewModel.loadCurrentUser()  // load user from Room
+    }
+    NavHost(navController = navController, startDestination = "splash") {
+
         composable("home") {
-            HomeScreenWithDrawer(navController = navController,viewModel = loginViewModel)
+            HomeScreenWithDrawer(navController = navController, viewModel = loginViewModel)
 
         }
         composable("Login") {
-            LoginScreen(navController = navController,viewModel = loginViewModel)
+            LoginScreen(navController = navController, viewModel = loginViewModel)
         }
         composable(route = "Signup") {
             SignupScreen(navController = navController, viewModel = signupViewModel)
         }
         composable("admin_home") {
-            AdminHomeScreen()
+            AdminHomeScreen(userViewModel = userViewModel,loginViewModel = loginViewModel,navController = navController)
         }
-        composable("admin_signup"){
+        composable("admin_signup") {
             AdminSignupScreen(navController = navController, viewModel = signupViewModel)
         }
+        composable("splash") {
+            SplashScreen()
+        }
     }
+
 }
 
 @Preview

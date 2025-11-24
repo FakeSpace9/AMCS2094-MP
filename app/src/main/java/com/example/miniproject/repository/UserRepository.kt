@@ -8,5 +8,8 @@ class UserRepository(private val userDao: UserDao) {
         userDao.insertUser(user)
     }
 
+    suspend fun getCurrentUser(): UserEntity? {
+        return userDao.getCurrentUser()
+    }
 
 }
