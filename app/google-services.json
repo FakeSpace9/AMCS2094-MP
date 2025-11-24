@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "541829479012",
+    "firebase_url": "https://miniproject-55de6-default-rtdb.asia-southeast1.firebasedatabase.app",
     "project_id": "miniproject-55de6",
     "storage_bucket": "miniproject-55de6.firebasestorage.app"
   },
@@ -13,6 +14,14 @@
         }
       },
       "oauth_client": [
+        {
+          "client_id": "541829479012-oprf42adjhbqfi1pq398ob4mp7mshsts.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.miniproject",
+            "certificate_hash": "2f6d929182c7f52db5878fc6d4d16aef2376732c"
+          }
+        },
         {
           "client_id": "541829479012-sbpl0qkshld60vp42p8ep3q7he4fsg7h.apps.googleusercontent.com",
           "client_type": 3

@@ -5,6 +5,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import com.google.firebase.auth.GoogleAuthProvider
 
 
 
@@ -56,4 +57,62 @@ class LoginRepository(
             Result.failure(e)
         }
     }
+
+    suspend fun logout(){
+        auth.signOut()
+        userDao.logoutAllUsers()
+    }
+    suspend fun loginWithGoogle(idToken: String): Result<UserEntity> {
+        return try {
+            val credential = GoogleAuthProvider.getCredential(idToken, null)
+
+            val result = auth.signInWithCredential(credential).await()
+            val firebaseUser = result.user ?: return Result.failure(Exception("Firebase user not found"))
+            val uid = firebaseUser.uid
+
+            // 1. check Firestore
+            val docRef = firestore.collection("users").document(uid)
+            val snapshot = docRef.get().await()
+
+            val userEntity = if (!snapshot.exists()) {
+                // 2. create new Firestore user
+                val newUser = mapOf(
+                    "uid" to uid,
+                    "email" to (firebaseUser.email ?: ""),
+                    "name" to (firebaseUser.displayName ?: ""),
+                    "role" to "customer"
+                )
+                docRef.set(newUser).await()
+
+                UserEntity(
+                    uid = uid,
+                    email = firebaseUser.email ?: "",
+                    name = firebaseUser.displayName ?: "",
+                    role = "customer",
+                    isLoggedIn = true
+                )
+            } else {
+                // existing user
+                UserEntity(
+                    uid = uid,
+                    email = snapshot.getString("email") ?: "",
+                    name = snapshot.getString("name") ?: "",
+                    role = snapshot.getString("role") ?: "customer",
+                    isLoggedIn = true
+                )
+            }
+
+            // clear previous users (local login)
+            userDao.logoutAllUsers()
+            userDao.insertUser(userEntity)
+
+            Result.success(userEntity)
+
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
 }
+
+

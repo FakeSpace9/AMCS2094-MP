@@ -4,6 +4,7 @@ import LoginRepository
 import LoginScreen
 import SignupViewModel
 import SignupViewModelFactory
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -38,10 +39,16 @@ import com.example.miniproject.viewmodel.LoginViewModel
 import com.example.miniproject.viewmodel.LoginViewModelFactory
 import com.example.miniproject.viewmodel.UserViewModel
 import com.example.miniproject.viewmodel.UserViewModelFactory
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
 
 class MainActivity : ComponentActivity() {
+
+    lateinit var loginViewModel: LoginViewModel
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -50,26 +57,51 @@ class MainActivity : ComponentActivity() {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
-                ) { App() }
+                ) {
+                    loginViewModel = viewModel(
+                        factory = LoginViewModelFactory(
+                            LoginRepository(
+                                FirebaseAuth.getInstance(),
+                                FirebaseFirestore.getInstance(),
+                                AppDatabase.getInstance(this).userDao()
+                            ),
+                            AuthPreferences(this)
+                        )
+                    )
+                    App(loginViewModel = loginViewModel)
+                }
             }
         }
     }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == LoginViewModel.RC_SIGN_IN) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(data)
+            try {
+                val account = task.getResult(ApiException::class.java)
+                val idToken = account.idToken ?: return
+
+                loginViewModel.handleGoogleLogin(idToken)
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
 }
 
 @Composable
-fun App(modifier: Modifier = Modifier) {
+fun App(modifier: Modifier = Modifier,loginViewModel: LoginViewModel,) {
     val navController = rememberNavController()
     val currentContext = LocalContext.current
 
-    val authPrefs = AuthPreferences(currentContext)
+
 
     val signupRepository =
         SignupRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
-    val loginRepository = LoginRepository(
-        auth = FirebaseAuth.getInstance(),
-        firestore = FirebaseFirestore.getInstance(),
-        userDao = AppDatabase.getInstance(currentContext).userDao()
-    )
     val userRepository = UserRepository(
         userDao = AppDatabase.getInstance(currentContext).userDao()
     )
@@ -78,28 +110,35 @@ fun App(modifier: Modifier = Modifier) {
     val signupViewModel: SignupViewModel = viewModel(
         factory = SignupViewModelFactory(signupRepository)
     )
-    val loginViewModel: LoginViewModel = viewModel(
-        factory = LoginViewModelFactory(loginRepository, authPrefs)
-    )
     val userViewModel: UserViewModel = viewModel(
         factory = UserViewModelFactory(userRepository)
     )
 
 
     val currentUser by userViewModel.currentUser.collectAsState()
+
     LaunchedEffect(currentUser) {
-        currentUser?.let { user ->
-            if (user.role.lowercase() == "admin") {
-                navController.navigate("admin_home") {
-                    popUpTo("home") { inclusive = true } // optional: clears back stack
-                }
-            } else {
-                navController.navigate("home") {
-                    popUpTo("home") { inclusive = true } // optional: clears back stack
-                }
+        val user = currentUser
+        if (user == null) {
+            navController.navigate("home") {
+                popUpTo("splash") { inclusive = true }
+            }
+            return@LaunchedEffect
+        }
+
+        // now smart cast works safely
+        if (user.role.lowercase() == "admin") {
+            navController.navigate("admin_home") {
+                popUpTo("home") { inclusive = true }
+            }
+        } else {
+            navController.navigate("home") {
+                popUpTo("home") { inclusive = true }
             }
         }
     }
+
+
     LaunchedEffect(Unit) {
         loginViewModel.checkAutoLogin() // restore login
         userViewModel.loadCurrentUser()  // load user from Room
@@ -117,7 +156,11 @@ fun App(modifier: Modifier = Modifier) {
             SignupScreen(navController = navController, viewModel = signupViewModel)
         }
         composable("admin_home") {
-            AdminHomeScreen(userViewModel = userViewModel,loginViewModel = loginViewModel,navController = navController)
+            AdminHomeScreen(
+                userViewModel = userViewModel,
+                loginViewModel = loginViewModel,
+                navController = navController
+            )
         }
         composable("admin_signup") {
             AdminSignupScreen(navController = navController, viewModel = signupViewModel)
@@ -129,8 +172,3 @@ fun App(modifier: Modifier = Modifier) {
 
 }
 
-@Preview
-@Composable
-private fun Preview() {
-    App()
-}

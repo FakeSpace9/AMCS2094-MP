@@ -1,4 +1,5 @@
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -40,6 +41,10 @@ import com.example.miniproject.viewmodel.LoginViewModel
 @Composable
 fun LoginScreen(navController: NavController, viewModel: LoginViewModel) {
     val loginState by viewModel.loginState.collectAsState()
+    val context = LocalContext.current
+
+
+
     // States
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -132,7 +137,29 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel) {
             }
         }
 
-        val context = LocalContext.current
+        Spacer(modifier = Modifier.height(25.dp))
+
+        Button(
+            onClick = {
+                // Trigger Google Sign-In
+                viewModel.signInWithGoogle(context as ComponentActivity)
+            },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.White
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+        ) {
+            Text(
+                text = "Sign in with Google",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
+        }
+
+
         // Navigation based on role
         LaunchedEffect(loginState) {
             when (loginState) {
