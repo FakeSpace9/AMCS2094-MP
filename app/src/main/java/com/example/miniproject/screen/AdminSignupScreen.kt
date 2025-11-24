@@ -1,7 +1,6 @@
 package com.example.miniproject.screen
-
-import SignupState
 import SignupViewModel
+import androidx.compose.runtime.Composable
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,7 +16,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -36,7 +34,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 
 @Composable
-fun SignupScreen(navController: NavController,viewModel: SignupViewModel) {
+fun AdminSignupScreen(navController: NavController, viewModel: SignupViewModel) {
     val signupState by viewModel.signupState.collectAsState()
     val context = LocalContext.current
 
@@ -44,6 +42,7 @@ fun SignupScreen(navController: NavController,viewModel: SignupViewModel) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+    var adminCode by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -52,9 +51,13 @@ fun SignupScreen(navController: NavController,viewModel: SignupViewModel) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(text = "Sign Up", fontSize = 32.sp, modifier = Modifier.padding(bottom = 24.dp))
+        Text(
+            text = "Admin Sign Up",
+            fontSize = 32.sp,
+            modifier = Modifier.padding(bottom = 24.dp)
+        )
 
-        // Name Field
+        // Full Name
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
@@ -66,7 +69,7 @@ fun SignupScreen(navController: NavController,viewModel: SignupViewModel) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Email Field
+        // Email
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -81,7 +84,7 @@ fun SignupScreen(navController: NavController,viewModel: SignupViewModel) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Password Field
+        // Password
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
@@ -94,7 +97,7 @@ fun SignupScreen(navController: NavController,viewModel: SignupViewModel) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Confirm Password Field
+        // Confirm Password
         OutlinedTextField(
             value = confirmPassword,
             onValueChange = { confirmPassword = it },
@@ -102,51 +105,65 @@ fun SignupScreen(navController: NavController,viewModel: SignupViewModel) {
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done)
+            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Admin Code
+        OutlinedTextField(
+            value = adminCode,
+            onValueChange = { adminCode = it },
+            label = { Text("Admin Code") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions.Default.copy(
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Done
+            )
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
         // Signup Button
-        val signupState by viewModel.signupState.collectAsState()
-
-// Button with loading
         Button(
             onClick = {
-
-                if (name.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
+                if (name.isBlank() || email.isBlank() || password.isBlank() ||
+                    confirmPassword.isBlank() || adminCode.isBlank()
+                ) {
                     Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
                 } else if (password != confirmPassword) {
                     Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
+                } else if (adminCode != "ADMIN123") {
+                    Toast.makeText(context, "Invalid Admin Code", Toast.LENGTH_SHORT).show()
                 } else {
-                    viewModel.signup(email, password,name) // Trigger Firebase signup
+                    viewModel.adminSignup(email, password, name)
                 }
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
-            enabled = signupState != SignupState.Loading, // disable while loading
+            enabled = signupState != SignupState.Loading,
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF573BFF) // Purple
-            ),
+                containerColor = Color(0xFF573BFF)
+            )
         ) {
             if (signupState == SignupState.Loading) {
-                // Show a CircularProgressIndicator inside the button
                 CircularProgressIndicator(
                     color = Color.White,
                     modifier = Modifier.size(24.dp),
                     strokeWidth = 2.dp
                 )
             } else {
-                Text("Sign Up", fontSize = 18.sp)
+                Text("Create Admin Account", fontSize = 18.sp)
             }
         }
 
-// Observe signupState to show toast messages
+        // Observe signup results
         LaunchedEffect(signupState) {
             when (signupState) {
                 is SignupState.Success -> {
-                    Toast.makeText(context, "Signup Successful", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Admin Signup Successful", Toast.LENGTH_SHORT).show()
                     navController.popBackStack()
                 }
                 is SignupState.Error -> {
@@ -159,7 +176,5 @@ fun SignupScreen(navController: NavController,viewModel: SignupViewModel) {
                 else -> {}
             }
         }
-
     }
 }
-

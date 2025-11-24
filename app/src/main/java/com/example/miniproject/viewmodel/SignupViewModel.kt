@@ -30,4 +30,18 @@ class SignupViewModel(private val repository: SignupRepository) : ViewModel() {
             }
         }
     }
+
+    fun adminSignup(email: String, password: String,name: String) {
+        viewModelScope.launch {
+            _signupState.value = SignupState.Loading
+            val result = repository.adminSignup(email, password,name)
+            _signupState.value = if (result.isSuccess && result.getOrNull() != null) {
+                SignupState.Success(result.getOrNull()!!)
+            } else {
+                SignupState.Error(result.exceptionOrNull()?.localizedMessage ?: "Unknown error")
+            }
+        }
+    }
+
+
 }

@@ -23,6 +23,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.miniproject.data.AuthPreferences
 import com.example.miniproject.data.SignupRepository
 import com.example.miniproject.screen.AdminHomeScreen
+import com.example.miniproject.screen.AdminSignupScreen
 import com.example.miniproject.screen.HomeScreenWithDrawer
 import com.example.miniproject.screen.SignupScreen
 import com.example.miniproject.ui.theme.MiniProjectTheme
@@ -84,6 +85,9 @@ fun App(modifier: Modifier = Modifier) {
         }
         composable("admin_home") {
             AdminHomeScreen()
+        }
+        composable("admin_signup"){
+            AdminSignupScreen(navController = navController, viewModel = signupViewModel)
         }
     }
 }
