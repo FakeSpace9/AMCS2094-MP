@@ -106,11 +106,17 @@ fun DrawerMenu(navController: NavController, viewModel: LoginViewModel) {
                 fontSize = 18.sp,
                 modifier = Modifier.clickable {
                     if (isLoggedIn) {
-                        //loginViewModel.logout()  // You need to implement logout
+                        // Logout
+                        viewModel.logout()
                         Toast.makeText(context, "Logged out", Toast.LENGTH_SHORT).show()
+
+                        navController.navigate("home") {
+                            popUpTo("home") { inclusive = true }
+                        }
                     } else {
-                        navController.navigate("Login")
-                    }
+                    // Navigate to Login screen
+                    navController.navigate("Login")
+                }
                 }
             )
 

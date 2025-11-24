@@ -15,6 +15,10 @@ class LoginRepository(
     private val userDao: UserDao
 ) {
 
+    suspend fun getUserByEmail(email: String): UserEntity? {
+        return userDao.getUserByEmail(email)
+    }
+
     suspend fun login(email: String, password: String): Result<UserEntity> {
         return try {
             // 1. Firebase Auth login
