@@ -28,13 +28,17 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.miniproject.data.AuthPreferences
 import com.example.miniproject.data.SignupRepository
+import com.example.miniproject.repository.ProductRepository
 import com.example.miniproject.repository.UserRepository
 import com.example.miniproject.screen.AdminHomeScreen
+import com.example.miniproject.screen.AdminProductEntryScreen
 import com.example.miniproject.screen.AdminSignupScreen
 import com.example.miniproject.screen.HomeScreenWithDrawer
 import com.example.miniproject.screen.SignupScreen
 import com.example.miniproject.screen.SplashScreen
 import com.example.miniproject.ui.theme.MiniProjectTheme
+import com.example.miniproject.viewmodel.AdminProductViewModel
+import com.example.miniproject.viewmodel.AdminProductViewModelFactory
 import com.example.miniproject.viewmodel.LoginViewModel
 import com.example.miniproject.viewmodel.LoginViewModelFactory
 import com.example.miniproject.viewmodel.UserViewModel
@@ -114,6 +118,11 @@ fun App(modifier: Modifier = Modifier,loginViewModel: LoginViewModel,) {
         factory = UserViewModelFactory(userRepository)
     )
 
+    val productRepository = remember { ProductRepository() }
+    val adminProductViewModel: AdminProductViewModel = viewModel(
+        factory = AdminProductViewModelFactory(productRepository)
+    )
+
 
     val currentUser by userViewModel.currentUser.collectAsState()
 
@@ -162,6 +171,14 @@ fun App(modifier: Modifier = Modifier,loginViewModel: LoginViewModel,) {
                 navController = navController
             )
         }
+
+        composable("admin_entry") {
+            AdminProductEntryScreen(
+                navController = navController,
+                viewModel = adminProductViewModel
+            )
+        }
+
         composable("admin_signup") {
             AdminSignupScreen(navController = navController, viewModel = signupViewModel)
         }
