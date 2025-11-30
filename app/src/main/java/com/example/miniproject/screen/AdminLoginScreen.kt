@@ -34,7 +34,8 @@ import com.example.miniproject.viewmodel.LoginViewModel
 @Composable
 fun AdminLoginScreen(
     navController: NavController,
-loginViewModel: LoginViewModel
+    loginViewModel: LoginViewModel,
+    onLoginSuccess: () -> Unit
 ) {
     val adminLoginState by loginViewModel.adminState.collectAsState()
     val context = LocalContext.current
@@ -83,7 +84,7 @@ loginViewModel: LoginViewModel
         LaunchedEffect(adminLoginState) {
             if (adminLoginState is LoginStateAdmin.Success) {
                 Toast.makeText(context, "Login Successful", Toast.LENGTH_SHORT).show()
-                navController.navigate("admin_home") {
+                navController.navigate("admin_dashboard") {
                     popUpTo("Login") { inclusive = true }
                 }
             }
