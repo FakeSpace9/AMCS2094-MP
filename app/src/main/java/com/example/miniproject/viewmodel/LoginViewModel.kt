@@ -129,7 +129,10 @@ class LoginViewModel(
             }
         }
     }
-
+    fun clearMessages() {
+        _customerState.value = LoginStateCustomer.Idle
+        _adminState.value = LoginStateAdmin.Idle
+    }
 
 }
 

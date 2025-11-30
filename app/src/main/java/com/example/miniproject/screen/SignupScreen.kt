@@ -159,6 +159,7 @@ fun SignupScreen(navController: NavController,viewModel: SignupViewModel) {
             when (signupState) {
                 is SignupState.Success -> {
                     Toast.makeText(context, "Signup Successful", Toast.LENGTH_SHORT).show()
+                    viewModel.clearMessages()
                     navController.popBackStack()
                 }
                 is SignupState.Error -> {
@@ -167,6 +168,7 @@ fun SignupScreen(navController: NavController,viewModel: SignupViewModel) {
                         (signupState as SignupState.Error).message,
                         Toast.LENGTH_LONG
                     ).show()
+                    viewModel.clearMessages()
                 }
                 else -> {}
             }

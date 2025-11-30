@@ -42,6 +42,8 @@ class SignupViewModel(private val repository: SignupRepository) : ViewModel() {
             }
         }
     }
-
+    fun clearMessages() {
+        _signupState.value = SignupState.Idle
+    }
 
 }

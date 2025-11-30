@@ -28,7 +28,6 @@ import com.example.miniproject.screen.AdminSignupScreen
 import com.example.miniproject.screen.ForgotPasswordScreen
 import com.example.miniproject.screen.HomeScreenWithDrawer
 import com.example.miniproject.screen.SignupScreen
-import com.example.miniproject.screen.SplashScreen
 import com.example.miniproject.ui.theme.MiniProjectTheme
 import com.example.miniproject.viewmodel.ForgotPasswordViewModel
 import com.example.miniproject.viewmodel.ForgotPasswordViewModelFactory
@@ -132,9 +131,6 @@ fun App(modifier: Modifier = Modifier,loginViewModel: LoginViewModel,) {
 
         composable("admin_signup") {
             AdminSignupScreen(navController = navController, viewModel = signupViewModel)
-        }
-        composable("splash") {
-            SplashScreen()
         }
         composable("adminLogin") {
             AdminLoginScreen(

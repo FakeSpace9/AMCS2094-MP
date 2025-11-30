@@ -106,13 +106,25 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel) {
 
         Spacer(modifier = Modifier.height(25.dp))
         LaunchedEffect(customerLoginState) {
-            if (customerLoginState is LoginStateCustomer.Success) {
-                Toast.makeText(context, "Login Successful", Toast.LENGTH_SHORT).show()
-                navController.navigate("home") {
-                    popUpTo("Login") { inclusive = true }
+            when (customerLoginState) {
+                is LoginStateCustomer.Success -> {
+                    Toast.makeText(context, "Login Successful", Toast.LENGTH_SHORT).show()
+
+                    navController.navigate("home") {
+                        popUpTo("Login") { inclusive = true }
+                    }
                 }
+                is LoginStateCustomer.Error -> {
+                    Toast.makeText(
+                        context,
+                        (customerLoginState as LoginStateCustomer.Error).message,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                else -> { /* do nothing for Idle or Loading */ }
             }
         }
+
 
         // Continue Button
         Button(
