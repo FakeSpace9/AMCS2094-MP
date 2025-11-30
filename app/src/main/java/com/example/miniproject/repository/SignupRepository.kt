@@ -12,17 +12,17 @@ class SignupRepository(
 
     // Function to create a user with email and password
     suspend fun signup(
-        email: String, password: String, name: String
+        email: String, password: String, name: String, phone: String
     ): Result<FirebaseUser?> {
         return try {
             val result = auth.createUserWithEmailAndPassword(email, password).await()
             val user = result.user ?: return Result.success(null)
 
-            val userData = mapOf(
-                "email" to email, "name" to name, "role" to "customer"
+            val custData = mapOf(
+                "customerId" to user.uid,"email" to email, "username" to name, "phone" to phone
             )
 
-            firestore.collection("users").document(user.uid).set(userData).await()
+            firestore.collection("customers").document(user.uid).set(custData).await()
 
             Result.success(user)
         } catch (e: Exception) {
@@ -31,17 +31,17 @@ class SignupRepository(
     }
 
     suspend fun adminSignup(
-        email: String, password: String, name: String
+        email: String, password: String, name: String, phone:String
     ): Result<FirebaseUser?> {
         return try {
             val result = auth.createUserWithEmailAndPassword(email, password).await()
             val user = result.user ?: return Result.success(null)
 
-            val userData = mapOf(
-                "email" to email, "name" to name, "role" to "admin"
+            val adminData = mapOf(
+                "email" to email, "name" to name, "phone" to phone
             )
 
-            firestore.collection("users").document(user.uid).set(userData).await()
+            firestore.collection("admins").document(user.uid).set(adminData).await()
 
             Result.success(user)
         } catch (e: Exception) {

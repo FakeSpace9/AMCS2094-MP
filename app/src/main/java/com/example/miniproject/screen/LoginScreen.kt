@@ -46,8 +46,6 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel) {
     val loginState by viewModel.loginState.collectAsState()
     val context = LocalContext.current
 
-
-
     // States
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -106,6 +104,14 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel) {
         )
 
         Spacer(modifier = Modifier.height(25.dp))
+        LaunchedEffect(loginState) {
+            if (loginState is LoginState.Success) {
+                Toast.makeText(context, "Login Successful", Toast.LENGTH_SHORT).show()
+                navController.navigate("home") {
+                    popUpTo("Login") { inclusive = true }
+                }
+            }
+        }
 
         // Continue Button
         Button(
@@ -114,6 +120,7 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel) {
                     navController.navigate("admin_signup")
                 } else {
                     viewModel.login(email, password)
+
                 }
             },
             enabled = loginState !is LoginState.Loading,
@@ -178,33 +185,7 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel) {
         }
 
 
-        // Navigation based on role
-        LaunchedEffect(loginState) {
-            when (loginState) {
-                is LoginState.Success -> {
-                    val user = (loginState as LoginState.Success).user
-                    if (user.role == "admin") {
-                        navController.navigate("admin_home") {
-                            popUpTo("login") { inclusive = true }
-                        }
-                    } else {
-                        navController.navigate("home") {
-                            popUpTo("login") { inclusive = true }
-                        }
-                    }
-                }
 
-                is LoginState.Error -> {
-                    Toast.makeText(
-                        context,
-                        (loginState as LoginState.Error).message,
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-
-                else -> Unit
-            }
-        }
 
 
         Spacer(modifier = Modifier.height(20.dp))

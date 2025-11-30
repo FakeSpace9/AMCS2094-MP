@@ -1,6 +1,6 @@
 package com.example.miniproject.screen
+import SignupState
 import SignupViewModel
-import androidx.compose.runtime.Composable
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,6 +16,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -40,6 +41,7 @@ fun AdminSignupScreen(navController: NavController, viewModel: SignupViewModel) 
 
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var adminCode by remember { mutableStateOf("") }
@@ -80,6 +82,18 @@ fun AdminSignupScreen(navController: NavController, viewModel: SignupViewModel) 
                 keyboardType = KeyboardType.Email,
                 imeAction = ImeAction.Next
             )
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Password
+        OutlinedTextField(
+            value = phone,
+            onValueChange = { phone = it },
+            label = { Text("Password") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -137,7 +151,7 @@ fun AdminSignupScreen(navController: NavController, viewModel: SignupViewModel) 
                 } else if (adminCode != "ADMIN123") {
                     Toast.makeText(context, "Invalid Admin Code", Toast.LENGTH_SHORT).show()
                 } else {
-                    viewModel.adminSignup(email, password, name)
+                    viewModel.adminSignup(email, password, name,phone)
                 }
             },
             modifier = Modifier

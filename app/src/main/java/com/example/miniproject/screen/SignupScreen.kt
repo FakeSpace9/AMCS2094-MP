@@ -43,6 +43,7 @@ fun SignupScreen(navController: NavController,viewModel: SignupViewModel) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
 
     Column(
@@ -78,7 +79,18 @@ fun SignupScreen(navController: NavController,viewModel: SignupViewModel) {
                 imeAction = ImeAction.Next
             )
         )
+        Spacer(modifier = Modifier.height(16.dp))
 
+        // Password Field
+        OutlinedTextField(
+            value = phone,
+            onValueChange = { phone = it },
+            label = { Text("Phone Number") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+
+            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next)
+        )
         Spacer(modifier = Modifier.height(16.dp))
 
         // Password Field
@@ -119,7 +131,7 @@ fun SignupScreen(navController: NavController,viewModel: SignupViewModel) {
                 } else if (password != confirmPassword) {
                     Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
                 } else {
-                    viewModel.signup(email, password,name) // Trigger Firebase signup
+                    viewModel.signup(email, password,name,phone) // Trigger Firebase signup
                 }
             },
             modifier = Modifier

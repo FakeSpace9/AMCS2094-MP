@@ -1,5 +1,6 @@
 package com.example.miniproject
 
+import AppDatabase
 import LoginRepository
 import LoginScreen
 import SignupViewModel
@@ -13,23 +14,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.miniproject.data.AuthPreferences
 import com.example.miniproject.data.SignupRepository
-import com.example.miniproject.repository.UserRepository
-import com.example.miniproject.screen.AdminHomeScreen
 import com.example.miniproject.screen.AdminSignupScreen
 import com.example.miniproject.screen.HomeScreenWithDrawer
 import com.example.miniproject.screen.SignupScreen
@@ -37,12 +28,9 @@ import com.example.miniproject.screen.SplashScreen
 import com.example.miniproject.ui.theme.MiniProjectTheme
 import com.example.miniproject.viewmodel.LoginViewModel
 import com.example.miniproject.viewmodel.LoginViewModelFactory
-import com.example.miniproject.viewmodel.UserViewModel
-import com.example.miniproject.viewmodel.UserViewModelFactory
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
 
 class MainActivity : ComponentActivity() {
@@ -63,7 +51,8 @@ class MainActivity : ComponentActivity() {
                             LoginRepository(
                                 FirebaseAuth.getInstance(),
                                 FirebaseFirestore.getInstance(),
-                                AppDatabase.getInstance(this).userDao()
+                                AppDatabase.getInstance(this).CustomerDao(),
+                                AppDatabase.getInstance(this).AdminDao()
                             ),
                             AuthPreferences(this)
                         )
@@ -96,54 +85,22 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun App(modifier: Modifier = Modifier,loginViewModel: LoginViewModel,) {
     val navController = rememberNavController()
-    val currentContext = LocalContext.current
 
 
 
     val signupRepository =
         SignupRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
-    val userRepository = UserRepository(
-        userDao = AppDatabase.getInstance(currentContext).userDao()
-    )
+
 
     // Create ViewModel with Factory
     val signupViewModel: SignupViewModel = viewModel(
         factory = SignupViewModelFactory(signupRepository)
     )
-    val userViewModel: UserViewModel = viewModel(
-        factory = UserViewModelFactory(userRepository)
-    )
 
 
-    val currentUser by userViewModel.currentUser.collectAsState()
-
-    LaunchedEffect(currentUser) {
-        val user = currentUser
-        if (user == null) {
-            navController.navigate("home") {
-                popUpTo("splash") { inclusive = true }
-            }
-            return@LaunchedEffect
-        }
-
-        // now smart cast works safely
-        if (user.role.lowercase() == "admin") {
-            navController.navigate("admin_home") {
-                popUpTo("home") { inclusive = true }
-            }
-        } else {
-            navController.navigate("home") {
-                popUpTo("home") { inclusive = true }
-            }
-        }
-    }
 
 
-    LaunchedEffect(Unit) {
-        loginViewModel.checkAutoLogin() // restore login
-        userViewModel.loadCurrentUser()  // load user from Room
-    }
-    NavHost(navController = navController, startDestination = "splash") {
+    NavHost(navController = navController, startDestination = "home") {
 
         composable("home") {
             HomeScreenWithDrawer(navController = navController, viewModel = loginViewModel)
@@ -155,13 +112,14 @@ fun App(modifier: Modifier = Modifier,loginViewModel: LoginViewModel,) {
         composable(route = "Signup") {
             SignupScreen(navController = navController, viewModel = signupViewModel)
         }
+        /*
         composable("admin_home") {
             AdminHomeScreen(
-                userViewModel = userViewModel,
                 loginViewModel = loginViewModel,
                 navController = navController
             )
         }
+        */
         composable("admin_signup") {
             AdminSignupScreen(navController = navController, viewModel = signupViewModel)
         }

@@ -1,26 +1,31 @@
-import com.example.miniproject.data.dao.UserDao
-import com.example.miniproject.data.entity.UserEntity
 
+
+
+import com.example.miniproject.data.dao.AdminDao
+import com.example.miniproject.data.entity.CustomerEntity
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
-import com.google.firebase.auth.GoogleAuthProvider
-
-
 
 
 class LoginRepository(
     private val auth: FirebaseAuth,
     private val firestore: FirebaseFirestore,
-    private val userDao: UserDao
+    private val customerDao: CustomerDao,
+    private val adminDao: AdminDao
 ) {
 
-    suspend fun getUserByEmail(email: String): UserEntity? {
-        return userDao.getUserByEmail(email)
+
+    suspend fun logoutFirebase() {
+        try {
+            auth.signOut()
+        } catch (e: Exception) {
+            // ignore logout errors
+        }
     }
 
-    suspend fun login(email: String, password: String): Result<UserEntity> {
+    suspend fun login(email: String, password: String): Result<CustomerEntity> {
         return try {
             // 1. Firebase Auth login
             val result = auth.signInWithEmailAndPassword(email, password).await()
@@ -29,7 +34,7 @@ class LoginRepository(
             val uid = user.uid
 
             // 2. Fetch Firestore user data using UID
-            val snapshot = firestore.collection("users")
+            val snapshot = firestore.collection("customers")
                 .document(uid)
                 .get()
                 .await()
@@ -38,75 +43,66 @@ class LoginRepository(
                 return Result.failure(Exception("User data not found in Firestore"))
             }
 
-            userDao.logoutAllUsers()
+
             // Convert Firestore -> local Room entity
-            val userEntity = UserEntity(
-                uid = uid,
+            val customerEntity = CustomerEntity(
+                customerId = uid,
                 email = snapshot.getString("email") ?: "",
                 name = snapshot.getString("name") ?: "",
-                role = snapshot.getString("role") ?: "",
-                isLoggedIn = true
+                phone = snapshot.getString("phone") ?: "",
             )
 
             // 3. Save to Room local database
-            userDao.insertUser(userEntity)
+            customerDao.insertCustomer(customerEntity)
 
-            Result.success(userEntity)
+            Result.success(customerEntity)
 
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    suspend fun logout(){
-        auth.signOut()
-        userDao.logoutAllUsers()
-    }
-    suspend fun loginWithGoogle(idToken: String): Result<UserEntity> {
+    suspend fun loginWithGoogle(idToken: String): Result<CustomerEntity> {
         return try {
             val credential = GoogleAuthProvider.getCredential(idToken, null)
 
             val result = auth.signInWithCredential(credential).await()
-            val firebaseUser = result.user ?: return Result.failure(Exception("Firebase user not found"))
-            val uid = firebaseUser.uid
+            val firebaseCust = result.user ?: return Result.failure(Exception("Firebase user not found"))
+            val uid = firebaseCust.uid
 
             // 1. check Firestore
-            val docRef = firestore.collection("users").document(uid)
+            val docRef = firestore.collection("customers").document(uid)
             val snapshot = docRef.get().await()
 
-            val userEntity = if (!snapshot.exists()) {
+            val customerEntity = if (!snapshot.exists()) {
                 // 2. create new Firestore user
                 val newUser = mapOf(
-                    "uid" to uid,
-                    "email" to (firebaseUser.email ?: ""),
-                    "name" to (firebaseUser.displayName ?: ""),
-                    "role" to "customer"
+                    "customerId" to uid,
+                    "email" to (firebaseCust.email ?: ""),
+                    "name" to (firebaseCust.displayName ?: ""),
+                    "phone" to (firebaseCust.phoneNumber ?: "")
                 )
                 docRef.set(newUser).await()
 
-                UserEntity(
-                    uid = uid,
-                    email = firebaseUser.email ?: "",
-                    name = firebaseUser.displayName ?: "",
-                    role = "customer",
-                    isLoggedIn = true
+                CustomerEntity(
+                    customerId = uid,
+                    email = firebaseCust.email ?: "",
+                    name = firebaseCust.displayName ?: "",
+                    phone = firebaseCust.phoneNumber?:""
                 )
             } else {
                 // existing user
-                UserEntity(
-                    uid = uid,
+                CustomerEntity(
+                    customerId = uid,
                     email = snapshot.getString("email") ?: "",
                     name = snapshot.getString("name") ?: "",
-                    role = snapshot.getString("role") ?: "customer",
-                    isLoggedIn = true
+                    phone = snapshot.getString("phone") ?: ""
                 )
             }
 
-            // clear previous users (local login)
-            userDao.logoutAllUsers()
-            userDao.insertUser(userEntity)
 
-            Result.success(userEntity)
+
+            Result.success(customerEntity)
 
         } catch (e: Exception) {
             Result.failure(e)

@@ -6,13 +6,14 @@ import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.miniproject.data.AuthPreferences
-import com.example.miniproject.data.entity.UserEntity
+import com.example.miniproject.data.entity.CustomerEntity
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+
 class LoginViewModel(
     private val repository: LoginRepository,
     private val authPrefs: AuthPreferences
@@ -37,27 +38,16 @@ class LoginViewModel(
             }
         }
     }
-
     fun logout() {
         viewModelScope.launch {
+            repository.logoutFirebase()
             authPrefs.clearLogin()
-            repository.logout()
+
             _loginState.value = LoginState.Idle
         }
     }
 
 
-    fun checkAutoLogin() {
-        if (authPrefs.shouldAutoLogin()) {
-            val email = authPrefs.getLoggedInEmail()
-            viewModelScope.launch {
-                val user = repository.getUserByEmail(email!!)
-                if (user != null) {
-                    _loginState.value = LoginState.Success(user)
-                }
-            }
-        }
-    }
 
     fun signInWithGoogle(activity: Activity) {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -101,6 +91,6 @@ class LoginViewModel(
 sealed class LoginState {
     object Idle : LoginState()
     object Loading : LoginState()
-    data class Success(val user: UserEntity) : LoginState()
+    data class Success(val user: CustomerEntity) : LoginState()
     data class Error(val message: String) : LoginState()
 }
