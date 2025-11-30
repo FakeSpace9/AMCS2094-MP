@@ -33,7 +33,7 @@ class LoginViewModel(
 
             val result = repository.login(email, password)
             if (result.isSuccess) {
-                authPrefs.saveLogin(email)
+                authPrefs.saveLogin(email, "customer")
                 _customerState.value = LoginStateCustomer.Success(result.getOrNull()!!)
             } else {
                 _customerState.value =
@@ -47,7 +47,7 @@ class LoginViewModel(
 
             val result = repository.adminLogin(email, password)
             if (result.isSuccess) {
-                authPrefs.saveLogin(email)
+                authPrefs.saveLogin(email, "admin")
                 _adminState.value = LoginStateAdmin.Success(result.getOrNull()!!)
             } else {
                 _adminState.value =
@@ -94,7 +94,7 @@ class LoginViewModel(
             if (result.isSuccess) {
                 val user = result.getOrNull()!!
 
-                authPrefs.saveLogin(user.email)
+                authPrefs.saveLogin(user.email, "customer")
 
                 _customerState.value = LoginStateCustomer.Success(user)
             } else {
@@ -103,12 +103,35 @@ class LoginViewModel(
         }
     }
 
+    fun checkSession() {
+        viewModelScope.launch {
+            if (!authPrefs.shouldAutoLogin()) return@launch
+
+            val email = authPrefs.getLoggedInEmail() ?: return@launch
+            val userType = authPrefs.getUserType() ?: return@launch
+
+            if (userType == "customer") {
+                _customerState.value = LoginStateCustomer.Loading
+                val result = repository.getCustomerByEmail(email)
+                _customerState.value = if (result.isSuccess) {
+                    LoginStateCustomer.Success(result.getOrNull()!!)
+                } else {
+                    LoginStateCustomer.Error("Session expired, please login again")
+                }
+            } else if (userType == "admin") {
+                _adminState.value = LoginStateAdmin.Loading
+                val result = repository.getAdminByEmail(email)
+                _adminState.value = if (result.isSuccess) {
+                    LoginStateAdmin.Success(result.getOrNull()!!)
+                } else {
+                    LoginStateAdmin.Error("Session expired, please login again")
+                }
+            }
+        }
+    }
+
 
 }
-
-
-
-
 
 sealed class LoginStateCustomer {
     object Idle : LoginStateCustomer()

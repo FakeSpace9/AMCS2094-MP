@@ -39,7 +39,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.miniproject.viewmodel.LoginStateCustomer
-
 import com.example.miniproject.viewmodel.LoginViewModel
 import kotlinx.coroutines.launch
 
@@ -60,13 +59,18 @@ fun HomeScreenWithDrawer(navController: NavController, viewModel: LoginViewModel
             navController = navController,
             onMenuClick = {
                 scope.launch { drawerState.open() }
-            }
+            },
+            loginViewModel = viewModel
         )
     }
 }
 
+
+
 @Composable
-fun HomeScreen(navController: NavController, onMenuClick: () -> Unit) {
+fun HomeScreen(navController: NavController, onMenuClick: () -> Unit, loginViewModel: LoginViewModel) {
+    val customerLoginState by loginViewModel.customerState.collectAsState()
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -78,8 +82,24 @@ fun HomeScreen(navController: NavController, onMenuClick: () -> Unit) {
 
         item { ProductSection(title = "New Arrival →") }
         item { ProductSection(title = "Superman Collab →") }
+
+        item {
+            when (customerLoginState) {
+                is LoginStateCustomer.Success -> {
+                    val customer = (customerLoginState as LoginStateCustomer.Success).user
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(text = "Customer Name: ${customer.name}", fontSize = 20.sp)
+                        Text(text = "Email: ${customer.email}", fontSize = 20.sp)
+                        Text(text = "Phone: ${customer.phone}", fontSize = 20.sp)
+                    }
+                }
+                else -> {
+                }
+            }
+        }
     }
 }
+
 
 
 @Composable

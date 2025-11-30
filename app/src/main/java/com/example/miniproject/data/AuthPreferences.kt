@@ -6,27 +6,36 @@ class AuthPreferences(context: Context) {
 
     private val prefs = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
 
-    fun saveLogin(email: String) {
+
+
+
+    fun saveLogin(email: String, userType: String) {
         prefs.edit().apply {
             putBoolean("isLoggedIn", true)
             putString("email", email)
+            putString("userType", userType) // "customer" or "admin"
             putLong("loginTime", System.currentTimeMillis())
             apply()
         }
     }
 
+    fun getUserType(): String? {
+        return prefs.getString("userType", null)
+    }
+
     fun clearLogin() {
         prefs.edit().apply {
             putBoolean("isLoggedIn", false)
+            remove("userType")
             apply()
         }
     }
+
 
     fun shouldAutoLogin(): Boolean {
         val isLoggedIn = prefs.getBoolean("isLoggedIn", false)
         val lastTime = prefs.getLong("loginTime", 0)
         val sevenDays = 7 * 24 * 60 * 60 * 1000L
-
         return isLoggedIn && (System.currentTimeMillis() - lastTime <= sevenDays)
     }
 

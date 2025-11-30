@@ -59,6 +59,7 @@ class MainActivity : ComponentActivity() {
                             AuthPreferences(this)
                         )
                     )
+                    loginViewModel.checkSession()
                     App(loginViewModel = loginViewModel)
                 }
             }

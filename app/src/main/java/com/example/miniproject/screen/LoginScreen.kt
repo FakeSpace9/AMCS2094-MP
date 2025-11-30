@@ -44,7 +44,7 @@ import com.example.miniproject.viewmodel.LoginViewModel
 
 @Composable
 fun LoginScreen(navController: NavController, viewModel: LoginViewModel) {
-    val customerloginState by viewModel.customerState.collectAsState()
+    val customerLoginState by viewModel.customerState.collectAsState()
     val context = LocalContext.current
 
     // States
@@ -105,8 +105,8 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel) {
         )
 
         Spacer(modifier = Modifier.height(25.dp))
-        LaunchedEffect(customerloginState) {
-            if (customerloginState is LoginStateCustomer.Success) {
+        LaunchedEffect(customerLoginState) {
+            if (customerLoginState is LoginStateCustomer.Success) {
                 Toast.makeText(context, "Login Successful", Toast.LENGTH_SHORT).show()
                 navController.navigate("home") {
                     popUpTo("Login") { inclusive = true }
@@ -124,7 +124,7 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel) {
 
                 }
             },
-            enabled = customerloginState !is LoginStateCustomer.Loading,
+            enabled = customerLoginState !is LoginStateCustomer.Loading,
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFFECECEC)
             ),
@@ -132,7 +132,7 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel) {
                 .fillMaxWidth()
                 .height(50.dp)
         ) {
-            if (customerloginState is LoginStateCustomer.Loading) {
+            if (customerLoginState is LoginStateCustomer.Loading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(22.dp),
                     strokeWidth = 3.dp,
