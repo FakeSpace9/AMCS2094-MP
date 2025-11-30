@@ -21,13 +21,17 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.miniproject.data.AuthPreferences
 import com.example.miniproject.data.SignupRepository
+import com.example.miniproject.repository.ForgotPasswordRepository
 import com.example.miniproject.screen.AdminHomeScreen
 import com.example.miniproject.screen.AdminLoginScreen
 import com.example.miniproject.screen.AdminSignupScreen
+import com.example.miniproject.screen.ForgotPasswordScreen
 import com.example.miniproject.screen.HomeScreenWithDrawer
 import com.example.miniproject.screen.SignupScreen
 import com.example.miniproject.screen.SplashScreen
 import com.example.miniproject.ui.theme.MiniProjectTheme
+import com.example.miniproject.viewmodel.ForgotPasswordViewModel
+import com.example.miniproject.viewmodel.ForgotPasswordViewModelFactory
 import com.example.miniproject.viewmodel.LoginViewModel
 import com.example.miniproject.viewmodel.LoginViewModelFactory
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -90,7 +94,10 @@ fun App(modifier: Modifier = Modifier,loginViewModel: LoginViewModel,) {
     val navController = rememberNavController()
 
 
-
+    val forgotPasswordRepository = ForgotPasswordRepository(FirebaseAuth.getInstance())
+    val forgotPasswordViewModel: ForgotPasswordViewModel = viewModel(
+        factory = ForgotPasswordViewModelFactory(forgotPasswordRepository)
+    )
     val signupRepository =
         SignupRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
 
@@ -136,6 +143,9 @@ fun App(modifier: Modifier = Modifier,loginViewModel: LoginViewModel,) {
             )
         }
 
+        composable(route = "forgot_password"){
+            ForgotPasswordScreen(navController = navController, forgotPasswordViewModel = forgotPasswordViewModel)
+        }
 
     }
 

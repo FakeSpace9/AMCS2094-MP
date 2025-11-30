@@ -232,7 +232,7 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel) {
             text = "Forgot Password",
             fontSize = 16.sp,
             modifier = Modifier.clickable {
-                navController.navigate("forgotPassword")
+                navController.navigate("forgot_password")
             }
         )
         Spacer(modifier = Modifier.height(20.dp))
