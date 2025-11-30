@@ -6,6 +6,7 @@ import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.miniproject.data.AuthPreferences
+import com.example.miniproject.data.entity.AdminEntity
 import com.example.miniproject.data.entity.CustomerEntity
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -19,31 +20,50 @@ class LoginViewModel(
     private val authPrefs: AuthPreferences
 ) : ViewModel() {
 
-    private val _loginState = MutableStateFlow<LoginState>(LoginState.Idle)
-    val loginState: StateFlow<LoginState> = _loginState
 
+    private val _customerState = MutableStateFlow<LoginStateCustomer>(LoginStateCustomer.Idle)
+    val customerState: StateFlow<LoginStateCustomer> = _customerState
+
+    private val _adminState = MutableStateFlow<LoginStateAdmin>(LoginStateAdmin.Idle)
+    val adminState: StateFlow<LoginStateAdmin> = _adminState
 
     fun login(email: String, password: String) {
         viewModelScope.launch {
-            _loginState.value = LoginState.Loading
+            _customerState.value = LoginStateCustomer.Loading
 
             val result = repository.login(email, password)
             if (result.isSuccess) {
-                // Save login info
                 authPrefs.saveLogin(email)
-
-                _loginState.value = LoginState.Success(result.getOrNull()!!)
+                _customerState.value = LoginStateCustomer.Success(result.getOrNull()!!)
             } else {
-                _loginState.value = LoginState.Error(result.exceptionOrNull()?.message ?: "Login failed")
+                _customerState.value =
+                    LoginStateCustomer.Error(result.exceptionOrNull()?.message ?: "Login failed")
             }
         }
     }
+    fun adminLogin(email: String, password: String) {
+        viewModelScope.launch {
+            _adminState.value = LoginStateAdmin.Loading
+
+            val result = repository.adminLogin(email, password)
+            if (result.isSuccess) {
+                authPrefs.saveLogin(email)
+                _adminState.value = LoginStateAdmin.Success(result.getOrNull()!!)
+            } else {
+                _adminState.value =
+                    LoginStateAdmin.Error(result.exceptionOrNull()?.message ?: "Admin login failed")
+            }
+        }
+    }
+
+
     fun logout() {
         viewModelScope.launch {
             repository.logoutFirebase()
             authPrefs.clearLogin()
 
-            _loginState.value = LoginState.Idle
+            _customerState.value = LoginStateCustomer.Idle
+            _adminState.value = LoginStateAdmin.Idle
         }
     }
 
@@ -67,7 +87,7 @@ class LoginViewModel(
 
     fun handleGoogleLogin(idToken: String) {
         viewModelScope.launch {
-            _loginState.value = LoginState.Loading
+            _customerState.value = LoginStateCustomer.Loading
 
             val result = repository.loginWithGoogle(idToken)
 
@@ -76,9 +96,9 @@ class LoginViewModel(
 
                 authPrefs.saveLogin(user.email)
 
-                _loginState.value = LoginState.Success(user)
+                _customerState.value = LoginStateCustomer.Success(user)
             } else {
-                _loginState.value = LoginState.Error("Google login failed")
+                _customerState.value = LoginStateCustomer.Error("Google login failed")
             }
         }
     }
@@ -88,9 +108,18 @@ class LoginViewModel(
 
 
 
-sealed class LoginState {
-    object Idle : LoginState()
-    object Loading : LoginState()
-    data class Success(val user: CustomerEntity) : LoginState()
-    data class Error(val message: String) : LoginState()
+
+
+sealed class LoginStateCustomer {
+    object Idle : LoginStateCustomer()
+    object Loading : LoginStateCustomer()
+    data class Success(val user: CustomerEntity) : LoginStateCustomer()
+    data class Error(val message: String) : LoginStateCustomer()
+}
+
+sealed class LoginStateAdmin {
+    object Idle : LoginStateAdmin()
+    object Loading : LoginStateAdmin()
+    data class Success(val admin: AdminEntity) : LoginStateAdmin()
+    data class Error(val message: String) : LoginStateAdmin()
 }

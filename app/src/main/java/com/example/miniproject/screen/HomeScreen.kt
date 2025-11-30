@@ -38,7 +38,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.miniproject.viewmodel.LoginState
+import com.example.miniproject.viewmodel.LoginStateCustomer
+
 import com.example.miniproject.viewmodel.LoginViewModel
 import kotlinx.coroutines.launch
 
@@ -83,7 +84,7 @@ fun HomeScreen(navController: NavController, onMenuClick: () -> Unit) {
 
 @Composable
 fun DrawerMenu(navController: NavController, viewModel: LoginViewModel) {
-    val loginState by viewModel.loginState.collectAsState()
+    val customerloginState by viewModel.customerState.collectAsState()
     val context = LocalContext.current
     Column(
         modifier = Modifier
@@ -97,7 +98,7 @@ fun DrawerMenu(navController: NavController, viewModel: LoginViewModel) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text("Menu", fontSize = 22.sp, fontWeight = FontWeight.Bold)
-            val isLoggedIn = loginState is LoginState.Success
+            val isLoggedIn = customerloginState is LoginStateCustomer.Success
             val buttonText = if (isLoggedIn) "Logout" else "Login"
             Text(
                 text = buttonText,

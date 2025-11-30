@@ -89,10 +89,9 @@ fun AdminSignupScreen(navController: NavController, viewModel: SignupViewModel) 
         OutlinedTextField(
             value = phone,
             onValueChange = { phone = it },
-            label = { Text("Password") },
+            label = { Text("Phone Number") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next)
         )
 

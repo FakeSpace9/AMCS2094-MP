@@ -21,6 +21,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.miniproject.data.AuthPreferences
 import com.example.miniproject.data.SignupRepository
+import com.example.miniproject.screen.AdminHomeScreen
+import com.example.miniproject.screen.AdminLoginScreen
 import com.example.miniproject.screen.AdminSignupScreen
 import com.example.miniproject.screen.HomeScreenWithDrawer
 import com.example.miniproject.screen.SignupScreen
@@ -112,20 +114,28 @@ fun App(modifier: Modifier = Modifier,loginViewModel: LoginViewModel,) {
         composable(route = "Signup") {
             SignupScreen(navController = navController, viewModel = signupViewModel)
         }
-        /*
+
         composable("admin_home") {
             AdminHomeScreen(
                 loginViewModel = loginViewModel,
                 navController = navController
             )
         }
-        */
+
         composable("admin_signup") {
             AdminSignupScreen(navController = navController, viewModel = signupViewModel)
         }
         composable("splash") {
             SplashScreen()
         }
+        composable("adminLogin") {
+            AdminLoginScreen(
+                navController = navController,
+                loginViewModel = loginViewModel
+            )
+        }
+
+
     }
 
 }

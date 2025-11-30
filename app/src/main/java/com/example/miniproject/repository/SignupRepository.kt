@@ -19,7 +19,7 @@ class SignupRepository(
             val user = result.user ?: return Result.success(null)
 
             val custData = mapOf(
-                "customerId" to user.uid,"email" to email, "username" to name, "phone" to phone
+                "customerId" to user.uid,"email" to email, "name" to name, "phone" to phone
             )
 
             firestore.collection("customers").document(user.uid).set(custData).await()
@@ -38,7 +38,7 @@ class SignupRepository(
             val user = result.user ?: return Result.success(null)
 
             val adminData = mapOf(
-                "email" to email, "name" to name, "phone" to phone
+                "adminId" to user.uid,"email" to email, "name" to name, "phone" to phone
             )
 
             firestore.collection("admins").document(user.uid).set(adminData).await()

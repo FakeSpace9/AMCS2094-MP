@@ -37,13 +37,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.miniproject.R
-import com.example.miniproject.viewmodel.LoginState
+import com.example.miniproject.viewmodel.LoginStateCustomer
+
 import com.example.miniproject.viewmodel.LoginViewModel
 
 
 @Composable
 fun LoginScreen(navController: NavController, viewModel: LoginViewModel) {
-    val loginState by viewModel.loginState.collectAsState()
+    val customerloginState by viewModel.customerState.collectAsState()
     val context = LocalContext.current
 
     // States
@@ -104,8 +105,8 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel) {
         )
 
         Spacer(modifier = Modifier.height(25.dp))
-        LaunchedEffect(loginState) {
-            if (loginState is LoginState.Success) {
+        LaunchedEffect(customerloginState) {
+            if (customerloginState is LoginStateCustomer.Success) {
                 Toast.makeText(context, "Login Successful", Toast.LENGTH_SHORT).show()
                 navController.navigate("home") {
                     popUpTo("Login") { inclusive = true }
@@ -123,7 +124,7 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel) {
 
                 }
             },
-            enabled = loginState !is LoginState.Loading,
+            enabled = customerloginState !is LoginStateCustomer.Loading,
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFFECECEC)
             ),
@@ -131,7 +132,7 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel) {
                 .fillMaxWidth()
                 .height(50.dp)
         ) {
-            if (loginState is LoginState.Loading) {
+            if (customerloginState is LoginStateCustomer.Loading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(22.dp),
                     strokeWidth = 3.dp,
@@ -232,6 +233,16 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel) {
             fontSize = 16.sp,
             modifier = Modifier.clickable {
                 navController.navigate("forgotPassword")
+            }
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Forgot Password
+        Text(
+            text = "Staff Login",
+            fontSize = 16.sp,
+            modifier = Modifier.clickable {
+                navController.navigate("adminLogin")
             }
         )
 
