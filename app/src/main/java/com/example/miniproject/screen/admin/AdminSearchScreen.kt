@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -57,13 +58,25 @@ fun AdminSearchScreen(
             value = query,
             onValueChange = { viewModel.searchQuery.value = it },
             placeholder = { Text("Search products...") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray) },
+            leadingIcon = {
+                Icon(
+                    Icons.Default.Search,
+                    contentDescription = null,
+                    tint = Color.Gray
+                )
+            },
             trailingIcon = {
                 IconButton(onClick = { showFilterDialog = true }) {
-                    Icon(Icons.Default.FilterList, contentDescription = "Filter", tint = Color(0xFF573BFF))
+                    Icon(
+                        Icons.Default.FilterList,
+                        contentDescription = "Filter",
+                        tint = Color(0xFF573BFF)
+                    )
                 }
             },
-            modifier = Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(12.dp)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White, RoundedCornerShape(12.dp)),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 unfocusedBorderColor = Color.LightGray,
@@ -78,14 +91,24 @@ fun AdminSearchScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("${searchResults.size} RESULTS", color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-            val sortText = when(currentSort) {
+            Text(
+                "${searchResults.size} RESULTS",
+                color = Color.Gray,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold
+            )
+            val sortText = when (currentSort) {
                 SortOption.NEWEST -> "NEWEST"
                 SortOption.PRICE_LOW_HIGH -> "PRICE: LOW - HIGH"
                 SortOption.PRICE_HIGH_LOW -> "PRICE: HIGH - LOW"
                 SortOption.NAME_A_Z -> "NAME A-Z"
             }
-            Text("SORT BY: $sortText", color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Text(
+                "SORT BY: $sortText",
+                color = Color.Gray,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -117,7 +140,6 @@ fun ProductSearchCard(
         modifier = Modifier
             .fillMaxWidth()
             .border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(12.dp))
-            // Clicking the card toggles the "Details" view
             .clickable { expanded = !expanded },
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(0.dp)
@@ -142,68 +164,160 @@ fun ProductSearchCard(
                 // Details
                 Column(modifier = Modifier.weight(1f)) {
                     Text(product.product.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Text("SKU: ${product.displaySku ?: "-"}", color = Color.Gray, fontSize = 12.sp)
+
+                    // --- CHANGED: Display Category instead of SKU ---
+                    Text(
+                        text = "Category: ${product.product.category}",
+                        color = Color.Gray,
+                        fontSize = 12.sp
+                    )
 
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("RM ${product.minPrice ?: 0.00}", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                        val priceText =
+                            if (product.minPrice != null && product.maxPrice != null && product.minPrice != product.maxPrice) {
+                                "RM ${product.minPrice} - RM ${product.maxPrice}" // Show Range
+                            } else {
+                                "RM ${product.minPrice ?: 0.00}" // Show Single Price
+                            }
+                        Text(priceText, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+
                         Spacer(modifier = Modifier.width(8.dp))
                         Box(
                             modifier = Modifier
                                 .background(Color(0xFFE0F7E0), RoundedCornerShape(4.dp))
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
-                            Text("${product.totalStock ?: 0} left", color = Color(0xFF2E7D32), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                "${product.totalStock ?: 0} left",
+                                color = Color(0xFF2E7D32),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }
 
-                // --- EDIT BUTTON ---
+                // Edit Button
                 IconButton(
                     onClick = onEditClick,
                     modifier = Modifier
                         .size(36.dp)
                         .background(Color(0xFFF5F5F5), CircleShape)
                 ) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color(0xFF573BFF), modifier = Modifier.size(20.dp))
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = "Edit",
+                        tint = Color(0xFF573BFF),
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
 
-            // --- EXPANDED SECTION (Details) ---
+            // --- EXPANDED SECTION (Table Layout) ---
             AnimatedVisibility(visible = expanded) {
                 Column(modifier = Modifier.padding(top = 12.dp)) {
                     Divider(color = Color(0xFFEEEEEE))
-                    Spacer(modifier = Modifier.height(8.dp))
 
-                    Text("Stock Details:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
-                    Spacer(modifier = Modifier.height(4.dp))
+                    // 1. Group variants by Color and sort alphabetically
+                    val groupedVariants =
+                        product.variants.sortedBy { it.colour }.groupBy { it.colour }
 
-                    // Grid-like display for variants
-                    product.variants.forEach { variant ->
+                    groupedVariants.forEach { (color, variants) ->
+
+                        // A. Color Header
+                        Text(
+                            text = color,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black,
+                            modifier = Modifier.padding(top = 12.dp, bottom = 8.dp)
+                        )
+
+                        // B. TABLE HEADER
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                                .background(Color(0xFFF5F5F5), RoundedCornerShape(4.dp))
+                                .padding(horizontal = 8.dp, vertical = 6.dp)
                         ) {
                             Text(
-                                text = "${variant.colour} - ${variant.size}",
-                                fontSize = 14.sp,
-                                color = Color.DarkGray
+                                "SKU",
+                                fontSize = 12.sp,
+                                color = Color.Gray,
+                                modifier = Modifier.weight(2f)
                             )
                             Text(
-                                text = "Qty: ${variant.quantity}",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (variant.quantity.toIntOrNull() ?: 0 > 0) Color.Black else Color.Red
+                                "Size",
+                                fontSize = 12.sp,
+                                color = Color.Gray,
+                                modifier = Modifier.weight(1f),
+                                textAlign = TextAlign.Center
                             )
+                            Text(
+                                "Price (RM)",
+                                fontSize = 12.sp,
+                                color = Color.Gray,
+                                modifier = Modifier.weight(1.5f),
+                                textAlign = TextAlign.End
+                            )
+                            Text(
+                                "Qty",
+                                fontSize = 12.sp,
+                                color = Color.Gray,
+                                modifier = Modifier.weight(1f),
+                                textAlign = TextAlign.End
+                            )
+                        }
+
+                        // C. TABLE ROWS
+                        variants.forEach { variant ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = variant.sku,
+                                    fontSize = 13.sp,
+                                    color = Color.DarkGray,
+                                    modifier = Modifier.weight(2f)
+                                )
+                                Text(
+                                    text = variant.size,
+                                    fontSize = 13.sp,
+                                    color = Color.DarkGray,
+                                    modifier = Modifier.weight(1f),
+                                    textAlign = TextAlign.Center
+                                )
+                                Text(
+                                    text = variant.price,
+                                    fontSize = 13.sp,
+                                    color = Color.DarkGray,
+                                    modifier = Modifier.weight(1.5f),
+                                    textAlign = TextAlign.End
+                                )
+                                Text(
+                                    text = variant.quantity,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if ((variant.quantity.toIntOrNull()
+                                            ?: 0) > 0
+                                    ) Color.DarkGray else Color.Red,
+                                    modifier = Modifier.weight(1f),
+                                    textAlign = TextAlign.End
+                                )
+                            }
+                            Divider(color = Color(0xFFF0F0F0))
                         }
                     }
 
                     // Collapse Hint
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp),
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Icon(Icons.Default.ExpandLess, null, tint = Color.LightGray)
@@ -214,7 +328,9 @@ fun ProductSearchCard(
             // Expand Hint (Visible only when collapsed)
             if (!expanded) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Icon(Icons.Default.ExpandMore, null, tint = Color.LightGray)
@@ -224,7 +340,7 @@ fun ProductSearchCard(
     }
 }
 
-// ... (FilterDialog remains the same) ...
+// ... (FilterDialog and SortOptionRow remain the same as previous) ...
 @Composable
 fun FilterDialog(
     viewModel: AddProductViewModel,
@@ -238,7 +354,9 @@ fun FilterDialog(
         Card(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            modifier = Modifier.fillMaxWidth().padding(8.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
         ) {
             Column(modifier = Modifier.padding(24.dp)) {
                 Text("Filter & Sort", fontSize = 20.sp, fontWeight = FontWeight.Bold)
@@ -249,8 +367,18 @@ fun FilterDialog(
                 Spacer(modifier = Modifier.height(8.dp))
                 Column {
                     SortOptionRow("Newest", SortOption.NEWEST, currentSort, viewModel)
-                    SortOptionRow("Price: Low to High", SortOption.PRICE_LOW_HIGH, currentSort, viewModel)
-                    SortOptionRow("Price: High to Low", SortOption.PRICE_HIGH_LOW, currentSort, viewModel)
+                    SortOptionRow(
+                        "Price: Low to High",
+                        SortOption.PRICE_LOW_HIGH,
+                        currentSort,
+                        viewModel
+                    )
+                    SortOptionRow(
+                        "Price: High to Low",
+                        SortOption.PRICE_HIGH_LOW,
+                        currentSort,
+                        viewModel
+                    )
                 }
 
                 Divider(modifier = Modifier.padding(vertical = 16.dp))
@@ -290,7 +418,12 @@ fun FilterDialog(
 }
 
 @Composable
-fun SortOptionRow(text: String, option: SortOption, current: SortOption, viewModel: AddProductViewModel) {
+fun SortOptionRow(
+    text: String,
+    option: SortOption,
+    current: SortOption,
+    viewModel: AddProductViewModel
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier

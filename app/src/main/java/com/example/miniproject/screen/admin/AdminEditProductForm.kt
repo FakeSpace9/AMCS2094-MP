@@ -47,32 +47,26 @@ fun AdminEditProductForm(
     viewModel: AddProductViewModel
 ) {
     val context = LocalContext.current
-
-    // --- Collect States from ViewModel ---
     val variants by viewModel.variants.collectAsState()
     val saveState by viewModel.saveState.collectAsState()
-    val selectedImages by viewModel.selectedImages.collectAsState()      // New images selected from gallery
-    val existingImages by viewModel.existingImageUrls.collectAsState()   // Old images from DB
+    val selectedImages by viewModel.selectedImages.collectAsState()
+    val existingImages by viewModel.existingImageUrls.collectAsState()
+    val takenSkus by viewModel.takenSkus.collectAsState()
 
-    // Text Field States
     val name by viewModel.productName.collectAsState()
     val desc by viewModel.productDesc.collectAsState()
     val cat by viewModel.category.collectAsState()
+    val gend by viewModel.gender.collectAsState()
 
-    // 1. Setup Image Picker
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia(),
         onResult = { uris -> viewModel.onImagesSelected(uris) }
     )
-
-    // 2. Setup Barcode Scanner
     val scanner = remember { GmsBarcodeScanning.getClient(context) }
 
-    // Handle Success/Error Events
     LaunchedEffect(saveState) {
         if (saveState is ProductState.Success) {
             Toast.makeText(context, "Product Updated Successfully!", Toast.LENGTH_SHORT).show()
-            // Optional: You can navigate back using navController.popBackStack()
         } else if (saveState is ProductState.Error) {
             Toast.makeText(context, (saveState as ProductState.Error).message, Toast.LENGTH_LONG).show()
         }
@@ -83,18 +77,13 @@ fun AdminEditProductForm(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
-                .padding(bottom = 70.dp) // Leave space for the bottom button
+                .padding(bottom = 70.dp)
         ) {
+            // IMAGES
             item {
-                Text("EDIT PRODUCT", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // --- IMAGES SECTION (Mixed: Existing + New) ---
-                Text("IMAGES", fontSize = 14.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
+                Text("PRODUCT IMAGES", fontSize = 14.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(8.dp))
-
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    // 1. Add Button
                     item {
                         Box(
                             modifier = Modifier
@@ -114,8 +103,6 @@ fun AdminEditProductForm(
                             }
                         }
                     }
-
-                    // 2. Show EXISTING Images (From Firebase URL)
                     items(existingImages) { url ->
                         Box(modifier = Modifier.size(100.dp, 120.dp).clip(RoundedCornerShape(12.dp))) {
                             Image(
@@ -124,7 +111,6 @@ fun AdminEditProductForm(
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
                             )
-                            // Remove Existing Image Button (Small X)
                             Box(
                                 modifier = Modifier
                                     .align(Alignment.TopEnd)
@@ -134,12 +120,15 @@ fun AdminEditProductForm(
                                     .clickable { viewModel.removeExistingImage(url) },
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Default.Close, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                Icon(
+                                    Icons.Default.Close,
+                                    null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(16.dp)
+                                )
                             }
                         }
                     }
-
-                    // 3. Show NEW Selected Images (From Local Uri)
                     items(selectedImages) { uri ->
                         Box(modifier = Modifier.size(100.dp, 120.dp).clip(RoundedCornerShape(12.dp))) {
                             Image(
@@ -148,7 +137,6 @@ fun AdminEditProductForm(
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
                             )
-                            // Remove New Image Button (Small X)
                             Box(
                                 modifier = Modifier
                                     .align(Alignment.TopEnd)
@@ -158,7 +146,12 @@ fun AdminEditProductForm(
                                     .clickable { viewModel.removeImage(uri) },
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Default.Close, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                Icon(
+                                    Icons.Default.Close,
+                                    null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(16.dp)
+                                )
                             }
                         }
                     }
@@ -166,52 +159,74 @@ fun AdminEditProductForm(
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // --- TEXT FIELDS ---
+            // DETAILS
             item {
+                Text("PRODUCT DETAILS", fontSize = 14.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(8.dp))
+
                 OutlinedTextField(
                     value = name,
                     onValueChange = { viewModel.productName.value = it },
                     label = { Text("Product Name") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedContainerColor = Color(0xFFF5F5F5),
+                        focusedContainerColor = Color(0xFFF5F5F5),
+                        unfocusedBorderColor = Color.Transparent,
+                        focusedBorderColor = Color.Transparent
+                    )
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 OutlinedTextField(
                     value = desc,
                     onValueChange = { viewModel.productDesc.value = it },
                     label = { Text("Description") },
                     modifier = Modifier.fillMaxWidth(),
-                    minLines = 3
+                    minLines = 3,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedContainerColor = Color(0xFFF5F5F5),
+                        focusedContainerColor = Color(0xFFF5F5F5),
+                        unfocusedBorderColor = Color.Transparent,
+                        focusedBorderColor = Color.Transparent
+                    )
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = cat,
-                        onValueChange = { viewModel.category.value = it },
-                        label = { Text("Category") },
-                        modifier = Modifier.weight(1f)
-                    )
-                    OutlinedTextField(
-                        value = "Unisex",
-                        onValueChange = {},
-                        enabled = false,
-                        label = { Text("Gender") },
-                        modifier = Modifier.weight(1f)
-                    )
+                    Box(modifier = Modifier.weight(1f)) {
+                        CustomDropdownEdit(
+                            "Category",
+                            viewModel.allCategories,
+                            cat
+                        ) { viewModel.category.value = it }
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        CustomDropdownEdit(
+                            "Department",
+                            viewModel.allGenders,
+                            gend
+                        ) { viewModel.gender.value = it }
+                    }
                 }
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // --- VARIANTS LIST ---
+            // VARIANTS
             items(variants) { variant ->
-                // Check sizes available for this specific color
                 val unavailableSizes = viewModel.getUnavailableSizes(variant.id, variant.colour)
+                val isSkuTaken = takenSkus.contains(variant.sku)
+                val isSkuDuplicate = variants.count { it.sku == variant.sku && it.sku.isNotBlank() } > 1
+                val skuError = if (isSkuTaken) "Already Exists" else if (isSkuDuplicate) "Duplicate SKU" else null
 
                 VariantCardEdit(
                     variantState = variant,
                     allSizes = viewModel.allSizes,
+                    validColors = viewModel.validColors,
                     unavailableSizes = unavailableSizes,
+                    skuErrorMessage = skuError,
                     onUpdate = { updated ->
                         viewModel.updateVariant(variant.id) {
                             it.size = updated.size
@@ -235,20 +250,25 @@ fun AdminEditProductForm(
                 OutlinedButton(
                     onClick = { viewModel.addVariantCard() },
                     modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, Color(0xFF573BFF)),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF573BFF))
                 ) {
                     Icon(Icons.Default.Add, null)
                     Spacer(Modifier.width(8.dp))
-                    Text("Add Variant")
+                    Text("Add Another Variant")
                 }
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // --- DELETE PRODUCT BUTTON (Exclusive to Edit Screen) ---
+            // DELETE BUTTON
             item {
                 OutlinedButton(
                     onClick = { viewModel.deleteProduct() },
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red),
                     border = BorderStroke(1.dp, Color.Red)
                 ) {
@@ -258,9 +278,9 @@ fun AdminEditProductForm(
                 }
                 Spacer(modifier = Modifier.height(24.dp))
             }
-        } // End LazyColumn
+        }
 
-        // --- UPDATE BUTTON (Bottom Fixed) ---
+        // UPDATE BUTTON
         Button(
             onClick = { viewModel.saveProduct() },
             modifier = Modifier
@@ -268,6 +288,7 @@ fun AdminEditProductForm(
                 .fillMaxWidth()
                 .padding(16.dp)
                 .height(56.dp),
+            shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A1B2E)),
             enabled = saveState != ProductState.Loading
         ) {
@@ -280,139 +301,252 @@ fun AdminEditProductForm(
     }
 }
 
+// --- LOCAL HELPERS ---
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun VariantCardEdit(
+private fun CustomDropdownEdit(
+    label: String,
+    options: List<String>,
+    selectedOption: String,
+    onOptionSelected: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        OutlinedTextField(
+            value = selectedOption,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(label) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .menuAnchor()
+                .fillMaxWidth(),
+            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
+                unfocusedContainerColor = Color(0xFFF5F5F5),
+                focusedContainerColor = Color(0xFFF5F5F5),
+                unfocusedBorderColor = Color.Transparent,
+                focusedBorderColor = Color.Transparent
+            )
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.background(Color.White)
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = {
+                        onOptionSelected(option)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun VariantCardEdit(
     variantState: VariantUiState,
     allSizes: List<String>,
+    validColors: List<String>,
     unavailableSizes: List<String>,
+    skuErrorMessage: String?,
     onUpdate: (VariantUiState) -> Unit,
     onRemove: () -> Unit,
     onScanClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth().border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(12.dp)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(12.dp)),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(12.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-
             Row(
-                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = if(variantState.size.isEmpty()) "Variant" else "${variantState.colour} - ${variantState.size}",
+                    text = if (variantState.size.isEmpty()) "Variant Details" else "${variantState.colour} - ${variantState.size}",
                     fontWeight = FontWeight.Bold,
-                    color = Color.DarkGray,
-                    fontSize = 16.sp
+                    color = Color.DarkGray
                 )
                 IconButton(onClick = onRemove) {
-                    Icon(Icons.Default.Delete, contentDescription = "Remove", tint = Color.Red)
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Remove",
+                        tint = Color.Red
+                    )
                 }
             }
             Divider(color = Color(0xFFE0E0E0))
             Spacer(modifier = Modifier.height(16.dp))
 
-            // COLOR
-            Text("COLOR", fontSize = 14.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = variantState.colour,
-                onValueChange = { onUpdate(variantState.copy(colour = it)) },
-                placeholder = { Text("e.g. Red, Navy Blue") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedContainerColor = Color(0xFFF5F5F5),
-                    focusedContainerColor = Color(0xFFF5F5F5),
-                    unfocusedBorderColor = Color.Transparent,
-                    focusedBorderColor = Color.Transparent
+            var expanded by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded }
+            ) {
+                OutlinedTextField(
+                    value = variantState.colour,
+                    onValueChange = {
+                        onUpdate(variantState.copy(colour = it))
+                        expanded = true
+                    },
+                    placeholder = { Text("Select Color") },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    trailingIcon = {
+                        Row {
+                            if (variantState.colour.isNotEmpty()) {
+                                IconButton(onClick = {
+                                    onUpdate(variantState.copy(colour = ""))
+                                    expanded = true
+                                }) { Icon(Icons.Default.Close, "Clear") }
+                            }
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
+                        unfocusedContainerColor = Color(0xFFF5F5F5),
+                        focusedContainerColor = Color(0xFFF5F5F5),
+                        unfocusedBorderColor = Color.Transparent,
+                        focusedBorderColor = Color.Transparent
+                    )
                 )
-            )
+                val filtered = validColors.filter { it.contains(variantState.colour, true) }
+                if (filtered.isNotEmpty()) {
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier.background(Color.White)
+                    ) {
+                        filtered.forEach { c ->
+                            DropdownMenuItem(
+                                text = { Text(c) },
+                                onClick = {
+                                    onUpdate(variantState.copy(colour = c))
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
             Spacer(modifier = Modifier.height(16.dp))
 
-            // SIZE
-            Text("SIZE", fontSize = 14.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 allSizes.forEach { size ->
-                    val isSelected = variantState.size == size
-                    val isDisabled = unavailableSizes.contains(size)
-
                     FilterChip(
-                        selected = isSelected,
+                        selected = variantState.size == size,
                         onClick = { onUpdate(variantState.copy(size = size)) },
                         label = { Text(size) },
-                        enabled = !isDisabled,
+                        enabled = !unavailableSizes.contains(size),
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = Color(0xFF1A1B2E),
                             selectedLabelColor = Color.White,
                             disabledContainerColor = Color(0xFFF5F5F5),
                             disabledLabelColor = Color.Gray
-                        )
+                        ),
+                        shape = RoundedCornerShape(8.dp)
                     )
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Price & Quantity
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("PRICE", fontSize = 14.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = variantState.price,
-                        onValueChange = { onUpdate(variantState.copy(price = it)) },
-                        placeholder = { Text("$ 0.00") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedContainerColor = Color(0xFFF5F5F5),
-                            focusedContainerColor = Color(0xFFF5F5F5),
-                            unfocusedBorderColor = Color.Transparent,
-                            focusedBorderColor = Color.Transparent
-                        )
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                val priceVal = variantState.price.toDoubleOrNull()
+                val isPriceError = variantState.price.isNotEmpty() && (priceVal == null || priceVal <= 0.0)
+                OutlinedTextField(
+                    value = variantState.price,
+                    onValueChange = { onUpdate(variantState.copy(price = it)) },
+                    placeholder = { Text("$ 0.00") },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    isError = isPriceError,
+                    supportingText = {
+                        if (isPriceError) {
+                            Text(
+                                text = if (priceVal == null) "Invalid format" else "Cannot be 0",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedContainerColor = Color(0xFFF5F5F5),
+                        focusedContainerColor = Color(0xFFF5F5F5),
+                        unfocusedBorderColor = Color.Transparent,
+                        focusedBorderColor = Color.Transparent,
+                        errorContainerColor = Color(0xFFFFF0F0),
+                        errorBorderColor = Color.Red
                     )
-                }
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("STOCK", fontSize = 14.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = variantState.quantity,
-                        onValueChange = { onUpdate(variantState.copy(quantity = it)) },
-                        placeholder = { Text("0") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedContainerColor = Color(0xFFF5F5F5),
-                            focusedContainerColor = Color(0xFFF5F5F5),
-                            unfocusedBorderColor = Color.Transparent,
-                            focusedBorderColor = Color.Transparent
-                        )
+                )
+
+                val qtyVal = variantState.quantity.toIntOrNull()
+                val isStockError = variantState.quantity.isNotEmpty() && (qtyVal == null || qtyVal < 0)
+                OutlinedTextField(
+                    value = variantState.quantity,
+                    onValueChange = { onUpdate(variantState.copy(quantity = it)) },
+                    placeholder = { Text("0") },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    isError = isStockError,
+                    supportingText = {
+                        if (isStockError) {
+                            Text("Invalid", color = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedContainerColor = Color(0xFFF5F5F5),
+                        focusedContainerColor = Color(0xFFF5F5F5),
+                        unfocusedBorderColor = Color.Transparent,
+                        focusedBorderColor = Color.Transparent,
+                        errorContainerColor = Color(0xFFFFF0F0),
+                        errorBorderColor = Color.Red
                     )
-                }
+                )
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            // SKU
-            Text("SKU / BARCODE", fontSize = 14.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = variantState.sku,
                 onValueChange = { onUpdate(variantState.copy(sku = it)) },
-                placeholder = { Text("Scan or enter SKU") },
+                placeholder = { Text("SKU / Barcode") },
                 modifier = Modifier.fillMaxWidth(),
                 trailingIcon = {
                     IconButton(onClick = onScanClick) {
-                        Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan", tint = Color.Black)
+                        Icon(
+                            Icons.Default.QrCodeScanner,
+                            contentDescription = "Scan",
+                            tint = Color.Black
+                        )
                     }
                 },
+                isError = skuErrorMessage != null,
+                supportingText = {
+                    if (skuErrorMessage != null) {
+                        Text(skuErrorMessage, color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedContainerColor = Color(0xFFF5F5F5),
                     focusedContainerColor = Color(0xFFF5F5F5),
                     unfocusedBorderColor = Color.Transparent,
-                    focusedBorderColor = Color.Transparent
+                    focusedBorderColor = Color.Transparent,
+                    errorContainerColor = Color(0xFFFFF0F0),
+                    errorBorderColor = Color.Red
                 )
             )
         }

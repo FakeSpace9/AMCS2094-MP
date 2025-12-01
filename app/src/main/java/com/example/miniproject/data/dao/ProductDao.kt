@@ -16,6 +16,7 @@ data class ProductSearchResult(
     @Embedded val product: ProductEntity,
     val totalStock: Int?,
     val minPrice: Double?,
+    val maxPrice: Double?,
     val displaySku: String?,
 ){
     @Ignore
@@ -46,7 +47,11 @@ interface ProductDao {
     // Note: This Room query doesn't populate the new 'variants' list, which is fine
     // because we are using Firestore for the search now.
     @Query("""
-        SELECT p.*, SUM(v.stockQuantity) as totalStock, MIN(v.price) as minPrice, MAX(v.sku) as displaySku
+        SELECT p.*, 
+               SUM(v.stockQuantity) as totalStock, 
+               MIN(v.price) as minPrice, 
+               MAX(v.price) as maxPrice,  -- <--- ADDED THIS
+               MAX(v.sku) as displaySku
         FROM products p 
         LEFT JOIN product_variants v ON p.productId = v.productId 
         WHERE p.name LIKE '%' || :query || '%' OR p.category LIKE '%' || :query || '%'
