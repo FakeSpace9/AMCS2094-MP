@@ -162,7 +162,7 @@ fun AdminAddProductForm(
 
                 OutlinedTextField(
                     value = name,
-                    onValueChange = { viewModel.productName.value = it },
+                    onValueChange = { viewModel.updateProductName(it) }, // Calls Auto-SKU Logic
                     label = { Text("Product Name") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
@@ -299,15 +299,9 @@ fun CustomDropdown(
     onOptionSelected: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded }
-    ) {
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
         OutlinedTextField(
-            value = selectedOption,
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(label) },
+            value = selectedOption, onValueChange = {}, readOnly = true, label = { Text(label) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
                 unfocusedContainerColor = Color(0xFFF5F5F5),
@@ -315,8 +309,7 @@ fun CustomDropdown(
                 unfocusedBorderColor = Color.Transparent,
                 focusedBorderColor = Color.Transparent
             ),
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier
+            shape = RoundedCornerShape(12.dp), modifier = Modifier
                 .menuAnchor()
                 .fillMaxWidth()
         )
@@ -328,11 +321,7 @@ fun CustomDropdown(
             options.forEach { option ->
                 DropdownMenuItem(
                     text = { Text(option) },
-                    onClick = {
-                        onOptionSelected(option)
-                        expanded = false
-                    }
-                )
+                    onClick = { onOptionSelected(option); expanded = false })
             }
         }
     }
@@ -397,8 +386,7 @@ fun VariantCard(
                                 IconButton(onClick = {
                                     onUpdate(variantState.copy(colour = "")); expanded = true
                                 }) { Icon(Icons.Default.Close, "Clear") }
-                            }
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                            }; ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                         }
                     },
                     shape = RoundedCornerShape(12.dp),
@@ -436,7 +424,9 @@ fun VariantCard(
                         label = { Text(size) },
                         enabled = !unavailableSizes.contains(size),
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Color(0xFF1A1B2E),
+                            selectedContainerColor = Color(
+                                0xFF1A1B2E
+                            ),
                             selectedLabelColor = Color.White,
                             disabledContainerColor = Color(0xFFF5F5F5),
                             disabledLabelColor = Color.Gray
@@ -506,11 +496,8 @@ fun VariantCard(
 
             OutlinedTextField(
                 value = variantState.sku,
-                onValueChange = {
-                    // AUTO-CAPITALIZE INPUT
-                    onUpdate(variantState.copy(sku = it.uppercase()))
-                },
-                placeholder = { Text("SKU / Barcode") },
+                onValueChange = { onUpdate(variantState.copy(sku = it.uppercase())) },
+                placeholder = { Text("SKU (Auto-Generated)") },
                 modifier = Modifier.fillMaxWidth(),
                 trailingIcon = {
                     IconButton(onClick = onScanClick) {

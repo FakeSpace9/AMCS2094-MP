@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey
 // Parent Product (General Info)
 @Entity(tableName = "products")
 data class ProductEntity(
-    @PrimaryKey val productId: String, // We will generate this via UUID or Firestore ID
+    @PrimaryKey val productId: String, // will generate this via UUID or Firestore ID
     val name: String,
     val description: String,
     val category: String,

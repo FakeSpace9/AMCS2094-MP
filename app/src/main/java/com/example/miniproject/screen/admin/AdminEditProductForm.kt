@@ -45,7 +45,7 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 fun AdminEditProductForm(
     navController: NavController,
     viewModel: ProductFormViewModel,
-    onUpdateSuccess: () -> Unit // <--- NEW PARAMETER
+    onUpdateSuccess: () -> Unit
 ) {
     val context = LocalContext.current
     val variants by viewModel.variants.collectAsState()
@@ -65,11 +65,10 @@ fun AdminEditProductForm(
     )
     val scanner = remember { GmsBarcodeScanning.getClient(context) }
 
-    // Observe Save State
     LaunchedEffect(saveState) {
         if (saveState is ProductState.Success) {
             Toast.makeText(context, "Product Updated Successfully!", Toast.LENGTH_SHORT).show()
-            onUpdateSuccess() // <--- TRIGGER NAVIGATION BACK
+            onUpdateSuccess()
         } else if (saveState is ProductState.Error) {
             Toast.makeText(context, (saveState as ProductState.Error).message, Toast.LENGTH_LONG)
                 .show()
@@ -83,7 +82,6 @@ fun AdminEditProductForm(
                 .padding(16.dp)
                 .padding(bottom = 70.dp)
         ) {
-            // IMAGES
             item {
                 Text(
                     "PRODUCT IMAGES",
@@ -176,7 +174,6 @@ fun AdminEditProductForm(
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // DETAILS
             item {
                 Text(
                     "PRODUCT DETAILS",
@@ -188,7 +185,7 @@ fun AdminEditProductForm(
 
                 OutlinedTextField(
                     value = name,
-                    onValueChange = { viewModel.productName.value = it },
+                    onValueChange = { viewModel.updateProductName(it) }, // Calls Auto-SKU Logic
                     label = { Text("Product Name") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
@@ -236,7 +233,6 @@ fun AdminEditProductForm(
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // VARIANTS
             items(variants) { variant ->
                 val unavailableSizes = viewModel.getUnavailableSizes(variant.id, variant.colour)
                 val isSkuTaken = takenSkus.contains(variant.sku.trim().uppercase())
@@ -289,7 +285,6 @@ fun AdminEditProductForm(
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // DELETE BUTTON
             item {
                 OutlinedButton(
                     onClick = { viewModel.deleteProduct() },
@@ -308,7 +303,6 @@ fun AdminEditProductForm(
             }
         }
 
-        // UPDATE BUTTON
         Button(
             onClick = { viewModel.saveProduct() },
             modifier = Modifier
@@ -329,7 +323,6 @@ fun AdminEditProductForm(
     }
 }
 
-// ... (Helper Composables CustomDropdownEdit and VariantCardEdit remain unchanged)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CustomDropdownEdit(
@@ -341,13 +334,9 @@ private fun CustomDropdownEdit(
     var expanded by remember { mutableStateOf(false) }
     ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
         OutlinedTextField(
-            value = selectedOption,
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(label) },
+            value = selectedOption, onValueChange = {}, readOnly = true, label = { Text(label) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier
+            shape = RoundedCornerShape(12.dp), modifier = Modifier
                 .menuAnchor()
                 .fillMaxWidth(),
             colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
@@ -428,8 +417,7 @@ private fun VariantCardEdit(
                                 IconButton(onClick = {
                                     onUpdate(variantState.copy(colour = "")); expanded = true
                                 }) { Icon(Icons.Default.Close, "Clear") }
-                            }
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                            }; ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                         }
                     },
                     shape = RoundedCornerShape(12.dp),
@@ -467,7 +455,9 @@ private fun VariantCardEdit(
                         label = { Text(size) },
                         enabled = !unavailableSizes.contains(size),
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Color(0xFF1A1B2E),
+                            selectedContainerColor = Color(
+                                0xFF1A1B2E
+                            ),
                             selectedLabelColor = Color.White,
                             disabledContainerColor = Color(0xFFF5F5F5),
                             disabledLabelColor = Color.Gray
@@ -538,7 +528,7 @@ private fun VariantCardEdit(
             OutlinedTextField(
                 value = variantState.sku,
                 onValueChange = { onUpdate(variantState.copy(sku = it.uppercase())) },
-                placeholder = { Text("Enter or scan SKU") },
+                placeholder = { Text("SKU (Auto-Generated)") },
                 modifier = Modifier.fillMaxWidth(),
                 trailingIcon = {
                     IconButton(onClick = onScanClick) {
