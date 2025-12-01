@@ -49,7 +49,7 @@ class ProductFormViewModel(
     val takenSkus: StateFlow<List<String>> = _takenSkus
 
     val allSizes = listOf("XS", "S", "M", "L", "XL", "XXL")
-    val allCategories = listOf("Tops", "Bottoms", "Outerwear", "Dresses", "Accessories", "Shoes")
+    val allCategories = listOf("Tops", "Bottoms", "Outerwear", "Dresses", "Accessories")
     val allGenders = listOf("Unisex", "Male", "Female")
     val validColors = listOf(
         "Black", "White", "Red", "Blue", "Green", "Yellow", "Orange", "Purple", "Pink",
