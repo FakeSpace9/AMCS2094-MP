@@ -259,7 +259,7 @@ fun ProductSearchCard(
                                 textAlign = TextAlign.Center
                             )
                             Text(
-                                "Price",
+                                "Price(RM)",
                                 fontSize = 12.sp,
                                 color = Color.Gray,
                                 modifier = Modifier.weight(1.5f),
