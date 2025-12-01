@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
-import com.example.miniproject.viewmodel.AddProductViewModel
+import com.example.miniproject.viewmodel.ProductFormViewModel
 import com.example.miniproject.viewmodel.ProductState
 import com.example.miniproject.viewmodel.VariantUiState
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
@@ -44,7 +44,7 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 @Composable
 fun AdminEditProductForm(
     navController: NavController,
-    viewModel: AddProductViewModel
+    viewModel: ProductFormViewModel
 ) {
     val context = LocalContext.current
     val variants by viewModel.variants.collectAsState()
@@ -68,7 +68,8 @@ fun AdminEditProductForm(
         if (saveState is ProductState.Success) {
             Toast.makeText(context, "Product Updated Successfully!", Toast.LENGTH_SHORT).show()
         } else if (saveState is ProductState.Error) {
-            Toast.makeText(context, (saveState as ProductState.Error).message, Toast.LENGTH_LONG).show()
+            Toast.makeText(context, (saveState as ProductState.Error).message, Toast.LENGTH_LONG)
+                .show()
         }
     }
 
@@ -81,7 +82,12 @@ fun AdminEditProductForm(
         ) {
             // IMAGES
             item {
-                Text("PRODUCT IMAGES", fontSize = 14.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
+                Text(
+                    "PRODUCT IMAGES",
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    fontWeight = FontWeight.Bold
+                )
                 Spacer(modifier = Modifier.height(8.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     item {
@@ -104,7 +110,11 @@ fun AdminEditProductForm(
                         }
                     }
                     items(existingImages) { url ->
-                        Box(modifier = Modifier.size(100.dp, 120.dp).clip(RoundedCornerShape(12.dp))) {
+                        Box(
+                            modifier = Modifier
+                                .size(100.dp, 120.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                        ) {
                             Image(
                                 painter = rememberAsyncImagePainter(url),
                                 contentDescription = null,
@@ -130,7 +140,11 @@ fun AdminEditProductForm(
                         }
                     }
                     items(selectedImages) { uri ->
-                        Box(modifier = Modifier.size(100.dp, 120.dp).clip(RoundedCornerShape(12.dp))) {
+                        Box(
+                            modifier = Modifier
+                                .size(100.dp, 120.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                        ) {
                             Image(
                                 painter = rememberAsyncImagePainter(uri),
                                 contentDescription = null,
@@ -161,7 +175,12 @@ fun AdminEditProductForm(
 
             // DETAILS
             item {
-                Text("PRODUCT DETAILS", fontSize = 14.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
+                Text(
+                    "PRODUCT DETAILS",
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    fontWeight = FontWeight.Bold
+                )
                 Spacer(modifier = Modifier.height(8.dp))
 
                 OutlinedTextField(
@@ -217,9 +236,13 @@ fun AdminEditProductForm(
             // VARIANTS
             items(variants) { variant ->
                 val unavailableSizes = viewModel.getUnavailableSizes(variant.id, variant.colour)
-                val isSkuTaken = takenSkus.contains(variant.sku)
-                val isSkuDuplicate = variants.count { it.sku == variant.sku && it.sku.isNotBlank() } > 1
-                val skuError = if (isSkuTaken) "Already Exists" else if (isSkuDuplicate) "Duplicate SKU" else null
+                val isSkuTaken = takenSkus.contains(variant.sku.trim().uppercase())
+                val isSkuDuplicate = variants.count {
+                    it.sku.trim().uppercase() == variant.sku.trim()
+                        .uppercase() && it.sku.isNotBlank()
+                } > 1
+                val skuError =
+                    if (isSkuTaken) "Already Exists" else if (isSkuDuplicate) "Duplicate SKU" else null
 
                 VariantCardEdit(
                     variantState = variant,
@@ -239,7 +262,9 @@ fun AdminEditProductForm(
                     onRemove = { viewModel.removeVariantCard(variant.id) },
                     onScanClick = {
                         scanner.startScan().addOnSuccessListener {
-                            if (it.rawValue != null) viewModel.updateVariant(variant.id) { v -> v.sku = it.rawValue!! }
+                            if (it.rawValue != null) viewModel.updateVariant(variant.id) { v ->
+                                v.sku = it.rawValue!!.uppercase()
+                            }
                         }
                     }
                 )
@@ -301,8 +326,6 @@ fun AdminEditProductForm(
     }
 }
 
-// --- LOCAL HELPERS ---
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CustomDropdownEdit(
@@ -312,10 +335,7 @@ private fun CustomDropdownEdit(
     onOptionSelected: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded }
-    ) {
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
         OutlinedTextField(
             value = selectedOption,
             onValueChange = {},
@@ -341,11 +361,7 @@ private fun CustomDropdownEdit(
             options.forEach { option ->
                 DropdownMenuItem(
                     text = { Text(option) },
-                    onClick = {
-                        onOptionSelected(option)
-                        expanded = false
-                    }
-                )
+                    onClick = { onOptionSelected(option); expanded = false })
             }
         }
     }
@@ -383,7 +399,7 @@ private fun VariantCardEdit(
                 IconButton(onClick = onRemove) {
                     Icon(
                         Icons.Default.Delete,
-                        contentDescription = "Remove",
+                        "Remove",
                         tint = Color.Red
                     )
                 }
@@ -394,22 +410,19 @@ private fun VariantCardEdit(
             var expanded by remember { mutableStateOf(false) }
             ExposedDropdownMenuBox(
                 expanded = expanded,
-                onExpandedChange = { expanded = !expanded }
-            ) {
+                onExpandedChange = { expanded = !expanded }) {
                 OutlinedTextField(
                     value = variantState.colour,
-                    onValueChange = {
-                        onUpdate(variantState.copy(colour = it))
-                        expanded = true
-                    },
+                    onValueChange = { onUpdate(variantState.copy(colour = it)); expanded = true },
                     placeholder = { Text("Select Color") },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(),
                     trailingIcon = {
                         Row {
                             if (variantState.colour.isNotEmpty()) {
                                 IconButton(onClick = {
-                                    onUpdate(variantState.copy(colour = ""))
-                                    expanded = true
+                                    onUpdate(variantState.copy(colour = "")); expanded = true
                                 }) { Icon(Icons.Default.Close, "Clear") }
                             }
                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
@@ -434,10 +447,8 @@ private fun VariantCardEdit(
                             DropdownMenuItem(
                                 text = { Text(c) },
                                 onClick = {
-                                    onUpdate(variantState.copy(colour = c))
-                                    expanded = false
-                                }
-                            )
+                                    onUpdate(variantState.copy(colour = c)); expanded = false
+                                })
                         }
                     }
                 }
@@ -465,7 +476,8 @@ private fun VariantCardEdit(
 
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 val priceVal = variantState.price.toDoubleOrNull()
-                val isPriceError = variantState.price.isNotEmpty() && (priceVal == null || priceVal <= 0.0)
+                val isPriceError =
+                    variantState.price.isNotEmpty() && (priceVal == null || priceVal <= 0.0)
                 OutlinedTextField(
                     value = variantState.price,
                     onValueChange = { onUpdate(variantState.copy(price = it)) },
@@ -474,12 +486,10 @@ private fun VariantCardEdit(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     isError = isPriceError,
                     supportingText = {
-                        if (isPriceError) {
-                            Text(
-                                text = if (priceVal == null) "Invalid format" else "Cannot be 0",
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
+                        if (isPriceError) Text(
+                            if (priceVal == null) "Invalid" else "Not 0",
+                            color = MaterialTheme.colorScheme.error
+                        )
                     },
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -493,7 +503,8 @@ private fun VariantCardEdit(
                 )
 
                 val qtyVal = variantState.quantity.toIntOrNull()
-                val isStockError = variantState.quantity.isNotEmpty() && (qtyVal == null || qtyVal < 0)
+                val isStockError =
+                    variantState.quantity.isNotEmpty() && (qtyVal == null || qtyVal < 0)
                 OutlinedTextField(
                     value = variantState.quantity,
                     onValueChange = { onUpdate(variantState.copy(quantity = it)) },
@@ -502,9 +513,10 @@ private fun VariantCardEdit(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     isError = isStockError,
                     supportingText = {
-                        if (isStockError) {
-                            Text("Invalid", color = MaterialTheme.colorScheme.error)
-                        }
+                        if (isStockError) Text(
+                            "Invalid",
+                            color = MaterialTheme.colorScheme.error
+                        )
                     },
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -521,23 +533,27 @@ private fun VariantCardEdit(
 
             OutlinedTextField(
                 value = variantState.sku,
-                onValueChange = { onUpdate(variantState.copy(sku = it)) },
+                onValueChange = {
+                    // AUTO-CAPITALIZE INPUT
+                    onUpdate(variantState.copy(sku = it.uppercase()))
+                },
                 placeholder = { Text("SKU / Barcode") },
                 modifier = Modifier.fillMaxWidth(),
                 trailingIcon = {
                     IconButton(onClick = onScanClick) {
                         Icon(
                             Icons.Default.QrCodeScanner,
-                            contentDescription = "Scan",
+                            "Scan",
                             tint = Color.Black
                         )
                     }
                 },
                 isError = skuErrorMessage != null,
                 supportingText = {
-                    if (skuErrorMessage != null) {
-                        Text(skuErrorMessage, color = MaterialTheme.colorScheme.error)
-                    }
+                    if (skuErrorMessage != null) Text(
+                        skuErrorMessage,
+                        color = MaterialTheme.colorScheme.error
+                    )
                 },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(

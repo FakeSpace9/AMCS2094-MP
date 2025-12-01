@@ -12,9 +12,13 @@ class AddProductViewModelFactory(
     private val productDao: ProductDao
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(AddProductViewModel::class.java)) {
+        if (modelClass.isAssignableFrom(ProductFormViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return AddProductViewModel(firestore,storage, productDao) as T
+            return ProductFormViewModel(firestore, storage, productDao) as T
+        }
+        if (modelClass.isAssignableFrom(ProductSearchViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return ProductSearchViewModel(firestore) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

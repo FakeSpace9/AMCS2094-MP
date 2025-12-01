@@ -32,7 +32,8 @@ import com.example.miniproject.screen.HomeScreenWithDrawer
 import com.example.miniproject.screen.SignupScreen
 import com.example.miniproject.screen.admin.AdminDashboardScreen
 import com.example.miniproject.ui.theme.MiniProjectTheme
-import com.example.miniproject.viewmodel.AddProductViewModel
+import com.example.miniproject.viewmodel.ProductFormViewModel
+import com.example.miniproject.viewmodel.ProductSearchViewModel // Make sure this import exists
 import com.example.miniproject.viewmodel.AddProductViewModelFactory
 import com.example.miniproject.viewmodel.ForgotPasswordViewModel
 import com.example.miniproject.viewmodel.ForgotPasswordViewModelFactory
@@ -94,7 +95,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun App(modifier: Modifier = Modifier,loginViewModel: LoginViewModel,) {
+fun App(modifier: Modifier = Modifier, loginViewModel: LoginViewModel) {
     val navController = rememberNavController()
     val context = LocalContext.current
 
@@ -112,16 +113,21 @@ fun App(modifier: Modifier = Modifier,loginViewModel: LoginViewModel,) {
     )
 
     val db = AppDatabase.getInstance(context) // Get Room Database instance
-    val addProductViewModel: AddProductViewModel = viewModel(
-        factory = AddProductViewModelFactory(
-            firestore = FirebaseFirestore.getInstance(),
-            storage = FirebaseStorage.getInstance("gs://miniproject-55de6.firebasestorage.app"),
-            productDao = db.ProductDao()
-        )
+
+    // 1. Create the factory instance once
+    val productFactory = AddProductViewModelFactory(
+        firestore = FirebaseFirestore.getInstance(),
+        storage = FirebaseStorage.getInstance("gs://miniproject-55de6.firebasestorage.app"),
+        productDao = db.ProductDao()
     )
 
+    // 2. Initialize productFormViewModel (Lower case 'p')
+    val productFormViewModel: ProductFormViewModel = viewModel(factory = productFactory)
 
+    // 3. Initialize productSearchViewModel (Missing in your code)
+    val productSearchViewModel: ProductSearchViewModel = viewModel(factory = productFactory)
 
+    // --- FIX ENDS HERE ---
 
     NavHost(navController = navController, startDestination = "home") {
 
@@ -162,10 +168,9 @@ fun App(modifier: Modifier = Modifier,loginViewModel: LoginViewModel,) {
         composable("admin_dashboard") {
             AdminDashboardScreen(
                 navController = navController,
-                addProductViewModel = addProductViewModel
+                formViewModel = productFormViewModel, // Now matches the variable above
+                searchViewModel = productSearchViewModel // Now exists
             )
         }
     }
-
 }
-

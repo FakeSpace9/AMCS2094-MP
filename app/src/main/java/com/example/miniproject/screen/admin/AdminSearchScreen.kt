@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.QrCodeScanner // Added Import
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext // Added Import
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -30,18 +32,23 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import coil.compose.rememberAsyncImagePainter
 import com.example.miniproject.data.dao.ProductSearchResult
-import com.example.miniproject.viewmodel.AddProductViewModel
+import com.example.miniproject.viewmodel.ProductSearchViewModel
 import com.example.miniproject.viewmodel.SortOption
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning // Added Import
 
 @Composable
 fun AdminSearchScreen(
-    viewModel: AddProductViewModel,
-    onProductClick: (ProductSearchResult) -> Unit // This is now "On Edit Click"
+    viewModel: ProductSearchViewModel,
+    onProductClick: (ProductSearchResult) -> Unit
 ) {
     val searchResults by viewModel.searchResults.collectAsState()
     val query by viewModel.searchQuery.collectAsState()
     val currentSort by viewModel.selectedSort.collectAsState()
     var showFilterDialog by remember { mutableStateOf(false) }
+
+    // Setup Scanner
+    val context = LocalContext.current
+    val scanner = remember { GmsBarcodeScanning.getClient(context) }
 
     LaunchedEffect(query, currentSort, viewModel.selectedCategory.collectAsState().value) {
         viewModel.loadProducts()
@@ -53,34 +60,44 @@ fun AdminSearchScreen(
             .background(Color(0xFFF8F9FA))
             .padding(16.dp)
     ) {
-        // Search Bar
+        // Search Bar with Scanner
         OutlinedTextField(
             value = query,
             onValueChange = { viewModel.searchQuery.value = it },
             placeholder = { Text("Search products...") },
             leadingIcon = {
-                Icon(
-                    Icons.Default.Search,
-                    contentDescription = null,
-                    tint = Color.Gray
-                )
+                Icon(Icons.Default.Search, null, tint = Color.Gray)
             },
             trailingIcon = {
-                IconButton(onClick = { showFilterDialog = true }) {
-                    Icon(
-                        Icons.Default.FilterList,
-                        contentDescription = "Filter",
-                        tint = Color(0xFF573BFF)
-                    )
+                // Row to hold both Scan and Filter icons
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(end = 8.dp)
+                ) {
+                    // SCANNER BUTTON
+                    IconButton(onClick = {
+                        scanner.startScan().addOnSuccessListener { barcode ->
+                            barcode.rawValue?.let { code ->
+                                viewModel.searchQuery.value = code
+                            }
+                        }
+                    }) {
+                        Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan", tint = Color.Black)
+                    }
+
+                    // FILTER BUTTON
+                    IconButton(onClick = { showFilterDialog = true }) {
+                        Icon(Icons.Default.FilterList, "Filter", tint = Color(0xFF573BFF))
+                    }
                 }
             },
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color.White, RoundedCornerShape(12.dp)),
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 unfocusedBorderColor = Color.LightGray,
-                focusedBorderColor = Color(0xFF573BFF)
+                focusedBorderColor = Color(0xFF573BFF),
+                unfocusedContainerColor = Color.White,
+                focusedContainerColor = Color.White
             )
         )
 
@@ -113,12 +130,11 @@ fun AdminSearchScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Product List
         LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             items(searchResults) { product ->
                 ProductSearchCard(
                     product = product,
-                    onEditClick = { onProductClick(product) } // Pass edit action
+                    onEditClick = { onProductClick(product) }
                 )
             }
         }
@@ -134,7 +150,7 @@ fun ProductSearchCard(
     product: ProductSearchResult,
     onEditClick: () -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) } // State for expansion
+    var expanded by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
@@ -145,10 +161,8 @@ fun ProductSearchCard(
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-
-            // --- TOP ROW (Summary) ---
+            // Summary Row
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Image
                 Image(
                     painter = rememberAsyncImagePainter(product.product.imageUrl),
                     contentDescription = null,
@@ -161,28 +175,23 @@ fun ProductSearchCard(
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                // Details
                 Column(modifier = Modifier.weight(1f)) {
                     Text(product.product.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-
-                    // --- CHANGED: Display Category instead of SKU ---
                     Text(
                         text = "Category: ${product.product.category}",
                         color = Color.Gray,
                         fontSize = 12.sp
                     )
-
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         val priceText =
                             if (product.minPrice != null && product.maxPrice != null && product.minPrice != product.maxPrice) {
-                                "RM ${product.minPrice} - RM ${product.maxPrice}" // Show Range
+                                "RM ${product.minPrice} - RM ${product.maxPrice}"
                             } else {
-                                "RM ${product.minPrice ?: 0.00}" // Show Single Price
+                                "RM ${product.minPrice ?: 0.00}"
                             }
                         Text(priceText, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-
                         Spacer(modifier = Modifier.width(8.dp))
                         Box(
                             modifier = Modifier
@@ -199,7 +208,6 @@ fun ProductSearchCard(
                     }
                 }
 
-                // Edit Button
                 IconButton(
                     onClick = onEditClick,
                     modifier = Modifier
@@ -215,18 +223,14 @@ fun ProductSearchCard(
                 }
             }
 
-            // --- EXPANDED SECTION (Table Layout) ---
+            // Expanded Variants
             AnimatedVisibility(visible = expanded) {
                 Column(modifier = Modifier.padding(top = 12.dp)) {
                     Divider(color = Color(0xFFEEEEEE))
 
-                    // 1. Group variants by Color and sort alphabetically
                     val groupedVariants =
                         product.variants.sortedBy { it.colour }.groupBy { it.colour }
-
                     groupedVariants.forEach { (color, variants) ->
-
-                        // A. Color Header
                         Text(
                             text = color,
                             fontSize = 14.sp,
@@ -234,8 +238,7 @@ fun ProductSearchCard(
                             color = Color.Black,
                             modifier = Modifier.padding(top = 12.dp, bottom = 8.dp)
                         )
-
-                        // B. TABLE HEADER
+                        // Header
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -256,7 +259,7 @@ fun ProductSearchCard(
                                 textAlign = TextAlign.Center
                             )
                             Text(
-                                "Price (RM)",
+                                "Price",
                                 fontSize = 12.sp,
                                 color = Color.Gray,
                                 modifier = Modifier.weight(1.5f),
@@ -270,8 +273,7 @@ fun ProductSearchCard(
                                 textAlign = TextAlign.End
                             )
                         }
-
-                        // C. TABLE ROWS
+                        // Rows
                         variants.forEach { variant ->
                             Row(
                                 modifier = Modifier
@@ -279,32 +281,29 @@ fun ProductSearchCard(
                                     .padding(horizontal = 8.dp, vertical = 6.dp)
                             ) {
                                 Text(
-                                    text = variant.sku,
+                                    variant.sku,
                                     fontSize = 13.sp,
                                     color = Color.DarkGray,
                                     modifier = Modifier.weight(2f)
                                 )
                                 Text(
-                                    text = variant.size,
+                                    variant.size,
                                     fontSize = 13.sp,
                                     color = Color.DarkGray,
                                     modifier = Modifier.weight(1f),
                                     textAlign = TextAlign.Center
                                 )
                                 Text(
-                                    text = variant.price,
+                                    variant.price,
                                     fontSize = 13.sp,
                                     color = Color.DarkGray,
                                     modifier = Modifier.weight(1.5f),
                                     textAlign = TextAlign.End
                                 )
                                 Text(
-                                    text = variant.quantity,
+                                    variant.quantity,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = if ((variant.quantity.toIntOrNull()
-                                            ?: 0) > 0
-                                    ) Color.DarkGray else Color.Red,
                                     modifier = Modifier.weight(1f),
                                     textAlign = TextAlign.End
                                 )
@@ -312,8 +311,6 @@ fun ProductSearchCard(
                             Divider(color = Color(0xFFF0F0F0))
                         }
                     }
-
-                    // Collapse Hint
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -324,8 +321,6 @@ fun ProductSearchCard(
                     }
                 }
             }
-
-            // Expand Hint (Visible only when collapsed)
             if (!expanded) {
                 Row(
                     modifier = Modifier
@@ -340,12 +335,8 @@ fun ProductSearchCard(
     }
 }
 
-// ... (FilterDialog and SortOptionRow remain the same as previous) ...
 @Composable
-fun FilterDialog(
-    viewModel: AddProductViewModel,
-    onDismiss: () -> Unit
-) {
+fun FilterDialog(viewModel: ProductSearchViewModel, onDismiss: () -> Unit) {
     val currentSort by viewModel.selectedSort.collectAsState()
     val currentCategory by viewModel.selectedCategory.collectAsState()
     val categories = viewModel.getAvailableCategories()
@@ -362,7 +353,6 @@ fun FilterDialog(
                 Text("Filter & Sort", fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Sort Options
                 Text("Sort By", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
                 Spacer(modifier = Modifier.height(8.dp))
                 Column {
@@ -380,10 +370,8 @@ fun FilterDialog(
                         viewModel
                     )
                 }
-
                 Divider(modifier = Modifier.padding(vertical = 16.dp))
 
-                // Category Filter
                 Text("Category", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
                 Spacer(modifier = Modifier.height(8.dp))
                 Column {
@@ -422,7 +410,7 @@ fun SortOptionRow(
     text: String,
     option: SortOption,
     current: SortOption,
-    viewModel: AddProductViewModel
+    viewModel: ProductSearchViewModel
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,

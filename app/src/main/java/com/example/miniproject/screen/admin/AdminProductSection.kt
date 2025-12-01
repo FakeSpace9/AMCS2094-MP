@@ -17,13 +17,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.miniproject.viewmodel.AddProductViewModel
+import com.example.miniproject.viewmodel.ProductFormViewModel
+import com.example.miniproject.viewmodel.ProductSearchViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminProductSection(
     navController: NavController,
-    addProductViewModel: AddProductViewModel
+    formViewModel: ProductFormViewModel,
+    searchViewModel: ProductSearchViewModel
 ) {
     var selectedTab by remember { mutableIntStateOf(1) } // Default to "Entry"
     val tabs = listOf("Search", "Entry", "Edit")
@@ -49,7 +51,7 @@ fun AdminProductSection(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
                 .height(50.dp)
-                .clip(RoundedCornerShape(25.dp)) // Fully rounded corners for container
+                .clip(RoundedCornerShape(25.dp))
                 .border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(25.dp))
                 .background(Color.White)
         ) {
@@ -60,15 +62,14 @@ fun AdminProductSection(
                 tabs.forEachIndexed { index, title ->
                     val selected = selectedTab == index
                     val isEditTab = index == 2
-                    // Cannot click "Edit" directly
                     val canClick = !isEditTab
 
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
-                            .padding(4.dp) // Inner padding for the grey background
-                            .clip(RoundedCornerShape(21.dp)) // Slightly smaller radius for inner pill
+                            .padding(4.dp)
+                            .clip(RoundedCornerShape(21.dp))
                             .background(
                                 if (selected) Color(0xFFF0F0F0) else Color.Transparent
                             )
@@ -92,22 +93,22 @@ fun AdminProductSection(
         Box(modifier = Modifier.fillMaxSize().background(Color.White)) {
             when (selectedTab) {
                 0 -> AdminSearchScreen(
-                    viewModel = addProductViewModel,
+                    viewModel = searchViewModel, // Using Search VM
                     onProductClick = { product ->
-                        // 1. Load data
-                        addProductViewModel.loadProductForEdit(product)
+                        // 1. Load data into Form VM
+                        formViewModel.loadProductForEdit(product)
                         // 2. Switch to Edit Tab
                         selectedTab = 2
                     }
                 )
                 1 -> {
-                    // Reset to "Add Mode"
-                    LaunchedEffect(Unit) { addProductViewModel.resetState() }
-                    AdminAddProductForm(navController, addProductViewModel)
+                    // Reset Form VM
+                    LaunchedEffect(Unit) { formViewModel.resetState() }
+                    AdminAddProductForm(navController, formViewModel)
                 }
                 2 -> {
-                    // Edit Form
-                    AdminEditProductForm(navController, addProductViewModel)
+                    // Edit Form VM
+                    AdminEditProductForm(navController, formViewModel)
                 }
             }
         }
