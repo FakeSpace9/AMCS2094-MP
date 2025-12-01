@@ -254,7 +254,7 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel) {
             text = "Staff Login",
             fontSize = 16.sp,
             modifier = Modifier.clickable {
-                navController.navigate("adminLogin")
+                navController.navigate("admin_login")
             }
         )
 

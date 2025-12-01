@@ -15,6 +15,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.google.firebase.storage.FirebaseStorage
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -22,13 +24,17 @@ import androidx.navigation.compose.rememberNavController
 import com.example.miniproject.data.AuthPreferences
 import com.example.miniproject.data.SignupRepository
 import com.example.miniproject.repository.ForgotPasswordRepository
-import com.example.miniproject.screen.AdminHomeScreen
+import com.example.miniproject.screen.admin.AdminAddProductForm
 import com.example.miniproject.screen.AdminLoginScreen
 import com.example.miniproject.screen.AdminSignupScreen
 import com.example.miniproject.screen.ForgotPasswordScreen
 import com.example.miniproject.screen.HomeScreenWithDrawer
 import com.example.miniproject.screen.SignupScreen
+import com.example.miniproject.screen.admin.AdminDashboardScreen
 import com.example.miniproject.ui.theme.MiniProjectTheme
+import com.example.miniproject.viewmodel.ProductFormViewModel
+import com.example.miniproject.viewmodel.ProductSearchViewModel // Make sure this import exists
+import com.example.miniproject.viewmodel.AddProductViewModelFactory
 import com.example.miniproject.viewmodel.ForgotPasswordViewModel
 import com.example.miniproject.viewmodel.ForgotPasswordViewModelFactory
 import com.example.miniproject.viewmodel.LoginViewModel
@@ -89,9 +95,9 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun App(modifier: Modifier = Modifier,loginViewModel: LoginViewModel,) {
+fun App(modifier: Modifier = Modifier, loginViewModel: LoginViewModel) {
     val navController = rememberNavController()
-
+    val context = LocalContext.current
 
     val forgotPasswordRepository = ForgotPasswordRepository(FirebaseAuth.getInstance())
     val forgotPasswordViewModel: ForgotPasswordViewModel = viewModel(
@@ -106,8 +112,22 @@ fun App(modifier: Modifier = Modifier,loginViewModel: LoginViewModel,) {
         factory = SignupViewModelFactory(signupRepository)
     )
 
+    val db = AppDatabase.getInstance(context) // Get Room Database instance
 
+    // 1. Create the factory instance once
+    val productFactory = AddProductViewModelFactory(
+        firestore = FirebaseFirestore.getInstance(),
+        storage = FirebaseStorage.getInstance("gs://miniproject-55de6.firebasestorage.app"),
+        productDao = db.ProductDao()
+    )
 
+    // 2. Initialize productFormViewModel (Lower case 'p')
+    val productFormViewModel: ProductFormViewModel = viewModel(factory = productFactory)
+
+    // 3. Initialize productSearchViewModel (Missing in your code)
+    val productSearchViewModel: ProductSearchViewModel = viewModel(factory = productFactory)
+
+    // --- FIX ENDS HERE ---
 
     NavHost(navController = navController, startDestination = "home") {
 
@@ -122,28 +142,35 @@ fun App(modifier: Modifier = Modifier,loginViewModel: LoginViewModel,) {
             SignupScreen(navController = navController, viewModel = signupViewModel)
         }
 
-        composable("admin_home") {
-            AdminHomeScreen(
-                loginViewModel = loginViewModel,
-                navController = navController
-            )
-        }
 
         composable("admin_signup") {
             AdminSignupScreen(navController = navController, viewModel = signupViewModel)
-        }
-        composable("adminLogin") {
-            AdminLoginScreen(
-                navController = navController,
-                loginViewModel = loginViewModel
-            )
         }
 
         composable(route = "forgot_password"){
             ForgotPasswordScreen(navController = navController, forgotPasswordViewModel = forgotPasswordViewModel)
         }
 
+        composable("admin_login") {
+            AdminLoginScreen(
+                navController = navController,
+                loginViewModel = loginViewModel,
+                onLoginSuccess = {
+                    // Navigate to the new dashboard instead of admin_home
+                    navController.navigate("admin_dashboard") {
+                        popUpTo("admin_login") { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // REPLACEMENT FOR "admin_home" and "add_product"
+        composable("admin_dashboard") {
+            AdminDashboardScreen(
+                navController = navController,
+                formViewModel = productFormViewModel, // Now matches the variable above
+                searchViewModel = productSearchViewModel // Now exists
+            )
+        }
     }
-
 }
-

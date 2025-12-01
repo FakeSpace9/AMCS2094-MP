@@ -89,4 +89,12 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
 
     implementation("com.google.firebase:firebase-firestore")
+
+    // 1. For loading images (Coil)
+    implementation("io.coil-kt:coil-compose:2.5.0")
+
+    // 2. For Barcode Scanning (Google Play Services)
+    implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
+
+    implementation("com.google.firebase:firebase-storage-ktx:20.3.0")
 }
