@@ -27,10 +27,12 @@ fun AdminProductSection(
     formViewModel: ProductFormViewModel,
     searchViewModel: ProductSearchViewModel
 ) {
-    var selectedTab by remember { mutableIntStateOf(1) } // Default to "Entry"
+    var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Search", "Entry", "Edit")
 
-    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF8F9FA))) {
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .background(Color(0xFFF8F9FA))) {
         // Top Bar
         TopAppBar(
             title = { Text("Product", fontWeight = FontWeight.Bold, fontSize = 24.sp) },
@@ -38,7 +40,9 @@ fun AdminProductSection(
                 Icon(
                     Icons.Default.AccountCircle,
                     contentDescription = "Profile",
-                    modifier = Modifier.padding(end = 16.dp).size(32.dp),
+                    modifier = Modifier
+                        .padding(end = 16.dp)
+                        .size(32.dp),
                     tint = Color.Gray
                 )
             },
@@ -90,7 +94,9 @@ fun AdminProductSection(
         }
 
         // Tab Content
-        Box(modifier = Modifier.fillMaxSize().background(Color.White)) {
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)) {
             when (selectedTab) {
                 0 -> AdminSearchScreen(
                     viewModel = searchViewModel, // Using Search VM
@@ -101,14 +107,23 @@ fun AdminProductSection(
                         selectedTab = 2
                     }
                 )
+
                 1 -> {
                     // Reset Form VM
                     LaunchedEffect(Unit) { formViewModel.resetState() }
                     AdminAddProductForm(navController, formViewModel)
                 }
+
                 2 -> {
                     // Edit Form VM
-                    AdminEditProductForm(navController, formViewModel)
+                    AdminEditProductForm(
+                        navController,
+                        formViewModel,
+                        onUpdateSuccess = {
+                            selectedTab = 0 // Switch back to Search Tab
+                            searchViewModel.loadProducts() // Refresh the list to show changes
+                        }
+                    )
                 }
             }
         }

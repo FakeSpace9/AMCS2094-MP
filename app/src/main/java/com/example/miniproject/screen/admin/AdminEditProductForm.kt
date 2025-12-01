@@ -44,7 +44,8 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 @Composable
 fun AdminEditProductForm(
     navController: NavController,
-    viewModel: ProductFormViewModel
+    viewModel: ProductFormViewModel,
+    onUpdateSuccess: () -> Unit // <--- NEW PARAMETER
 ) {
     val context = LocalContext.current
     val variants by viewModel.variants.collectAsState()
@@ -64,9 +65,11 @@ fun AdminEditProductForm(
     )
     val scanner = remember { GmsBarcodeScanning.getClient(context) }
 
+    // Observe Save State
     LaunchedEffect(saveState) {
         if (saveState is ProductState.Success) {
             Toast.makeText(context, "Product Updated Successfully!", Toast.LENGTH_SHORT).show()
+            onUpdateSuccess() // <--- TRIGGER NAVIGATION BACK
         } else if (saveState is ProductState.Error) {
             Toast.makeText(context, (saveState as ProductState.Error).message, Toast.LENGTH_LONG)
                 .show()
@@ -326,6 +329,7 @@ fun AdminEditProductForm(
     }
 }
 
+// ... (Helper Composables CustomDropdownEdit and VariantCardEdit remain unchanged)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CustomDropdownEdit(
@@ -533,11 +537,8 @@ private fun VariantCardEdit(
 
             OutlinedTextField(
                 value = variantState.sku,
-                onValueChange = {
-                    // AUTO-CAPITALIZE INPUT
-                    onUpdate(variantState.copy(sku = it.uppercase()))
-                },
-                placeholder = { Text("SKU / Barcode") },
+                onValueChange = { onUpdate(variantState.copy(sku = it.uppercase())) },
+                placeholder = { Text("Enter or scan SKU") },
                 modifier = Modifier.fillMaxWidth(),
                 trailingIcon = {
                     IconButton(onClick = onScanClick) {
