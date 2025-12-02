@@ -1,4 +1,4 @@
-package com.example.miniproject.screen
+package com.example.miniproject.screen.admin
 
 import android.widget.Toast
 import androidx.compose.foundation.clickable

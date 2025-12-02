@@ -1,4 +1,4 @@
-package com.example.miniproject.screen
+package com.example.miniproject.screen.admin
 import SignupState
 import SignupViewModel
 import android.widget.Toast

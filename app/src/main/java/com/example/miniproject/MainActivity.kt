@@ -24,9 +24,8 @@ import androidx.navigation.compose.rememberNavController
 import com.example.miniproject.data.AuthPreferences
 import com.example.miniproject.data.SignupRepository
 import com.example.miniproject.repository.ForgotPasswordRepository
-import com.example.miniproject.screen.admin.AdminAddProductForm
-import com.example.miniproject.screen.AdminLoginScreen
-import com.example.miniproject.screen.AdminSignupScreen
+import com.example.miniproject.screen.admin.AdminLoginScreen
+import com.example.miniproject.screen.admin.AdminSignupScreen
 import com.example.miniproject.screen.ForgotPasswordScreen
 import com.example.miniproject.screen.HomeScreenWithDrawer
 import com.example.miniproject.screen.SignupScreen
