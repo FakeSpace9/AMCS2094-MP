@@ -102,7 +102,13 @@ class LoginViewModel(
             }
         }
     }
+    fun restoreAdminSession(admin: AdminEntity) {
+        _adminState.value = LoginStateAdmin.Success(admin)
+    }
 
+    fun restoreCustomerSession(customer: CustomerEntity) {
+        _customerState.value = LoginStateCustomer.Success(customer)
+    }
     fun checkSession() {
         viewModelScope.launch {
             if (!authPrefs.shouldAutoLogin()) return@launch

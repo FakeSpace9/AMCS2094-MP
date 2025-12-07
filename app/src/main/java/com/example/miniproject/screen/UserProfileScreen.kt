@@ -105,7 +105,11 @@ fun UserProfileScreen(navController: NavController, viewModel: LoginViewModel) {
                             .fillMaxWidth()
                             .height(50.dp)
                     ) {
-                        Text("Logout", fontSize = 16.sp, fontWeight = FontWeight.Bold,modifier = Modifier.clickable{viewModel.logout()})
+                        Text("Logout", fontSize = 16.sp, fontWeight = FontWeight.Bold,modifier = Modifier.clickable{viewModel.logout()
+                            Toast.makeText(context, "Logged out successfully", Toast.LENGTH_SHORT).show()
+                            navController.navigate("home") {
+                                popUpTo("home") { inclusive = true }
+                            }})
                     }
                 }
                 else -> {

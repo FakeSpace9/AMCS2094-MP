@@ -58,6 +58,8 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    // 1. Initialize LoginViewModel
+                    val authPrefs = AuthPreferences(this)
                     loginViewModel = viewModel(
                         factory = LoginViewModelFactory(
                             LoginRepository(
@@ -66,11 +68,25 @@ class MainActivity : ComponentActivity() {
                                 AppDatabase.getInstance(this).CustomerDao(),
                                 AppDatabase.getInstance(this).AdminDao()
                             ),
-                            AuthPreferences(this)
+                            authPrefs
                         )
                     )
+
+                    // 2. Trigger session check (loads data into ViewModel)
                     loginViewModel.checkSession()
-                    App(loginViewModel = loginViewModel)
+
+                    // 3. Determine Start Destination based on Prefs (Immediate check)
+                    val startDestination = if (authPrefs.shouldAutoLogin()) {
+                        val type = authPrefs.getUserType()
+                        if (type == "admin") "admin_dashboard" else "home"
+                    } else {
+                        "home"
+                    }
+
+                    App(
+                        loginViewModel = loginViewModel,
+                        startDest = startDestination
+                    )
                 }
             }
         }
@@ -84,57 +100,53 @@ class MainActivity : ComponentActivity() {
             try {
                 val account = task.getResult(ApiException::class.java)
                 val idToken = account.idToken ?: return
-
                 loginViewModel.handleGoogleLogin(idToken)
-
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
     }
-
 }
 
 @Composable
-fun App(modifier: Modifier = Modifier, loginViewModel: LoginViewModel) {
+fun App(
+    modifier: Modifier = Modifier,
+    loginViewModel: LoginViewModel,
+    startDest: String
+) {
     val navController = rememberNavController()
     val context = LocalContext.current
 
+    // --- Repositories & ViewModels ---
     val forgotPasswordRepository = ForgotPasswordRepository(FirebaseAuth.getInstance())
     val forgotPasswordViewModel: ForgotPasswordViewModel = viewModel(
         factory = ForgotPasswordViewModelFactory(forgotPasswordRepository)
     )
-    val signupRepository =
-        SignupRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
 
-
-    // Create ViewModel with Factory
+    val signupRepository = SignupRepository(
+        FirebaseAuth.getInstance(),
+        FirebaseFirestore.getInstance()
+    )
     val signupViewModel: SignupViewModel = viewModel(
         factory = SignupViewModelFactory(signupRepository)
     )
 
-    val db = AppDatabase.getInstance(context) // Get Room Database instance
-
-    // 1. Create the factory instance once
+    val db = AppDatabase.getInstance(context)
     val productFactory = AddProductViewModelFactory(
         firestore = FirebaseFirestore.getInstance(),
         storage = FirebaseStorage.getInstance("gs://miniproject-55de6.firebasestorage.app"),
         productDao = db.ProductDao()
     )
-
-    // 2. Initialize productFormViewModel (Lower case 'p')
     val productFormViewModel: ProductFormViewModel = viewModel(factory = productFactory)
-
-    // 3. Initialize productSearchViewModel (Missing in your code)
     val productSearchViewModel: ProductSearchViewModel = viewModel(factory = productFactory)
 
-    // --- FIX ENDS HERE ---
 
-    NavHost(navController = navController, startDestination = "home") {
+    // --- Navigation Host ---
+    NavHost(navController = navController, startDestination = startDest) {
 
+        // --- CUSTOMER ROUTES ---
         composable("home") {
             HomeScreenWithDrawer(navController = navController, viewModel = loginViewModel)
-
         }
         composable("Login") {
             LoginScreen(navController = navController, viewModel = loginViewModel)
@@ -142,17 +154,19 @@ fun App(modifier: Modifier = Modifier, loginViewModel: LoginViewModel) {
         composable(route = "Signup") {
             SignupScreen(navController = navController, viewModel = signupViewModel)
         }
-
         composable("profile") {
             UserProfileScreen(navController = navController, viewModel = loginViewModel)
         }
-
-        composable("admin_signup") {
-            AdminSignupScreen(navController = navController, viewModel = signupViewModel)
+        composable(route = "forgot_password") {
+            ForgotPasswordScreen(
+                navController = navController,
+                forgotPasswordViewModel = forgotPasswordViewModel
+            )
         }
 
-        composable(route = "forgot_password"){
-            ForgotPasswordScreen(navController = navController, forgotPasswordViewModel = forgotPasswordViewModel)
+        // --- ADMIN ROUTES ---
+        composable("admin_signup") {
+            AdminSignupScreen(navController = navController, viewModel = signupViewModel)
         }
 
         composable("admin_login") {
@@ -160,23 +174,26 @@ fun App(modifier: Modifier = Modifier, loginViewModel: LoginViewModel) {
                 navController = navController,
                 loginViewModel = loginViewModel,
                 onLoginSuccess = {
-                    // Navigate to the new dashboard instead of admin_home
                     navController.navigate("admin_dashboard") {
                         popUpTo("admin_login") { inclusive = true }
                     }
                 }
             )
         }
-        composable("admin_profile") {
-            AdminProfileScreen(navController = navController, viewModel = loginViewModel)
-        }
-        // REPLACEMENT FOR "admin_home" and "add_product"
+
         composable("admin_dashboard") {
             AdminDashboardScreen(
                 navController = navController,
-                formViewModel = productFormViewModel, // Now matches the variable above
-                searchViewModel = productSearchViewModel, // Now exists
+                formViewModel = productFormViewModel,
+                searchViewModel = productSearchViewModel,
                 loginViewModel = loginViewModel
+            )
+        }
+
+        composable("admin_profile") {
+            AdminProfileScreen(
+                navController = navController,
+                viewModel = loginViewModel
             )
         }
     }
