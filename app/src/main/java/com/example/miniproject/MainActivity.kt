@@ -15,7 +15,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.google.firebase.storage.FirebaseStorage
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -24,24 +23,26 @@ import androidx.navigation.compose.rememberNavController
 import com.example.miniproject.data.AuthPreferences
 import com.example.miniproject.data.SignupRepository
 import com.example.miniproject.repository.ForgotPasswordRepository
-import com.example.miniproject.screen.admin.AdminLoginScreen
-import com.example.miniproject.screen.admin.AdminSignupScreen
 import com.example.miniproject.screen.ForgotPasswordScreen
 import com.example.miniproject.screen.HomeScreenWithDrawer
 import com.example.miniproject.screen.SignupScreen
+import com.example.miniproject.screen.UserProfileScreen
 import com.example.miniproject.screen.admin.AdminDashboardScreen
+import com.example.miniproject.screen.admin.AdminLoginScreen
+import com.example.miniproject.screen.admin.AdminSignupScreen
 import com.example.miniproject.ui.theme.MiniProjectTheme
-import com.example.miniproject.viewmodel.ProductFormViewModel
-import com.example.miniproject.viewmodel.ProductSearchViewModel // Make sure this import exists
 import com.example.miniproject.viewmodel.AddProductViewModelFactory
 import com.example.miniproject.viewmodel.ForgotPasswordViewModel
 import com.example.miniproject.viewmodel.ForgotPasswordViewModelFactory
 import com.example.miniproject.viewmodel.LoginViewModel
 import com.example.miniproject.viewmodel.LoginViewModelFactory
+import com.example.miniproject.viewmodel.ProductFormViewModel
+import com.example.miniproject.viewmodel.ProductSearchViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 
 class MainActivity : ComponentActivity() {
 
@@ -141,6 +142,9 @@ fun App(modifier: Modifier = Modifier, loginViewModel: LoginViewModel) {
             SignupScreen(navController = navController, viewModel = signupViewModel)
         }
 
+        composable("profile") {
+            UserProfileScreen(navController = navController, viewModel = loginViewModel)
+        }
 
         composable("admin_signup") {
             AdminSignupScreen(navController = navController, viewModel = signupViewModel)

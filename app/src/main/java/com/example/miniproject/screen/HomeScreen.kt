@@ -1,6 +1,5 @@
 package com.example.miniproject.screen
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -33,7 +33,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,7 +40,6 @@ import androidx.navigation.NavController
 import com.example.miniproject.viewmodel.LoginStateCustomer
 import com.example.miniproject.viewmodel.LoginViewModel
 import kotlinx.coroutines.launch
-
 
 @Composable
 fun HomeScreenWithDrawer(navController: NavController, viewModel: LoginViewModel) {
@@ -65,8 +63,6 @@ fun HomeScreenWithDrawer(navController: NavController, viewModel: LoginViewModel
     }
 }
 
-
-
 @Composable
 fun HomeScreen(navController: NavController, onMenuClick: () -> Unit, loginViewModel: LoginViewModel) {
     val customerLoginState by loginViewModel.customerState.collectAsState()
@@ -76,7 +72,7 @@ fun HomeScreen(navController: NavController, onMenuClick: () -> Unit, loginViewM
             .fillMaxSize()
             .background(Color.White)
     ) {
-        item { TopBar(onMenuClick) }
+        item { TopBar(onMenuClick, viewModel = loginViewModel, navController = navController) }
         item { MenuTabs() }
         item { SalesBanner() }
 
@@ -100,12 +96,8 @@ fun HomeScreen(navController: NavController, onMenuClick: () -> Unit, loginViewM
     }
 }
 
-
-
 @Composable
 fun DrawerMenu(navController: NavController, viewModel: LoginViewModel) {
-    val customerloginState by viewModel.customerState.collectAsState()
-    val context = LocalContext.current
     Column(
         modifier = Modifier
             .width(260.dp)
@@ -118,28 +110,6 @@ fun DrawerMenu(navController: NavController, viewModel: LoginViewModel) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text("Menu", fontSize = 22.sp, fontWeight = FontWeight.Bold)
-            val isLoggedIn = customerloginState is LoginStateCustomer.Success
-            val buttonText = if (isLoggedIn) "Logout" else "Login"
-            Text(
-                text = buttonText,
-                fontSize = 18.sp,
-                modifier = Modifier.clickable {
-                    if (isLoggedIn) {
-                        // Logout
-                        viewModel.logout()
-
-                        Toast.makeText(context, "Logged out", Toast.LENGTH_SHORT).show()
-
-                        navController.navigate("home") {
-                            popUpTo("home") { inclusive = true }
-                        }
-                    } else {
-                    // Navigate to Login screen
-                    navController.navigate("Login")
-                }
-                }
-            )
-
         }
         Spacer(Modifier.height(20.dp))
 
@@ -152,9 +122,13 @@ fun DrawerMenu(navController: NavController, viewModel: LoginViewModel) {
     }
 }
 
-
 @Composable
-fun TopBar(onMenuClick: () -> Unit) {
+fun TopBar(onMenuClick: () -> Unit, viewModel: LoginViewModel, navController: NavController) {
+    val customerloginState by viewModel.customerState.collectAsState()
+
+    // Check if user is logged in
+    val isLoggedIn = customerloginState is LoginStateCustomer.Success
+
     Spacer(modifier = Modifier.height(16.dp))
     Row(
         modifier = Modifier
@@ -167,12 +141,26 @@ fun TopBar(onMenuClick: () -> Unit) {
             Icons.Default.Menu,
             contentDescription = "Menu",
             modifier = Modifier.clickable { onMenuClick() })
+        Spacer(modifier = Modifier.width(12.dp))
+        Icon(Icons.Default.Search, contentDescription = "Search")
         Spacer(modifier = Modifier.weight(1f))
         Text("Shop Name", fontSize = 20.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.weight(1f))
         Icon(Icons.Default.ShoppingCart, contentDescription = "Cart")
         Spacer(modifier = Modifier.width(12.dp))
-        Icon(Icons.Default.Search, contentDescription = "Cart")
+
+        // --- UPDATED PROFILE ICON LOGIC ---
+        Icon(
+            Icons.Default.AccountCircle,
+            contentDescription = "Profile",
+            modifier = Modifier.clickable {
+                if (isLoggedIn) {
+                    navController.navigate("profile")
+                } else {
+                    navController.navigate("Login")
+                }
+            }
+        )
     }
 }
 
@@ -245,4 +233,3 @@ fun ProductCard() {
         Text("RM 800", fontSize = 12.sp, fontWeight = FontWeight.Bold)
     }
 }
-
