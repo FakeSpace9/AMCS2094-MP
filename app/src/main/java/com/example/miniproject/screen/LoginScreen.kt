@@ -1,8 +1,12 @@
+package com.example.miniproject.screen
 
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,13 +17,24 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -33,14 +48,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.miniproject.R
 import com.example.miniproject.viewmodel.LoginStateCustomer
-
 import com.example.miniproject.viewmodel.LoginViewModel
-
 
 @Composable
 fun LoginScreen(navController: NavController, viewModel: LoginViewModel) {
@@ -50,214 +65,169 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel) {
     // States
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
 
-    // Scrollable column
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    // Colors
+    val primaryColor = Color(0xFF573BFF)
 
-        Spacer(modifier = Modifier.height(80.dp))
-
-        // SHOP NAME
-        Text(
-            text = "SHOP NAME",
-            fontSize = 32.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 2.sp
-        )
-
-        Spacer(modifier = Modifier.height(40.dp))
-
-        // Sign In Title
-        Text(
-            text = "Sign in",
-            fontSize = 22.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.align(Alignment.Start)
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Email Field
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            placeholder = { Text("Email") },
-            singleLine = true,
+    Box(modifier = Modifier.fillMaxSize().background(Color.White)) {
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-        )
+                .fillMaxSize()
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            // --- Header Section ---
+            Spacer(modifier = Modifier.height(40.dp))
+            Text(
+                text = "Welcome Back",
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
+            Text(
+                text = "Sign in to continue",
+                fontSize = 16.sp,
+                color = Color.Gray,
+                modifier = Modifier.padding(top = 8.dp, bottom = 32.dp)
+            )
 
-        Spacer(modifier = Modifier.height(15.dp))
+            // --- Input Fields ---
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Email") },
+                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = primaryColor) },
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = primaryColor,
+                    focusedLabelColor = primaryColor
+                )
+            )
 
-        // Password Field
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            placeholder = { Text("Password") },
-            singleLine = true,
-            modifier = Modifier
-                .fillMaxWidth()
-        )
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(25.dp))
-        LaunchedEffect(customerLoginState) {
-            when (customerLoginState) {
-                is LoginStateCustomer.Success -> {
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") },
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = primaryColor) },
+                trailingIcon = {
+                    val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(imageVector = image, contentDescription = null)
+                    }
+                },
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = primaryColor,
+                    focusedLabelColor = primaryColor
+                )
+            )
+
+            // Forgot Password Link
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                TextButton(onClick = { navController.navigate("forgot_password") }) {
+                    Text("Forgot Password?", color = primaryColor)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // --- Logic Observer ---
+            LaunchedEffect(customerLoginState) {
+                if (customerLoginState is LoginStateCustomer.Success) {
                     Toast.makeText(context, "Login Successful", Toast.LENGTH_SHORT).show()
-
                     navController.navigate("home") {
                         popUpTo("Login") { inclusive = true }
                     }
+                } else if (customerLoginState is LoginStateCustomer.Error) {
+                    Toast.makeText(context, (customerLoginState as LoginStateCustomer.Error).message, Toast.LENGTH_SHORT).show()
                 }
-                is LoginStateCustomer.Error -> {
-                    Toast.makeText(
-                        context,
-                        (customerLoginState as LoginStateCustomer.Error).message,
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-                else -> { /* do nothing for Idle or Loading */ }
             }
-        }
 
-
-        // Continue Button
-        Button(
-            onClick = {
-                if (email == "admin" && password == "admin") {
-                    navController.navigate("admin_signup")
-                } else {
-                    viewModel.login(email, password)
-
-                }
-            },
-            enabled = customerLoginState !is LoginStateCustomer.Loading,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFECECEC)
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
-        ) {
-            if (customerLoginState is LoginStateCustomer.Loading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(22.dp),
-                    strokeWidth = 3.dp,
-                    color = Color.Gray
-                )
-            } else {
-                Text(
-                    text = "Continue",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Gray
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(18.dp))
-
-        Button(
-            onClick = {
-                // Trigger Google Sign-In
-                viewModel.signInWithGoogle(context as ComponentActivity)
-            },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.White
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
-        ) {
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(3.dp)
+            // --- Login Button ---
+            Button(
+                onClick = {
+                    if (email == "admin" && password == "admin") {
+                        navController.navigate("admin_signup") // Secret admin shortcut
+                    } else {
+                        viewModel.login(email, password)
+                    }
+                },
+                enabled = customerLoginState !is LoginStateCustomer.Loading,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.google__g__logo_svg),
-                    contentDescription = "Google logo",
-                    modifier = Modifier.size(30.dp)   // make image balanced
-                )
+                if (customerLoginState is LoginStateCustomer.Loading) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                } else {
+                    Text("Login", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                }
+            }
 
-                Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
+            // --- Divider ---
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Divider(modifier = Modifier.weight(1f), color = Color.LightGray)
+                Text("  Or sign in with  ", color = Color.Gray, fontSize = 14.sp)
+                Divider(modifier = Modifier.weight(1f), color = Color.LightGray)
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // --- Google Button ---
+            OutlinedButton(
+                onClick = { viewModel.signInWithGoogle(context as ComponentActivity) },
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painter = painterResource(id = R.drawable.google__g__logo_svg),
+                        contentDescription = "Google Logo",
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("Google", fontSize = 16.sp, color = Color.Black)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // --- Footer ---
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Don't have an account? ", color = Color.Gray)
                 Text(
-                    text = "Sign in with Google",
-                    fontSize = 18.sp,
+                    text = "Sign Up",
+                    color = primaryColor,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    modifier = Modifier.clickable { navController.navigate("Signup") }
                 )
             }
 
-        }
+            Spacer(modifier = Modifier.height(16.dp))
 
-
-
-
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // OR Divider
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Divider(modifier = Modifier.weight(1f))
             Text(
-                "   or   ",
+                text = "Staff Login",
                 fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
-            )
-            Divider(modifier = Modifier.weight(1f))
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Sign Up Button
-        Button(
-            onClick = { navController.navigate("Signup") },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF573BFF) // Purple
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
-        ) {
-            Text(
-                text = "Sign Up",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = Color.Gray,
+                modifier = Modifier.clickable { navController.navigate("admin_login") }
             )
         }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Forgot Password
-        Text(
-            text = "Forgot Password",
-            fontSize = 16.sp,
-            modifier = Modifier.clickable {
-                navController.navigate("forgot_password")
-            }
-        )
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Forgot Password
-        Text(
-            text = "Staff Login",
-            fontSize = 16.sp,
-            modifier = Modifier.clickable {
-                navController.navigate("admin_login")
-            }
-        )
-
-        Spacer(modifier = Modifier.height(40.dp))
     }
 }

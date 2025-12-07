@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.miniproject.viewmodel.LoginViewModel
 import com.example.miniproject.viewmodel.ProductFormViewModel
 import com.example.miniproject.viewmodel.ProductSearchViewModel
 
@@ -32,7 +33,8 @@ import com.example.miniproject.viewmodel.ProductSearchViewModel
 fun AdminDashboardScreen(
     navController: NavController,
     formViewModel: ProductFormViewModel,
-    searchViewModel: ProductSearchViewModel
+    searchViewModel: ProductSearchViewModel,
+    loginViewModel: LoginViewModel
 ) {
     var selectedItem by remember { mutableIntStateOf(3) } // Default to "Product" (index 3)
     val items = listOf(
@@ -72,7 +74,7 @@ fun AdminDashboardScreen(
                 0 -> PlaceholderScreen("POS Feature Coming Soon")
                 1 -> PlaceholderScreen("Analytics Feature Coming Soon")
                 2 -> PlaceholderScreen("Orders Feature Coming Soon")
-                3 -> AdminProductSection(navController, formViewModel, searchViewModel)
+                3 -> AdminProductSection(navController, formViewModel, searchViewModel,loginViewModel)
             }
         }
     }

@@ -2,7 +2,6 @@ package com.example.miniproject
 
 import AppDatabase
 import LoginRepository
-import LoginScreen
 import SignupViewModel
 import SignupViewModelFactory
 import android.content.Intent
@@ -25,10 +24,12 @@ import com.example.miniproject.data.SignupRepository
 import com.example.miniproject.repository.ForgotPasswordRepository
 import com.example.miniproject.screen.ForgotPasswordScreen
 import com.example.miniproject.screen.HomeScreenWithDrawer
+import com.example.miniproject.screen.LoginScreen
 import com.example.miniproject.screen.SignupScreen
 import com.example.miniproject.screen.UserProfileScreen
 import com.example.miniproject.screen.admin.AdminDashboardScreen
 import com.example.miniproject.screen.admin.AdminLoginScreen
+import com.example.miniproject.screen.admin.AdminProfileScreen
 import com.example.miniproject.screen.admin.AdminSignupScreen
 import com.example.miniproject.ui.theme.MiniProjectTheme
 import com.example.miniproject.viewmodel.AddProductViewModelFactory
@@ -166,13 +167,16 @@ fun App(modifier: Modifier = Modifier, loginViewModel: LoginViewModel) {
                 }
             )
         }
-
+        composable("admin_profile") {
+            AdminProfileScreen(navController = navController, viewModel = loginViewModel)
+        }
         // REPLACEMENT FOR "admin_home" and "add_product"
         composable("admin_dashboard") {
             AdminDashboardScreen(
                 navController = navController,
                 formViewModel = productFormViewModel, // Now matches the variable above
-                searchViewModel = productSearchViewModel // Now exists
+                searchViewModel = productSearchViewModel, // Now exists
+                loginViewModel = loginViewModel
             )
         }
     }
