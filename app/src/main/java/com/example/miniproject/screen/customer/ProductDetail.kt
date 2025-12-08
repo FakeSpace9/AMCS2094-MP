@@ -31,7 +31,10 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.miniproject.screen.TopBar
 import com.example.miniproject.ui.theme.PurpleAccent
+import com.example.miniproject.viewmodel.AddToCartStatus
 import com.example.miniproject.viewmodel.ProductDetailScreenViewModel
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,6 +47,9 @@ fun ProductDetailScreen(
     val availableSizes by viewModel.availableSizes.collectAsState()
     val selectedSizes by viewModel.selectedSize.collectAsState()
     val priceRange by viewModel.priceRange.collectAsState()
+    val selectedVariant by viewModel.selectedVariant.collectAsState()
+    val addToCartStatus by viewModel.addToCartStatus.collectAsState()
+    val context = LocalContext.current
 
     LaunchedEffect(productId)
     {
@@ -67,7 +73,8 @@ fun ProductDetailScreen(
         },
         bottomBar = {
             Button(
-                onClick = { /*TODO*/ },
+                onClick = { viewModel.addToCart() },
+                enabled = addToCartStatus !is AddToCartStatus.Loading &&(selectedVariant?.stockQuantity ?:0)>0,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
@@ -75,6 +82,15 @@ fun ProductDetailScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = PurpleAccent),
                 shape = RoundedCornerShape(12.dp)
             ){
+                if(addToCartStatus is AddToCartStatus.Loading){
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }else{
+                    val buttonText = if((selectedVariant?.stockQuantity ?: 0)<= 0 && selectedSizes.isNotEmpty())"Out Of Stock" else "Add to cart"
+                    Text(buttonText, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
                 Text(
                     text = "ADD TO CART",
                     fontSize = 16.sp,

@@ -1,17 +1,26 @@
 package com.example.miniproject.viewmodel
 
+import android.os.Message
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.miniproject.data.dao.ProductDao
+import com.example.miniproject.data.entity.CartEntity
 import com.example.miniproject.data.entity.ProductEntity
 import com.example.miniproject.data.entity.ProductVariantEntity
+import com.example.miniproject.repository.CartRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
+sealed class AddToCartStatus{
+    object Idle : AddToCartStatus()
+    object Loading : AddToCartStatus()
+    object Success : AddToCartStatus()
+    data class Error(val message: String) : AddToCartStatus()
+}
 class ProductDetailScreenViewModel (
-    private val productDao: ProductDao
+    private val productDao: ProductDao,
+    private val cartRepository: CartRepository
 ) : ViewModel() {
     private val _product = MutableStateFlow<ProductEntity?>(null)
     val product: StateFlow<ProductEntity?> = _product
@@ -24,6 +33,12 @@ class ProductDetailScreenViewModel (
 
     private val _sizeOrder = listOf("XS","S","M","L","XL")
     val availableSizes: StateFlow<List<String>> = MutableStateFlow(emptyList())
+
+    private val _selectedVariant = MutableStateFlow<ProductVariantEntity?>(null)
+    val selectedVariant: StateFlow<ProductVariantEntity?> = _selectedVariant
+
+    private val _addToCartStatus = MutableStateFlow<AddToCartStatus>(AddToCartStatus.Idle)
+    val addToCartStatus : StateFlow<AddToCartStatus> = _addToCartStatus
 
     val priceRange: StateFlow<String> = MutableStateFlow("")
 
@@ -60,6 +75,42 @@ class ProductDetailScreenViewModel (
 
     fun selectSize(size:String){
         _selectedSize.value = size
+    }
+
+    fun addToCart(){
+        val productVal = _product.value ?: return
+        val variantVal = _selectedVariant.value ?: return
+
+        if(_selectedSize.value.isEmpty()){
+            _addToCartStatus.value = AddToCartStatus.Error("Please select a size")
+            return
+        }
+
+        if(variantVal.stockQuantity <=0 ){
+            _addToCartStatus.value = AddToCartStatus.Error("Out of Stock")
+        }
+
+        viewModelScope.launch {
+            _addToCartStatus.value = AddToCartStatus.Loading
+            try {
+                val cartItem = CartEntity(
+                    productId = productVal.productId,
+                    variantSku = variantVal.sku,
+                    productName = productVal.name,
+                    productImageUrl = productVal.imageUrl,
+                    selectedSize = _selectedSize.value,
+                    selectedColour = variantVal.colour,
+                    price = variantVal.price,
+                    quantity = 1
+                )
+            }catch (e:Exception){
+                _addToCartStatus.value = AddToCartStatus.Error(e.message ?: "Failed to add to cart")
+            }
+        }
+    }
+
+    fun resetAddToCartStatus(){
+        _addToCartStatus.value = AddToCartStatus.Idle
     }
 }
 

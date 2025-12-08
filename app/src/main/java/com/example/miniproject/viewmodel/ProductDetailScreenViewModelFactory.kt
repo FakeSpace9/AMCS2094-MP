@@ -14,7 +14,7 @@ class ProductDetailScreenViewModelFactory(
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ProductDetailScreenViewModel::class.java)) {
             @Suppress("UNCHECK_CAST")
-            return ProductDetailScreenViewModel(productDao) as T
+            return ProductDetailScreenViewModel(productDao,cartRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
