@@ -160,7 +160,7 @@ fun CartItemCard(
             ){
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(item.imageUrl)
+                        .data(item.productImageUrl)
                         .crossfade(true)
                         .build(),
                     contentDescription = item.productName,
@@ -245,6 +245,7 @@ fun CartItemCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PromoCodeSection(
     promoCode: String,
@@ -261,7 +262,7 @@ fun PromoCodeSection(
             OutlinedTextField(
                 value = promoCode,
                 onValueChange = onPromoCodeChange,
-                placeholder = Text("Enter promo code", color = Color.Gray),
+                placeholder = {Text("Enter promo code", color = Color.Gray)},
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
