@@ -10,6 +10,8 @@ import com.example.miniproject.data.entity.CustomerEntity
 import com.example.miniproject.data.entity.ProductEntity
 import com.example.miniproject.data.entity.ProductImageEntity
 import com.example.miniproject.data.entity.ProductVariantEntity
+import com.example.miniproject.data.dao.CartDao
+import com.example.miniproject.data.entity.CartEntity
 
 @Database(
     entities = [
@@ -17,10 +19,10 @@ import com.example.miniproject.data.entity.ProductVariantEntity
         AdminEntity::class,
         ProductEntity::class,
         ProductImageEntity::class,
-        ProductVariantEntity::class
-
+        ProductVariantEntity::class,
+        CartEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -29,6 +31,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun AdminDao(): AdminDao
 
     abstract fun ProductDao(): ProductDao
+    abstract fun CartDao(): CartDao
+
 
     companion object {
         @Volatile
