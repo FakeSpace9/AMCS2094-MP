@@ -19,6 +19,8 @@ class ProductSearchViewModel(
     val selectedSort = MutableStateFlow(SortOption.NEWEST)
     val selectedCategory = MutableStateFlow("All")
 
+    val categoryFilter = selectedCategory.value
+
     // Static categories list
     private val allCategories = listOf("Tops", "Bottoms", "Outerwear", "Dresses", "Accessories", "Shoes")
 
@@ -49,6 +51,13 @@ class ProductSearchViewModel(
                 it.product.category.equals(selectedCategory.value, ignoreCase = true)
             }
         }
+
+        if(categoryFilter != "All" && categoryFilter.isNotEmpty()){
+            list = list.filter {
+                it.product.category.equals(categoryFilter, ignoreCase = true)
+            }
+        }
+
 
         // Apply Sorting
         list = when (selectedSort.value) {

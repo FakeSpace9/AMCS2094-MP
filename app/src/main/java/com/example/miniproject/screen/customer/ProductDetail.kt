@@ -51,6 +51,23 @@ fun ProductDetailScreen(
     val addToCartStatus by viewModel.addToCartStatus.collectAsState()
     val context = LocalContext.current
 
+    LaunchedEffect(addToCartStatus) {
+        when (addToCartStatus) {
+            is AddToCartStatus.Success -> {
+                Toast.makeText(context, "Added to Cart!", Toast.LENGTH_SHORT).show()
+                viewModel.resetAddToCartStatus() // Reset so we can add again
+
+                navController.navigate("cart")
+            }
+            is AddToCartStatus.Error -> {
+                Toast.makeText(context, (addToCartStatus as AddToCartStatus.Error).message, Toast.LENGTH_SHORT).show()
+                viewModel.resetAddToCartStatus()
+
+            }
+            else -> {}
+        }
+    }
+
     LaunchedEffect(productId)
     {
         viewModel.loadProductData(productId)
@@ -91,11 +108,7 @@ fun ProductDetailScreen(
                     val buttonText = if((selectedVariant?.stockQuantity ?: 0)<= 0 && selectedSizes.isNotEmpty())"Out Of Stock" else "Add to cart"
                     Text(buttonText, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
-                Text(
-                    text = "ADD TO CART",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
+
             }
         },
                     containerColor = Color.White

@@ -22,6 +22,8 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Text
@@ -29,7 +31,10 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -39,10 +44,14 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.miniproject.viewmodel.LoginStateCustomer
 import com.example.miniproject.viewmodel.LoginViewModel
+import com.example.miniproject.viewmodel.ProductSearchViewModel
 import kotlinx.coroutines.launch
 
 @Composable
-fun HomeScreenWithDrawer(navController: NavController, viewModel: LoginViewModel) {
+fun HomeScreenWithDrawer(navController: NavController,
+                         viewModel: LoginViewModel,
+                         searchViewModel: ProductSearchViewModel
+) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
@@ -58,13 +67,18 @@ fun HomeScreenWithDrawer(navController: NavController, viewModel: LoginViewModel
             onMenuClick = {
                 scope.launch { drawerState.open() }
             },
-            loginViewModel = viewModel
+            loginViewModel = viewModel,
+            searchViewModel = searchViewModel
         )
     }
 }
 
 @Composable
-fun HomeScreen(navController: NavController, onMenuClick: () -> Unit, loginViewModel: LoginViewModel) {
+fun HomeScreen(navController: NavController,
+               onMenuClick: () -> Unit,
+               loginViewModel: LoginViewModel,
+               searchViewModel: ProductSearchViewModel
+) {
     val customerLoginState by loginViewModel.customerState.collectAsState()
 
     LazyColumn(
@@ -73,7 +87,7 @@ fun HomeScreen(navController: NavController, onMenuClick: () -> Unit, loginViewM
             .background(Color.White)
     ) {
         item { TopBar(onMenuClick, viewModel = loginViewModel, navController = navController) }
-        item { MenuTabs() }
+        item { MenuTabs( navController = navController, searchViewModel = searchViewModel) }
         item { SalesBanner() }
 
         item { ProductSection(title = "New Arrival →") }
@@ -165,16 +179,51 @@ fun TopBar(onMenuClick: () -> Unit, viewModel: LoginViewModel, navController: Na
 }
 
 @Composable
-fun MenuTabs() {
+fun MenuTabs(
+    navController: NavController,
+    searchViewModel: ProductSearchViewModel
+) {
+    var showCategories by remember { mutableStateOf(false) }
+    val categories = searchViewModel.getAvailableCategories()
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        Text("New Arrivals ▼")
-        Text("Categories ▼")
-        Text("Sales ▼")
+        Text(
+            text = "New Arrivals",
+            modifier = Modifier.clickable {
+                searchViewModel.selectedCategory.value = "New Arrivals"
+                navController.navigate("menu")
+            },
+            fontWeight = FontWeight.Medium
+        )
+        Text(
+            text = "Categories ▼",
+            modifier = Modifier.clickable {
+                showCategories = true
+            },
+            fontWeight = FontWeight.Medium
+        )
+        DropdownMenu(
+            expanded = showCategories,
+            onDismissRequest = { showCategories = false },
+            modifier = Modifier.background(Color.White)
+        ) {
+            categories.filter { it != "All" }.forEach {categories ->
+                DropdownMenuItem(
+                    text = { Text(categories) },
+                    onClick = {
+                        searchViewModel.selectedCategory.value = categories
+                        navController.navigate("menu")
+                        showCategories = false
+                    }
+                )
+
+            }
+        }
     }
 }
 
@@ -192,10 +241,14 @@ fun SalesBanner() {
 }
 
 @Composable
-fun ProductSection(title: String) {
+fun ProductSection(title: String, onClick:()->Unit = {}) {
     Column(modifier = Modifier.padding(16.dp)) {
-        Text(title, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(title, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+        }
         Spacer(modifier = Modifier.height(12.dp))
 
         Row(

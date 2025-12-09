@@ -44,6 +44,16 @@ import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import com.example.miniproject.repository.CartRepository
+import com.example.miniproject.screen.customer.CartScreen
+import com.example.miniproject.screen.customer.NewArrivalScreen
+import com.example.miniproject.screen.customer.ProductDetailScreen
+import com.example.miniproject.viewmodel.CartViewModel
+import com.example.miniproject.viewmodel.CartViewModelFactory
+import com.example.miniproject.viewmodel.ProductDetailScreenViewModel
+import com.example.miniproject.viewmodel.ProductDetailScreenViewModelFactory
 
 class MainActivity : ComponentActivity() {
 
@@ -140,13 +150,23 @@ fun App(
     val productFormViewModel: ProductFormViewModel = viewModel(factory = productFactory)
     val productSearchViewModel: ProductSearchViewModel = viewModel(factory = productFactory)
 
+    val cartRepository = CartRepository(db.CartDao())
+    val cartViewModel: CartViewModel = viewModel(
+        factory = CartViewModelFactory(cartRepository)
+    )
+
+    val productDetailViewModel: ProductDetailScreenViewModel = viewModel(
+        factory = ProductDetailScreenViewModelFactory(productDao = db.ProductDao(),cartRepository)
+    )
+
+
 
     // --- Navigation Host ---
     NavHost(navController = navController, startDestination = startDest) {
 
         // --- CUSTOMER ROUTES ---
         composable("home") {
-            HomeScreenWithDrawer(navController = navController, viewModel = loginViewModel)
+            HomeScreenWithDrawer(navController = navController, viewModel = loginViewModel, searchViewModel = productSearchViewModel)
         }
         composable("Login") {
             LoginScreen(navController = navController, viewModel = loginViewModel)
@@ -194,6 +214,33 @@ fun App(
             AdminProfileScreen(
                 navController = navController,
                 viewModel = loginViewModel
+            )
+        }
+
+        // --- CUSTOMER ROUTES ---
+
+        composable("menu") {
+            NewArrivalScreen(
+                navController = navController,
+                viewModel = productSearchViewModel
+            )
+        }
+
+        composable("cart"){
+            CartScreen(
+                navController = navController,
+                viewModel = cartViewModel
+            )
+        }
+
+        composable("productDetail/{productId}",
+            arguments = listOf(navArgument("productId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val productId = backStackEntry.arguments?.getString("productId")?:""
+            ProductDetailScreen(
+                navController = navController,
+                viewModel = productDetailViewModel,
+                productId = productId
             )
         }
     }

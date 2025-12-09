@@ -58,6 +58,10 @@ class ProductDetailScreenViewModel (
 
             if(_selectedSize.value.isEmpty()&&uniqueSizes.isNotEmpty()){
                 _selectedSize.value = uniqueSizes.first()
+                updateSelectedVariant()
+            }else if(_selectedSize.value.isNotEmpty()){
+                updateSelectedVariant()
+
             }
 
             if(variantsResult.isNotEmpty()){
@@ -77,6 +81,12 @@ class ProductDetailScreenViewModel (
         _selectedSize.value = size
     }
 
+    private fun updateSelectedVariant() {
+        val currentSize = _selectedSize.value
+        val currentVariants = _variants.value
+
+        _selectedVariant.value = currentVariants.find { it.size == currentSize }
+    }
     fun addToCart(){
         val productVal = _product.value ?: return
         val variantVal = _selectedVariant.value ?: return
@@ -103,6 +113,8 @@ class ProductDetailScreenViewModel (
                     price = variantVal.price,
                     quantity = 1
                 )
+                cartRepository.addCartItem(cartItem)
+                _addToCartStatus.value = AddToCartStatus.Success
             }catch (e:Exception){
                 _addToCartStatus.value = AddToCartStatus.Error(e.message ?: "Failed to add to cart")
             }
