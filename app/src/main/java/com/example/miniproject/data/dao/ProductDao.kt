@@ -59,6 +59,9 @@ interface ProductDao {
     @Query("DELETE FROM product_images WHERE productId NOT IN (:activeProductIds)")
     suspend fun deleteImagesNotIn(activeProductIds: List<String>)
 
+    @Query("SELECT * FROM products WHERE productId = :productId")
+    suspend fun getProductById(productId: String): ProductEntity?
+
     @Transaction
     suspend fun syncData(products: List<ProductEntity>, variants: List<ProductVariantEntity>, images: List<ProductImageEntity>) {
         // 1. Insert/Update new data
