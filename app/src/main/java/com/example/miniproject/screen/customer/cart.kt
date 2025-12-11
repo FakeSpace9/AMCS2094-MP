@@ -73,7 +73,7 @@ fun CartScreen(
         },
                 bottomBar = {
                     if(cartItems.isNotEmpty()){
-                        CheckoutBottomBar(total = total, onCheckoutClick = { /*TODO*/ })
+                        CheckoutBottomBar(total = total, onCheckoutClick = { navController.navigate("checkout") })
                     }
                 },
                 containerColor = Color(0xFFF9FAFB)

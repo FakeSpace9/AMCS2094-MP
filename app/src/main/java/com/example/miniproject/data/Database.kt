@@ -6,11 +6,18 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.miniproject.data.dao.AddressDao
 import com.example.miniproject.data.dao.AdminDao
+import com.example.miniproject.data.dao.CartDao
 import com.example.miniproject.data.dao.CustomerDao
+import com.example.miniproject.data.dao.OrderDao
+import com.example.miniproject.data.dao.PaymentDao
 import com.example.miniproject.data.dao.ProductDao
 import com.example.miniproject.data.entity.AddressEntity
 import com.example.miniproject.data.entity.AdminEntity
+import com.example.miniproject.data.entity.CartEntity
 import com.example.miniproject.data.entity.CustomerEntity
+import com.example.miniproject.data.entity.OrderEntity
+import com.example.miniproject.data.entity.OrderItemEntity
+import com.example.miniproject.data.entity.PaymentEntity
 import com.example.miniproject.data.entity.ProductEntity
 import com.example.miniproject.data.entity.ProductImageEntity
 import com.example.miniproject.data.entity.ProductVariantEntity
@@ -22,10 +29,14 @@ import com.example.miniproject.data.entity.ProductVariantEntity
         ProductEntity::class,
         ProductImageEntity::class,
         ProductVariantEntity::class,
-        AddressEntity::class
+        AddressEntity::class,
+        CartEntity::class,
+        PaymentEntity::class ,
+        OrderEntity::class,
+        OrderItemEntity::class
 
     ],
-    version = 6,
+    version = 8,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -35,6 +46,11 @@ abstract class AppDatabase : RoomDatabase() {
 
     abstract fun ProductDao(): ProductDao
     abstract fun AddressDao(): AddressDao
+    abstract fun CartDao(): CartDao
+    abstract fun PaymentDao(): PaymentDao
+
+    abstract fun OrderDao(): OrderDao
+
 
     companion object {
         @Volatile

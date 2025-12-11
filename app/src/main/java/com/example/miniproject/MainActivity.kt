@@ -11,48 +11,72 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.miniproject.data.AppDatabase
 import com.example.miniproject.data.AuthPreferences
 import com.example.miniproject.repository.AddressRepository
+import com.example.miniproject.repository.CartRepository
 import com.example.miniproject.repository.EditProfileRepository
 import com.example.miniproject.repository.SignupRepository
 import com.example.miniproject.repository.ForgotPasswordRepository
 import com.example.miniproject.repository.LoginRepository
+import com.example.miniproject.repository.OrderRepository
+import com.example.miniproject.repository.PaymentRepository
 import com.example.miniproject.screen.AddAddressScreen
+import com.example.miniproject.screen.AddEditPaymentScreen
 import com.example.miniproject.screen.AddressScreen
 import com.example.miniproject.screen.EditProfileScreen
 import com.example.miniproject.screen.ForgotPasswordScreen
 import com.example.miniproject.screen.HomeScreenWithDrawer
 import com.example.miniproject.screen.LoginScreen
+import com.example.miniproject.screen.PaymentMethodScreen
 import com.example.miniproject.screen.ProfileScreen
 import com.example.miniproject.screen.SignupScreen
 import com.example.miniproject.screen.admin.AdminDashboardScreen
 import com.example.miniproject.screen.admin.AdminLoginScreen
 import com.example.miniproject.screen.admin.AdminProfileScreen
 import com.example.miniproject.screen.admin.AdminSignupScreen
+import com.example.miniproject.screen.customer.CartScreen
+import com.example.miniproject.screen.customer.CheckOutScreen
+import com.example.miniproject.screen.customer.NewArrivalScreen
+import com.example.miniproject.screen.customer.OrderSuccessScreen
+import com.example.miniproject.screen.customer.ProductDetailScreen
 import com.example.miniproject.ui.theme.MiniProjectTheme
 import com.example.miniproject.viewmodel.AddProductViewModelFactory
 import com.example.miniproject.viewmodel.AddressViewModel
 import com.example.miniproject.viewmodel.AddressViewModelFactory
+import com.example.miniproject.viewmodel.CartViewModel
+import com.example.miniproject.viewmodel.CartViewModelFactory
 import com.example.miniproject.viewmodel.EditProfileViewModel
 import com.example.miniproject.viewmodel.EditProfileViewModelFactory
 import com.example.miniproject.viewmodel.ForgotPasswordViewModel
 import com.example.miniproject.viewmodel.ForgotPasswordViewModelFactory
 import com.example.miniproject.viewmodel.LoginViewModel
 import com.example.miniproject.viewmodel.LoginViewModelFactory
+import com.example.miniproject.viewmodel.PaymentViewModel
+import com.example.miniproject.viewmodel.PaymentViewModelFactory
+import com.example.miniproject.viewmodel.ProductDetailScreenViewModel
+import com.example.miniproject.viewmodel.ProductDetailScreenViewModelFactory
 import com.example.miniproject.viewmodel.ProductFormViewModel
 import com.example.miniproject.viewmodel.ProductSearchViewModel
 import com.example.miniproject.viewmodel.SignupViewModel
 import com.example.miniproject.viewmodel.SignupViewModelFactory
+import com.example.miniproject.viewmodel.CheckoutViewModel
+import com.example.miniproject.viewmodel.CheckoutViewModelFactory
+import com.example.miniproject.viewmodel.OrderSuccessViewModel
+import com.example.miniproject.viewmodel.OrderSuccessViewModelFactory
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
+import kotlinx.serialization.builtins.BooleanArraySerializer
 
 class MainActivity : ComponentActivity() {
 
@@ -170,13 +194,51 @@ fun App(
         factory = AddressViewModelFactory(addressRepo, AuthPreferences(context))
     )
 
+    val cartRepository = CartRepository(db.CartDao())
+    val cartViewModel: CartViewModel = viewModel(
+        factory = CartViewModelFactory(cartRepository)
+    )
+
+    val productDetailViewModel: ProductDetailScreenViewModel = viewModel(
+        factory = ProductDetailScreenViewModelFactory(productDao = db.ProductDao(), cartRepository)
+    )
+
+    val paymentRepo = PaymentRepository(
+        paymentDao = db.PaymentDao(),
+        firestore = FirebaseFirestore.getInstance()
+    )
+
+    val paymentViewModel: PaymentViewModel = viewModel(
+        factory = PaymentViewModelFactory(paymentRepo, AuthPreferences(context))
+    )
+
+    val orderRepo = OrderRepository(
+        orderDao = db.OrderDao(),
+        cartDao = db.CartDao(),
+        firestore = FirebaseFirestore.getInstance()
+    )
+
+    val checkoutViewModel: CheckoutViewModel = viewModel(
+        factory = CheckoutViewModelFactory(
+            cartRepository = cartRepository,
+            addressRepository = addressRepo,
+            paymentRepository = paymentRepo,
+            orderRepository = orderRepo,
+            authPreferences = AuthPreferences(context)
+        )
+    )
+
+    val orderSuccessViewModel: OrderSuccessViewModel = viewModel(
+        factory = OrderSuccessViewModelFactory(orderRepo)
+    )
+
 
     // --- Navigation Host ---
     NavHost(navController = navController, startDestination = startDest) {
 
         // --- CUSTOMER ROUTES ---
         composable("home") {
-            HomeScreenWithDrawer(navController = navController, viewModel = loginViewModel)
+            HomeScreenWithDrawer(navController = navController, viewModel = loginViewModel, searchViewModel = productSearchViewModel)
         }
         composable("Login") {
             LoginScreen(navController = navController, viewModel = loginViewModel)
@@ -234,10 +296,15 @@ fun App(
             )
         }
 
-        composable("address") {
+        composable(
+            route = "address?selectMode={selectMode}",
+            arguments = listOf(navArgument("selectMode") { defaultValue = false })
+        ) { backStackEntry ->
+            val selectMode = backStackEntry.arguments?.getBoolean("selectMode") ?: false
             AddressScreen(
                 navController = navController,
-                viewModel = addressViewModel
+                viewModel = addressViewModel,
+                selectMode = selectMode
             )
         }
 
@@ -245,5 +312,80 @@ fun App(
             AddAddressScreen(viewModel = addressViewModel, navController = navController)
         }
 
+        composable("edit_address") {
+            AddAddressScreen(viewModel = addressViewModel, navController = navController)
+        }
+
+        composable("menu") {
+            NewArrivalScreen(
+                navController = navController,
+                viewModel = productSearchViewModel
+            )
+        }
+
+        composable("cart"){
+            CartScreen(
+                navController = navController,
+                viewModel = cartViewModel
+            )
+        }
+
+        composable("productDetail/{productId}",
+            arguments = listOf(navArgument("productId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val productId = backStackEntry.arguments?.getString("productId")?:""
+            ProductDetailScreen(
+                navController = navController,
+                viewModel = productDetailViewModel,
+                productId = productId
+            )
+        }
+
+        composable(
+            route = "payment?selectMode={selectMode}",
+            arguments = listOf(navArgument("selectMode") { defaultValue = false })
+        ) { backStackEntry ->
+            val selectMode = backStackEntry.arguments?.getBoolean("selectMode") ?: false
+            PaymentMethodScreen(
+                navController = navController,
+                viewModel = paymentViewModel,
+                selectMode = selectMode
+            )
+        }
+
+        // ADD payment
+        composable("add_payment") {
+            AddEditPaymentScreen(
+                navController = navController,
+                viewModel = paymentViewModel
+            )
+        }
+
+        // EDIT payment
+        composable("edit_payment") {
+            AddEditPaymentScreen(
+                navController = navController,
+                viewModel = paymentViewModel
+            )
+        }
+        //checkout
+        composable("checkout") {
+            CheckOutScreen(
+                navController = navController,
+                viewModel = checkoutViewModel
+            )
+        }
+
+        composable(
+            route = "order_success/{orderId}",
+            arguments = listOf(navArgument("orderId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val orderId = backStackEntry.arguments?.getLong("orderId") ?: 0L
+            OrderSuccessScreen(
+                navController = navController,
+                orderId = orderId,
+                viewModel = orderSuccessViewModel
+            )
+        }
     }
 }

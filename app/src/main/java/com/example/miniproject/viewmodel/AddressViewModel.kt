@@ -21,9 +21,6 @@ class AddressViewModel(
     var fullName = mutableStateOf("")
     var phone = mutableStateOf("")
     var addressLine1 = mutableStateOf("")
-    var addressLine2 = mutableStateOf("")
-    var city = mutableStateOf("")
-    var state = mutableStateOf("")
     var postcode = mutableStateOf("")
     var label = mutableStateOf("Home")
     var isDefault = mutableStateOf(false)
@@ -38,7 +35,7 @@ class AddressViewModel(
 
     fun loadAddresses() {
         viewModelScope.launch {
-            currentCustomerId = authPrefs.getLoggedInEmail() ?: return@launch
+            currentCustomerId = authPrefs.getUserId() ?: return@launch
             _addresses.value = repo.getAddressesByCustomerId(currentCustomerId)
         }
     }
@@ -48,16 +45,13 @@ class AddressViewModel(
         fullName.value = ""
         phone.value = ""
         addressLine1.value = ""
-        addressLine2.value = ""
-        city.value = ""
-        state.value = ""
         postcode.value = ""
         label.value = "Home"
         isDefault.value = false
         message.value = ""
     }
 
-    fun loadAddressForEdit(addressId: Long) {
+    fun editAddress(addressId: Long) {
         viewModelScope.launch {
             val address = repo.getAddressById(addressId) ?: return@launch
             editingAddressId = address.addressId
@@ -66,9 +60,6 @@ class AddressViewModel(
             fullName.value = address.fullName
             phone.value = address.phone
             addressLine1.value = address.addressLine1
-            addressLine2.value = address.addressLine2
-            city.value = address.city
-            state.value = address.state
             postcode.value = address.postcode
             label.value = address.label
             isDefault.value = address.isDefault
@@ -79,7 +70,7 @@ class AddressViewModel(
     fun save(onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             if (currentCustomerId.isEmpty()) {
-                currentCustomerId = authPrefs.getLoggedInEmail() ?: ""
+                currentCustomerId = authPrefs.getUserId() ?: ""
             }
 
             val address = AddressEntity(
@@ -88,9 +79,6 @@ class AddressViewModel(
                 fullName = fullName.value,
                 phone = phone.value,
                 addressLine1 = addressLine1.value,
-                addressLine2 = addressLine2.value,
-                city = city.value,
-                state = state.value,
                 postcode = postcode.value,
                 label = label.value,
                 isDefault = isDefault.value
@@ -112,4 +100,17 @@ class AddressViewModel(
             }
         }
     }
+
+    fun deleteAddress(addressId: Long, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val result = repo.deleteAddress(currentCustomerId , addressId)
+            if (result.isSuccess) {
+                loadAddresses()
+                onResult(true)
+            } else {
+                onResult(false)
+            }
+        }
+    }
+
 }
