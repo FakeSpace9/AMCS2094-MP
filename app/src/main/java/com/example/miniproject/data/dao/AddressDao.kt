@@ -1,6 +1,7 @@
 package com.example.miniproject.data.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -27,4 +28,11 @@ interface AddressDao {
 
     @Query("UPDATE addresses SET isDefault = 1 WHERE addressId = :addressId")
     suspend fun setDefault(addressId: Long)
+
+    @Delete
+    suspend fun deleteAddress(address: AddressEntity)
+
+    @Query("DELETE FROM addresses WHERE addressId = :id")
+    suspend fun deleteAddressById(id: Long)
+
 }

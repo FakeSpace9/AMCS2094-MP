@@ -11,9 +11,6 @@ data class AddressEntity(
     val fullName: String,
     val phone: String,
     val addressLine1: String,
-    val addressLine2: String,
-    val city: String,
-    val state: String,
     val postcode: String,
     val label: String = "Home",
     val isDefault: Boolean = false

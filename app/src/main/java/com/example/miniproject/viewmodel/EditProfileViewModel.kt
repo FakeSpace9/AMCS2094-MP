@@ -22,9 +22,9 @@ class EditProfileViewModel(
 
     fun loadCurrentUser() {
         viewModelScope.launch {
-            val userEmail = authPrefs.getLoggedInEmail() ?: return@launch
+            val userId = authPrefs.getUserId() ?: return@launch
 
-            val user = repo.getCustomerByEmail(userEmail)
+            val user = repo.getCustomerById(userId)
 
             name.value = user.name
             phone.value = user.phone
