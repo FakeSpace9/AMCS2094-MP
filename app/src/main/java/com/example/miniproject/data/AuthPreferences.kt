@@ -6,9 +6,6 @@ class AuthPreferences(context: Context) {
 
     private val prefs = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
 
-
-
-
     fun saveLogin(userType: String, uid: String) {
         prefs.edit().apply {
             putBoolean("isLoggedIn", true)

@@ -14,6 +14,10 @@ class EditProfileRepository(
         return customerDao.getCustomerByEmail(email)
     }
 
+    suspend fun getCustomerById(customerId: String): CustomerEntity {
+        return customerDao.getCustomerById(customerId)
+    }
+
     suspend fun updateProfile(customer: CustomerEntity): Result<Unit> {
         return try {
             // 1. Update Room

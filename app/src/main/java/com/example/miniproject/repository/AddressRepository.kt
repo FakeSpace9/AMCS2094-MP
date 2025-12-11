@@ -35,9 +35,6 @@ class AddressRepository(
                 "fullName" to finalAddress.fullName,
                 "phone" to finalAddress.phone,
                 "addressLine1" to finalAddress.addressLine1,
-                "addressLine2" to finalAddress.addressLine2,
-                "city" to finalAddress.city,
-                "state" to finalAddress.state,
                 "postcode" to finalAddress.postcode,
                 "label" to finalAddress.label,
                 "isDefault" to finalAddress.isDefault
@@ -66,6 +63,24 @@ class AddressRepository(
     suspend fun setDefaultAddress(customerId: String, addressId: Long) {
         addressDao.clearDefault(customerId)
         addressDao.setDefault(addressId)
-        // (Optional: also update Firestore default flag here)
     }
+
+    suspend fun deleteAddress(customerId: String, addressId: Long): Result<Unit> {
+        return try {
+            addressDao.deleteAddressById(addressId)
+
+            firestore.collection("customers")
+                .document(customerId)
+                .collection("addresses")
+                .document(addressId.toString())
+                .delete()
+                .await()
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+
 }
