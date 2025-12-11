@@ -1,7 +1,8 @@
-
+package com.example.miniproject.repository
 
 
 import com.example.miniproject.data.dao.AdminDao
+import com.example.miniproject.data.dao.CustomerDao
 import com.example.miniproject.data.entity.AdminEntity
 import com.example.miniproject.data.entity.CustomerEntity
 import com.google.firebase.auth.FirebaseAuth

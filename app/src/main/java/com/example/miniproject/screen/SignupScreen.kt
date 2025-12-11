@@ -1,7 +1,5 @@
 package com.example.miniproject.screen
 
-import SignupState
-import SignupViewModel
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -49,6 +47,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.miniproject.viewmodel.SignupState
+import com.example.miniproject.viewmodel.SignupViewModel
 
 @Composable
 fun SignupScreen(navController: NavController, viewModel: SignupViewModel) {

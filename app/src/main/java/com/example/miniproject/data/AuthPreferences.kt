@@ -6,9 +6,6 @@ class AuthPreferences(context: Context) {
 
     private val prefs = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
 
-
-
-
     fun saveLogin(email: String, userType: String) {
         prefs.edit().apply {
             putBoolean("isLoggedIn", true)
@@ -42,4 +39,5 @@ class AuthPreferences(context: Context) {
     fun getLoggedInEmail(): String? {
         return prefs.getString("email", null)
     }
+
 }

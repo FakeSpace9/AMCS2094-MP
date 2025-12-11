@@ -1,10 +1,14 @@
+package com.example.miniproject.data
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.example.miniproject.data.dao.AddressDao
 import com.example.miniproject.data.dao.AdminDao
+import com.example.miniproject.data.dao.CustomerDao
 import com.example.miniproject.data.dao.ProductDao
+import com.example.miniproject.data.entity.AddressEntity
 import com.example.miniproject.data.entity.AdminEntity
 import com.example.miniproject.data.entity.CustomerEntity
 import com.example.miniproject.data.entity.ProductEntity
@@ -17,10 +21,11 @@ import com.example.miniproject.data.entity.ProductVariantEntity
         AdminEntity::class,
         ProductEntity::class,
         ProductImageEntity::class,
-        ProductVariantEntity::class
+        ProductVariantEntity::class,
+        AddressEntity::class
 
     ],
-    version = 4,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -29,6 +34,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun AdminDao(): AdminDao
 
     abstract fun ProductDao(): ProductDao
+    abstract fun AddressDao(): AddressDao
 
     companion object {
         @Volatile

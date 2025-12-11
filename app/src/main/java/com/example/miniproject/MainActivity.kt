@@ -1,9 +1,5 @@
 package com.example.miniproject
 
-import AppDatabase
-import LoginRepository
-import SignupViewModel
-import SignupViewModelFactory
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -19,26 +15,39 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.miniproject.data.AppDatabase
 import com.example.miniproject.data.AuthPreferences
-import com.example.miniproject.data.SignupRepository
+import com.example.miniproject.repository.AddressRepository
+import com.example.miniproject.repository.EditProfileRepository
+import com.example.miniproject.repository.SignupRepository
 import com.example.miniproject.repository.ForgotPasswordRepository
+import com.example.miniproject.repository.LoginRepository
+import com.example.miniproject.screen.AddAddressScreen
+import com.example.miniproject.screen.AddressScreen
+import com.example.miniproject.screen.EditProfileScreen
 import com.example.miniproject.screen.ForgotPasswordScreen
 import com.example.miniproject.screen.HomeScreenWithDrawer
 import com.example.miniproject.screen.LoginScreen
+import com.example.miniproject.screen.ProfileScreen
 import com.example.miniproject.screen.SignupScreen
-import com.example.miniproject.screen.UserProfileScreen
 import com.example.miniproject.screen.admin.AdminDashboardScreen
 import com.example.miniproject.screen.admin.AdminLoginScreen
 import com.example.miniproject.screen.admin.AdminProfileScreen
 import com.example.miniproject.screen.admin.AdminSignupScreen
 import com.example.miniproject.ui.theme.MiniProjectTheme
 import com.example.miniproject.viewmodel.AddProductViewModelFactory
+import com.example.miniproject.viewmodel.AddressViewModel
+import com.example.miniproject.viewmodel.AddressViewModelFactory
+import com.example.miniproject.viewmodel.EditProfileViewModel
+import com.example.miniproject.viewmodel.EditProfileViewModelFactory
 import com.example.miniproject.viewmodel.ForgotPasswordViewModel
 import com.example.miniproject.viewmodel.ForgotPasswordViewModelFactory
 import com.example.miniproject.viewmodel.LoginViewModel
 import com.example.miniproject.viewmodel.LoginViewModelFactory
 import com.example.miniproject.viewmodel.ProductFormViewModel
 import com.example.miniproject.viewmodel.ProductSearchViewModel
+import com.example.miniproject.viewmodel.SignupViewModel
+import com.example.miniproject.viewmodel.SignupViewModelFactory
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
@@ -140,6 +149,27 @@ fun App(
     val productFormViewModel: ProductFormViewModel = viewModel(factory = productFactory)
     val productSearchViewModel: ProductSearchViewModel = viewModel(factory = productFactory)
 
+    val editProfileRepo = EditProfileRepository(
+        customerDao = db.CustomerDao(),
+        firestore = FirebaseFirestore.getInstance()
+    )
+
+    val editProfileViewModel: EditProfileViewModel = viewModel(
+        factory = EditProfileViewModelFactory(
+            editProfileRepo,
+            AuthPreferences(context)
+        )
+    )
+
+    val addressRepo = AddressRepository(
+        addressDao = db.AddressDao(),
+        firestore = FirebaseFirestore.getInstance()
+    )
+
+    val addressViewModel: AddressViewModel = viewModel(
+        factory = AddressViewModelFactory(addressRepo, AuthPreferences(context))
+    )
+
 
     // --- Navigation Host ---
     NavHost(navController = navController, startDestination = startDest) {
@@ -155,7 +185,7 @@ fun App(
             SignupScreen(navController = navController, viewModel = signupViewModel)
         }
         composable("profile") {
-            UserProfileScreen(navController = navController, viewModel = loginViewModel)
+            ProfileScreen(navController = navController, viewModel = loginViewModel)
         }
         composable(route = "forgot_password") {
             ForgotPasswordScreen(
@@ -196,5 +226,24 @@ fun App(
                 viewModel = loginViewModel
             )
         }
+
+        composable("edit") {
+            EditProfileScreen(
+                viewModel = editProfileViewModel,
+                navController = navController
+            )
+        }
+
+        composable("address") {
+            AddressScreen(
+                navController = navController,
+                viewModel = addressViewModel
+            )
+        }
+
+        composable("add_address") {
+            AddAddressScreen(viewModel = addressViewModel, navController = navController)
+        }
+
     }
 }

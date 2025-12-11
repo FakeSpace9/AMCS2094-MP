@@ -1,6 +1,5 @@
 package com.example.miniproject.viewmodel
 
-import LoginRepository
 import android.app.Activity
 import android.content.Intent
 import androidx.lifecycle.ViewModel
@@ -8,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.miniproject.data.AuthPreferences
 import com.example.miniproject.data.entity.AdminEntity
 import com.example.miniproject.data.entity.CustomerEntity
+import com.example.miniproject.repository.LoginRepository
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
