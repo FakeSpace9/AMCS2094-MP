@@ -160,7 +160,13 @@ fun TopBar(onMenuClick: () -> Unit, viewModel: LoginViewModel, navController: Na
         Spacer(modifier = Modifier.weight(1f))
         Text("Shop Name", fontSize = 20.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.weight(1f))
-        Icon(Icons.Default.ShoppingCart, contentDescription = "Cart")
+        Icon(Icons.Default.ShoppingCart, contentDescription = "Cart",modifier = Modifier.clickable {
+            if (isLoggedIn) {
+                navController.navigate("cart")
+            } else {
+                navController.navigate("Login")
+            }
+        })
         Spacer(modifier = Modifier.width(12.dp))
 
         // --- UPDATED PROFILE ICON LOGIC ---

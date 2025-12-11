@@ -33,8 +33,12 @@ class LoginViewModel(
 
             val result = repository.login(email, password)
             if (result.isSuccess) {
-                authPrefs.saveLogin(email, "customer")
-                _customerState.value = LoginStateCustomer.Success(result.getOrNull()!!)
+                val user = result.getOrNull()!!
+
+                // UPDATE: Save 'user.customerId'
+                authPrefs.saveLogin("customer", user.customerId)
+
+                _customerState.value = LoginStateCustomer.Success(user)
             } else {
                 _customerState.value =
                     LoginStateCustomer.Error(result.exceptionOrNull()?.message ?: "Login failed")
@@ -47,8 +51,12 @@ class LoginViewModel(
 
             val result = repository.adminLogin(email, password)
             if (result.isSuccess) {
-                authPrefs.saveLogin(email, "admin")
-                _adminState.value = LoginStateAdmin.Success(result.getOrNull()!!)
+                val admin = result.getOrNull()!!
+
+                // UPDATE: Save 'admin.adminId'
+                authPrefs.saveLogin("admin", admin.adminId)
+
+                _adminState.value = LoginStateAdmin.Success(admin)
             } else {
                 _adminState.value =
                     LoginStateAdmin.Error(result.exceptionOrNull()?.message ?: "Admin login failed")
@@ -94,7 +102,7 @@ class LoginViewModel(
             if (result.isSuccess) {
                 val user = result.getOrNull()!!
 
-                authPrefs.saveLogin(user.email, "customer")
+                authPrefs.saveLogin("customer", user.customerId)
 
                 _customerState.value = LoginStateCustomer.Success(user)
             } else {
@@ -102,23 +110,21 @@ class LoginViewModel(
             }
         }
     }
-    fun restoreAdminSession(admin: AdminEntity) {
-        _adminState.value = LoginStateAdmin.Success(admin)
-    }
 
-    fun restoreCustomerSession(customer: CustomerEntity) {
-        _customerState.value = LoginStateCustomer.Success(customer)
-    }
     fun checkSession() {
         viewModelScope.launch {
             if (!authPrefs.shouldAutoLogin()) return@launch
 
-            val email = authPrefs.getLoggedInEmail() ?: return@launch
+            // UPDATE: Get UID instead of just Email
+            val uid = authPrefs.getUserId() ?: return@launch
             val userType = authPrefs.getUserType() ?: return@launch
 
             if (userType == "customer") {
                 _customerState.value = LoginStateCustomer.Loading
-                val result = repository.getCustomerByEmail(email)
+
+                // UPDATE: Use getCustomerById(uid)
+                val result = repository.getCustomerById(uid)
+
                 _customerState.value = if (result.isSuccess) {
                     LoginStateCustomer.Success(result.getOrNull()!!)
                 } else {
@@ -126,7 +132,10 @@ class LoginViewModel(
                 }
             } else if (userType == "admin") {
                 _adminState.value = LoginStateAdmin.Loading
-                val result = repository.getAdminByEmail(email)
+
+                // UPDATE: Use getAdminById(uid)
+                val result = repository.getAdminById(uid)
+
                 _adminState.value = if (result.isSuccess) {
                     LoginStateAdmin.Success(result.getOrNull()!!)
                 } else {

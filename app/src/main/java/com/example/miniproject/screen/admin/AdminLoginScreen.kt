@@ -191,6 +191,13 @@ fun AdminLoginScreen(
             navController.navigate("admin_dashboard") {
                 popUpTo("Login") { inclusive = true }
             }
+        } else if (adminLoginState is LoginStateAdmin.Error) {
+            // --- NEW: Handle Error State ---
+            val errorMsg = (adminLoginState as LoginStateAdmin.Error).message
+            Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
+
+            // Optional: Clear the error state so it doesn't show again on rotation
+            loginViewModel.clearMessages()
         }
     }
 }
