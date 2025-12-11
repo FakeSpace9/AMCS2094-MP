@@ -6,11 +6,14 @@ class AuthPreferences(context: Context) {
 
     private val prefs = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
 
-    fun saveLogin(email: String, userType: String) {
+
+
+
+    fun saveLogin(userType: String, uid: String) {
         prefs.edit().apply {
             putBoolean("isLoggedIn", true)
-            putString("email", email)
             putString("userType", userType) // "customer" or "admin"
+            putString("uid", uid)
             putLong("loginTime", System.currentTimeMillis())
             apply()
         }
@@ -19,7 +22,9 @@ class AuthPreferences(context: Context) {
     fun getUserType(): String? {
         return prefs.getString("userType", null)
     }
-
+    fun getUserId(): String? {
+        return prefs.getString("uid", null)
+    }
     fun clearLogin() {
         prefs.edit().apply {
             putBoolean("isLoggedIn", false)
@@ -39,5 +44,4 @@ class AuthPreferences(context: Context) {
     fun getLoggedInEmail(): String? {
         return prefs.getString("email", null)
     }
-
 }

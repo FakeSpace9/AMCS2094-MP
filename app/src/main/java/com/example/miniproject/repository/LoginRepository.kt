@@ -150,7 +150,38 @@ class LoginRepository(
         }
     }
 
+    suspend fun getCustomerById(uid: String): Result<CustomerEntity> {
+        return try {
+            val snapshot = firestore.collection("customers").document(uid).get().await()
+            if (!snapshot.exists()) return Result.failure(Exception("User not found"))
 
+            val customer = CustomerEntity(
+                customerId = snapshot.id,
+                email = snapshot.getString("email") ?: "",
+                name = snapshot.getString("name") ?: "",
+                phone = snapshot.getString("phone") ?: ""
+            )
+            Result.success(customer)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    suspend fun getAdminById(uid: String): Result<AdminEntity> {
+        return try {
+            val snapshot = firestore.collection("admins").document(uid).get().await()
+            if (!snapshot.exists()) return Result.failure(Exception("Admin not found"))
+
+            val admin = AdminEntity(
+                adminId = snapshot.id,
+                email = snapshot.getString("email") ?: "",
+                name = snapshot.getString("name") ?: "",
+                phone = snapshot.getString("phone") ?: ""
+            )
+            Result.success(admin)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
     suspend fun getCustomerByEmail(email: String): Result<CustomerEntity> {
         return try {
             val snapshot = firestore.collection("customers")
