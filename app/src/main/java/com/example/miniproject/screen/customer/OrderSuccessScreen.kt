@@ -42,7 +42,7 @@ fun OrderSuccessScreen(
     val order by viewModel.order.collectAsState()
     val items by viewModel.orderItems.collectAsState()
 
-    // Load data on entry
+    // Load data
     LaunchedEffect(orderId) {
         viewModel.loadOrder(orderId)
     }

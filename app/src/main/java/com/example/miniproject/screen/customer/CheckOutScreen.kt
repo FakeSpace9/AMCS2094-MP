@@ -206,7 +206,7 @@ fun CheckOutScreen(
                         navController.navigate("address?selectMode=true")
                     }
                 )
-                Spacer(modifier = Modifier.height(100.dp)) // Spacing for bottom bar
+                Spacer(modifier = Modifier.height(100.dp))
             }
         }
     }
