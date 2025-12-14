@@ -1,4 +1,4 @@
-package com.example.miniproject.data
+package com.example.miniproject.repository
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser

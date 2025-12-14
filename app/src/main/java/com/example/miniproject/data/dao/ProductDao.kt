@@ -96,4 +96,10 @@ interface ProductDao {
         ORDER BY p.name ASC
     """)
     suspend fun searchProducts(query: String): List<ProductSearchResult>
+
+    @Query("SELECT * FROM product_variants WHERE sku = :sku LIMIT 1")
+    suspend fun getVariantBySku(sku: String): ProductVariantEntity?
+
+    @Query("UPDATE product_variants SET stockQuantity = stockQuantity - :quantity WHERE sku = :sku")
+    suspend fun decreaseStock(sku: String, quantity: Int)
 }

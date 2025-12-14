@@ -3,17 +3,17 @@ package com.example.miniproject.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.miniproject.data.AuthPreferences
-import com.example.miniproject.repository.LoginRepository
+import com.example.miniproject.repository.AddressRepository
 
-class LoginViewModelFactory(
-    private val repository: LoginRepository,
+class AddressViewModelFactory(
+    private val repo: AddressRepository,
     private val authPrefs: AuthPreferences
 ) : ViewModelProvider.Factory {
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(LoginViewModel::class.java)) {
+        if (modelClass.isAssignableFrom(AddressViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return LoginViewModel(repository, authPrefs) as T
+            return AddressViewModel(repo, authPrefs) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

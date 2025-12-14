@@ -169,7 +169,6 @@ fun TopBar(onMenuClick: () -> Unit, viewModel: LoginViewModel, navController: Na
         })
         Spacer(modifier = Modifier.width(12.dp))
 
-        // --- UPDATED PROFILE ICON LOGIC ---
         Icon(
             Icons.Default.AccountCircle,
             contentDescription = "Profile",

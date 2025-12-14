@@ -1,6 +1,9 @@
+package com.example.miniproject.viewmodel
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.miniproject.data.SignupRepository
+import com.example.miniproject.repository.SignupRepository
+import com.example.miniproject.viewmodel.SignupViewModel
 
 class SignupViewModelFactory(
     private val repository: SignupRepository
