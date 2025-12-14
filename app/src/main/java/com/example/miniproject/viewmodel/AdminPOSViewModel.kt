@@ -5,17 +5,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.miniproject.data.dao.ProductDao
-import com.example.miniproject.data.entity.OrderEntity
-import com.example.miniproject.data.entity.OrderItemEntity
 import com.example.miniproject.data.entity.POSOrderEntity
 import com.example.miniproject.data.entity.POSOrderItemEntity
-import com.example.miniproject.repository.OrderRepository
 import com.example.miniproject.repository.POSRepository
+import com.example.miniproject.repository.PromotionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.util.Date
 
-// Simple data class for Admin POS items (in-memory)
+// Updated Data Class with maxStock
 data class POSItem(
     val variantId: Int,
     val productId: String,
@@ -25,15 +24,22 @@ data class POSItem(
     val color: String,
     val price: Double,
     val imageUrl: String,
-    var quantity: Int
+    var quantity: Int,
+    val maxStock: Int // Added to track available stock
 )
 
 class AdminPOSViewModel(
     private val productDao: ProductDao,
-    private val posRepository: POSRepository
+    private val posRepository: POSRepository,
+    private val promotionRepository: PromotionRepository
 ) : ViewModel() {
 
-    // Transaction State
+    private val _subTotal = MutableStateFlow(0.0)
+    val subTotal: StateFlow<Double> = _subTotal
+
+    private val _discountAmount = MutableStateFlow(0.0)
+    val discountAmount: StateFlow<Double> = _discountAmount
+
     private val _posItems = mutableStateListOf<POSItem>()
     val posItems: List<POSItem> get() = _posItems
 
@@ -46,34 +52,46 @@ class AdminPOSViewModel(
     private val _checkoutState = MutableStateFlow<Result<Long>?>(null)
     val checkoutState: StateFlow<Result<Long>?> = _checkoutState
 
-    // Form Data
     var customerEmail = MutableStateFlow("")
     var promoCode = MutableStateFlow("")
     var selectedPaymentMethod = MutableStateFlow("")
+    val currentDate = Date()
 
     fun onScanSku(sku: String) {
         viewModelScope.launch {
             val cleanSku = sku.trim().uppercase()
 
-            // 1. Check if already in list
-            val existing = _posItems.find { it.sku == cleanSku }
-            if (existing != null) {
-                existing.quantity++
-                calculateTotal()
-                return@launch
-            }
-
-            // 2. Lookup in DB
+            // 1. Fetch Variant to check real-time stock
             val variant = productDao.getVariantBySku(cleanSku)
             if (variant == null) {
                 _message.value = "SKU not found: $sku"
                 return@launch
             }
 
+            // 2. Check if item is already in the cart
+            val existing = _posItems.find { it.sku == cleanSku }
+
+            if (existing != null) {
+                // Check if adding 1 more exceeds available stock
+                if (existing.quantity + 1 <= variant.stockQuantity) {
+                    existing.quantity++
+                    calculateTotal()
+                } else {
+                    _message.value = "Insufficient stock! Max available: ${variant.stockQuantity}"
+                }
+                return@launch
+            }
+
+            // 3. New Item - Check if any stock exists
+            if (variant.stockQuantity <= 0) {
+                _message.value = "Item is Out of Stock"
+                return@launch
+            }
+
             val product = productDao.getProductById(variant.productId)
             if (product == null) return@launch
 
-            // 3. Add to list
+            // 4. Add to list with maxStock
             _posItems.add(
                 POSItem(
                     variantId = variant.variantId,
@@ -84,7 +102,8 @@ class AdminPOSViewModel(
                     color = variant.colour,
                     price = variant.price,
                     imageUrl = product.imageUrl,
-                    quantity = 1
+                    quantity = 1,
+                    maxStock = variant.stockQuantity // Store the limit
                 )
             )
             calculateTotal()
@@ -95,6 +114,12 @@ class AdminPOSViewModel(
         if (newQty <= 0) {
             _posItems.remove(item)
         } else {
+            // Check against maxStock before increasing
+            if (newQty > item.maxStock) {
+                _message.value = "Cannot add more. Only ${item.maxStock} left in stock."
+                return
+            }
+
             val index = _posItems.indexOf(item)
             if (index != -1) {
                 _posItems[index] = item.copy(quantity = newQty)
@@ -104,7 +129,48 @@ class AdminPOSViewModel(
     }
 
     private fun calculateTotal() {
-        _totalAmount.value = _posItems.sumOf { it.price * it.quantity }
+        val sub = _posItems.sumOf { it.price * it.quantity }
+        _subTotal.value = sub
+
+        // Recalculate discount if a code is already applied
+        if (promoCode.value.isNotEmpty()) {
+            _totalAmount.value = sub - _discountAmount.value
+        } else {
+            _totalAmount.value = sub
+        }
+    }
+
+    fun applyPromoCode() {
+        val code = promoCode.value.trim().uppercase()
+        if (code.isEmpty()) return
+
+        viewModelScope.launch {
+            val promo = promotionRepository.getPromotionByCode(code)
+
+            if (promo == null) {
+                _message.value = "Invalid Promo Code"
+                _discountAmount.value = 0.0
+            } else {
+                // Check Date Validity
+                val now = System.currentTimeMillis()
+                if (now < promo.startDate || now > promo.endDate) {
+                    _message.value = "Promotion Expired"
+                    _discountAmount.value = 0.0
+                } else {
+                    // Calculate Discount
+                    val sub = _subTotal.value
+                    val discount = if (promo.isPercentage) {
+                        sub * (promo.discountRate / 100)
+                    } else {
+                        promo.discountRate // Fixed amount
+                    }
+
+                    _discountAmount.value = discount
+                    _totalAmount.value = (sub - discount).coerceAtLeast(0.0)
+                    _message.value = "Code Applied: ${promo.name}"
+                }
+            }
+        }
     }
 
     fun completeOrder(adminId: String) {
@@ -115,25 +181,21 @@ class AdminPOSViewModel(
         }
 
         viewModelScope.launch {
-            val total = _totalAmount.value
-            val discount = if(promoCode.value.isNotEmpty()) 0.0 else 0.0 // Logic later
-            val finalTotal = total - discount
-
-            // --- USE NEW POS ENTITY ---
             val order = POSOrderEntity(
                 cashierId = adminId,
                 customerEmail = customerEmail.value.ifBlank { null },
-                orderDate = System.currentTimeMillis(),
-                totalAmount = total,
-                discount = discount,
-                grandTotal = finalTotal,
+                orderDate = currentDate,
+                totalAmount = _subTotal.value,     // Store original subtotal
+                discount = _discountAmount.value,  // Store discount
+                grandTotal = _totalAmount.value,   // Store final total
                 paymentMethod = selectedPaymentMethod.value,
                 status = "Completed"
             )
 
+            // ... existing items mapping ...
             val orderItems = _posItems.map {
                 POSOrderItemEntity(
-                    posOrderId = 0, // Will be set by Room auto-gen
+                    posOrderId = 0,
                     productId = it.productId,
                     productName = it.name,
                     variantSku = it.sku,
@@ -144,7 +206,6 @@ class AdminPOSViewModel(
                 )
             }
 
-            // --- CALL POS REPOSITORY ---
             _checkoutState.value = posRepository.placePOSOrder(order, orderItems)
         }
     }
@@ -153,6 +214,8 @@ class AdminPOSViewModel(
 
     fun resetOrder() {
         _posItems.clear()
+        _subTotal.value = 0.0
+        _discountAmount.value = 0.0
         _totalAmount.value = 0.0
         customerEmail.value = ""
         promoCode.value = ""
@@ -160,4 +223,3 @@ class AdminPOSViewModel(
         _checkoutState.value = null
     }
 }
-

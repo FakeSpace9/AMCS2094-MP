@@ -29,6 +29,7 @@ import com.example.miniproject.repository.LoginRepository
 import com.example.miniproject.repository.OrderRepository
 import com.example.miniproject.repository.POSRepository
 import com.example.miniproject.repository.PaymentRepository
+import com.example.miniproject.repository.PromotionRepository
 import com.example.miniproject.screen.AddAddressScreen
 import com.example.miniproject.screen.AddEditPaymentScreen
 import com.example.miniproject.screen.AddressScreen
@@ -77,6 +78,10 @@ import com.example.miniproject.viewmodel.CheckoutViewModel
 import com.example.miniproject.viewmodel.CheckoutViewModelFactory
 import com.example.miniproject.viewmodel.OrderSuccessViewModel
 import com.example.miniproject.viewmodel.OrderSuccessViewModelFactory
+import com.example.miniproject.viewmodel.PromotionViewModel
+import com.example.miniproject.viewmodel.PromotionViewModelFactory
+import com.example.miniproject.viewmodel.SalesHistoryViewModel
+import com.example.miniproject.viewmodel.SalesHistoryViewModelFactory
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
@@ -221,6 +226,13 @@ fun App(
     val orderRepo = OrderRepository(
         orderDao = db.OrderDao(),
         cartDao = db.CartDao(),
+        productDao = db.ProductDao(), // PASS PRODUCT DAO HERE
+        firestore = FirebaseFirestore.getInstance()
+    )
+
+    val posRepository = POSRepository(
+        posOrderDao = db.POSOrderDao(),
+        productDao = db.ProductDao(), // PASS PRODUCT DAO HERE
         firestore = FirebaseFirestore.getInstance()
     )
 
@@ -238,18 +250,23 @@ fun App(
         factory = OrderSuccessViewModelFactory(orderRepo)
     )
 
-    val posRepository = POSRepository(
-        posOrderDao = db.POSOrderDao(),
-        firestore = FirebaseFirestore.getInstance()
-    )
+    val promoRepo = PromotionRepository(db.PromotionDao(), FirebaseFirestore.getInstance())
 
     val adminPOSViewModel: AdminPOSViewModel = viewModel(
         factory = AdminPOSViewModelFactory(
             productDao = db.ProductDao(),
-            posRepository = posRepository
+            posRepository = posRepository,
+            promotionRepository = promoRepo
         )
     )
 
+    val promoViewModel: PromotionViewModel = viewModel(
+        factory = PromotionViewModelFactory(promoRepo, AuthPreferences(context))
+    )
+
+    val salesHistoryViewModel: SalesHistoryViewModel = viewModel(
+        factory = SalesHistoryViewModelFactory(posRepository)
+    )
 
     // --- Navigation Host ---
     NavHost(navController = navController, startDestination = startDest) {
@@ -296,7 +313,9 @@ fun App(
                 navController = navController,
                 formViewModel = productFormViewModel,
                 searchViewModel = productSearchViewModel,
-                loginViewModel = loginViewModel
+                loginViewModel = loginViewModel,
+                promoViewModel = promoViewModel,
+                salesViewModel = salesHistoryViewModel
             )
         }
 

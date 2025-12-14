@@ -28,13 +28,18 @@ import androidx.navigation.NavController
 import com.example.miniproject.viewmodel.LoginViewModel
 import com.example.miniproject.viewmodel.ProductFormViewModel
 import com.example.miniproject.viewmodel.ProductSearchViewModel
+import androidx.compose.runtime.LaunchedEffect
+import com.example.miniproject.viewmodel.PromotionViewModel
+import com.example.miniproject.viewmodel.SalesHistoryViewModel
 
 @Composable
 fun AdminDashboardScreen(
     navController: NavController,
     formViewModel: ProductFormViewModel,
     searchViewModel: ProductSearchViewModel,
-    loginViewModel: LoginViewModel
+    loginViewModel: LoginViewModel,
+    promoViewModel: PromotionViewModel,
+    salesViewModel: SalesHistoryViewModel
 ) {
     var selectedItem by remember { mutableIntStateOf(3) } // Default to "Product" (index 3)
     val items = listOf(
@@ -43,6 +48,10 @@ fun AdminDashboardScreen(
         BottomNavItem("Orders", Icons.Default.ShoppingCart),
         BottomNavItem("Product", Icons.Default.Inventory)
     )
+
+    LaunchedEffect(Unit) {
+        salesViewModel.syncOrders()
+    }
 
     Scaffold(
         bottomBar = {
@@ -82,7 +91,7 @@ fun AdminDashboardScreen(
                 }
                 1 -> PlaceholderScreen("Analytics Feature Coming Soon")
                 2 -> PlaceholderScreen("Orders Feature Coming Soon")
-                3 -> AdminProductSection(navController, formViewModel, searchViewModel,loginViewModel)
+                3 -> AdminProductSection(navController, formViewModel, searchViewModel,loginViewModel,promoViewModel)
             }
         }
     }

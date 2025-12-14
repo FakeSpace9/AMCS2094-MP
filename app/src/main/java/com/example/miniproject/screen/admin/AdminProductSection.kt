@@ -37,6 +37,7 @@ import androidx.navigation.NavController
 import com.example.miniproject.viewmodel.LoginViewModel
 import com.example.miniproject.viewmodel.ProductFormViewModel
 import com.example.miniproject.viewmodel.ProductSearchViewModel
+import com.example.miniproject.viewmodel.PromotionViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,10 +45,11 @@ fun AdminProductSection(
     navController: NavController,
     formViewModel: ProductFormViewModel,
     searchViewModel: ProductSearchViewModel,
-    loginViewModel: LoginViewModel
+    loginViewModel: LoginViewModel,
+    promoViewModel: PromotionViewModel
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Search", "Entry", "Edit")
+    val tabs = listOf("Search", "Entry", "Edit", "Promo")
 
     Column(modifier = Modifier
         .fillMaxSize()
@@ -146,6 +148,10 @@ fun AdminProductSection(
                             searchViewModel.loadProducts() // Refresh the list to show changes
                         }
                     )
+                }
+
+                3 -> {
+                    AdminPromotionScreen(viewModel = promoViewModel)
                 }
             }
         }

@@ -7,7 +7,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -16,11 +18,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.miniproject.ui.theme.PurpleAccent
 import com.example.miniproject.viewmodel.AdminPOSViewModel
 import com.example.miniproject.viewmodel.POSItem
@@ -160,12 +165,20 @@ fun POSItemRow(item: POSItem, onInc: () -> Unit, onDec: () -> Unit) {
             modifier = Modifier.padding(12.dp).fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
+            // --- CHANGED: Replaced Placeholder Box with AsyncImage ---
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(item.imageUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = item.name,
+                contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(50.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Color.LightGray)
-            ) // Placeholder for image, or use AsyncImage if context available
+                    .background(Color.LightGray) // Background while loading
+            )
+            // ---------------------------------------------------------
 
             Spacer(Modifier.width(12.dp))
 
@@ -199,11 +212,26 @@ fun AdminPOSDetailsScreen(
 ) {
     val email by viewModel.customerEmail.collectAsState()
     val promo by viewModel.promoCode.collectAsState()
-    val total by viewModel.totalAmount.collectAsState()
+
+    val subTotal by viewModel.subTotal.collectAsState() // Original Total
+    val discount by viewModel.discountAmount.collectAsState() // Discount Amount
+    val total by viewModel.totalAmount.collectAsState() // Final Total
+
+    val items = viewModel.posItems // List of items
+
     val paymentMethod by viewModel.selectedPaymentMethod.collectAsState()
     val checkoutState by viewModel.checkoutState.collectAsState()
+    val message by viewModel.message.collectAsState() // For toast
 
     val context = LocalContext.current
+
+    // Show toast messages (like "Code Applied")
+    LaunchedEffect(message) {
+        message?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearMessage()
+        }
+    }
 
     LaunchedEffect(checkoutState) {
         checkoutState?.let { result ->
@@ -247,7 +275,32 @@ fun AdminPOSDetailsScreen(
                 .padding(padding)
                 .padding(16.dp)
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState()) // Enable scrolling for small screens
         ) {
+
+            // --- 1. Order Summary (List of items) ---
+            Text("Order Summary", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Spacer(Modifier.height(8.dp))
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF9FAFB)),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    items.forEach { item ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("${item.name} (x${item.quantity})", fontSize = 14.sp, color = Color.Gray)
+                            Text("RM ${String.format("%.2f", item.price * item.quantity)}", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.height(24.dp))
+
+            // --- 2. Customer Email ---
             Text("Customer Info", fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(
@@ -260,32 +313,80 @@ fun AdminPOSDetailsScreen(
 
             Spacer(Modifier.height(24.dp))
 
+            // --- 3. Promo Code Section (With Button) ---
             Text("Discount", fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(8.dp))
-            OutlinedTextField(
-                value = promo,
-                onValueChange = { viewModel.promoCode.value = it },
-                label = { Text("Promotion Code") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            )
-
-            Spacer(Modifier.height(24.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("Total Payable", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                Text("RM ${String.format("%.2f", total)}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = PurpleAccent)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = promo,
+                    onValueChange = { viewModel.promoCode.value = it },
+                    label = { Text("Promotion Code") },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true
+                )
+                Spacer(Modifier.width(8.dp))
+                Button(
+                    onClick = { viewModel.applyPromoCode() },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.height(56.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A1B2E))
+                ) {
+                    Text("Apply")
+                }
             }
 
             Spacer(Modifier.height(24.dp))
+
+            // --- 4. Payment Calculation (Subtotal, Discount, Total) ---
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFFF3F4F6), RoundedCornerShape(12.dp))
+                    .padding(16.dp)
+            ) {
+                // Subtotal
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Subtotal", color = Color.Gray)
+                    Text("RM ${String.format("%.2f", subTotal)}", fontWeight = FontWeight.Bold)
+                }
+
+                // Discount (Only show if there is one)
+                if (discount > 0) {
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Discount", color = Color(0xFF00C853)) // Green
+                        Text("- RM ${String.format("%.2f", discount)}", color = Color(0xFF00C853), fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                Divider(modifier = Modifier.padding(vertical = 12.dp))
+
+                // Total
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Total Payable", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text("RM ${String.format("%.2f", total)}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PurpleAccent)
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
+
+            // --- 5. Payment Method ---
             Text("Payment Method", fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(12.dp))
 
             val methods = listOf("Cash", "Credit Card", "E-Wallet / QR")
             methods.forEach { method ->
+                // ... (Same as before) ...
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -309,6 +410,9 @@ fun AdminPOSDetailsScreen(
                     Text(method, fontWeight = FontWeight.Medium)
                 }
             }
+
+            // Add extra space at bottom for scrolling above the button
+            Spacer(Modifier.height(80.dp))
         }
     }
 }
