@@ -20,4 +20,7 @@ interface PromotionDao {
 
     @Query("DELETE FROM promotions WHERE promotionId = :id")
     suspend fun deletePromotionById(id: String)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPromotions(promotions: List<PromotionEntity>)
 }

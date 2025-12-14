@@ -40,6 +40,7 @@ import com.example.miniproject.screen.LoginScreen
 import com.example.miniproject.screen.PaymentMethodScreen
 import com.example.miniproject.screen.ProfileScreen
 import com.example.miniproject.screen.SignupScreen
+import com.example.miniproject.screen.admin.AdminAnalyticsScreen
 import com.example.miniproject.screen.admin.AdminDashboardScreen
 import com.example.miniproject.screen.admin.AdminLoginScreen
 import com.example.miniproject.screen.admin.AdminPOSDetailsScreen
@@ -265,7 +266,9 @@ fun App(
     )
 
     val salesHistoryViewModel: SalesHistoryViewModel = viewModel(
-        factory = SalesHistoryViewModelFactory(posRepository)
+        factory = SalesHistoryViewModelFactory(
+            posRepository
+            )
     )
 
     // --- Navigation Host ---
@@ -435,5 +438,8 @@ fun App(
             AdminPOSSuccessScreen(navController = navController, viewModel = adminPOSViewModel)
         }
 
+        composable("admin_analytics") {
+            AdminAnalyticsScreen(navController = navController)
+        }
     }
 }
