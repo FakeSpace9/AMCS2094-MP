@@ -6,6 +6,8 @@ import com.example.miniproject.data.entity.POSOrderEntity
 import com.example.miniproject.data.entity.POSOrderItemEntity
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import java.util.Calendar
+import java.util.Date
 
 class POSRepository(
     private val posOrderDao: POSOrderDao,
@@ -86,6 +88,32 @@ class POSRepository(
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+
+    private fun getTodayRange(): Pair<Date, Date> {
+        val calendar = Calendar.getInstance()
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        val start = calendar.time
+
+        calendar.set(Calendar.HOUR_OF_DAY, 23)
+        calendar.set(Calendar.MINUTE, 59)
+        calendar.set(Calendar.SECOND, 59)
+        val end = calendar.time
+
+        return Pair(start, end)
+    }
+
+    suspend fun getTodaySales(): Double {
+        val (start, end) = getTodayRange()
+        return posOrderDao.getSalesInRange(start, end) ?: 0.0
+    }
+
+
+    suspend fun getTodayOrderCount(): Int {
+        val (start, end) = getTodayRange()
+        return posOrderDao.getOrderCountInRange(start, end)
     }
 
     suspend fun syncPOSOrders() {

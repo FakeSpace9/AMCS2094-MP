@@ -50,6 +50,8 @@ fun CartScreen(
     val total by viewModel.total.collectAsState()
     val promoCode by viewModel.promoCode.collectAsState()
     val promoCodeError by viewModel.promoCodeError.collectAsState()
+    val appliedDiscount by viewModel.discountAmount.collectAsState()
+    val currentPromoCode by viewModel.promoCode.collectAsState()
 
     Scaffold(
         topBar = {
@@ -73,7 +75,16 @@ fun CartScreen(
         },
                 bottomBar = {
                     if(cartItems.isNotEmpty()){
-                        CheckoutBottomBar(total = total, onCheckoutClick = { navController.navigate("checkout") })
+                        CheckoutBottomBar(
+                            total = total,
+                            onCheckoutClick = {
+                                if(appliedDiscount> 0 && currentPromoCode.isNotEmpty()){
+                                    navController.navigate("checkout?promo=$currentPromoCode")
+                                }else{
+                                    navController.navigate("checkout")
+                                }
+                            }
+                        )
                     }
                 },
                 containerColor = Color(0xFFF9FAFB)

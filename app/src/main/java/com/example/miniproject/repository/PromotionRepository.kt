@@ -70,6 +70,34 @@ class PromotionRepository(
         }
     }
 
+    suspend fun syncPromotions() {
+        try {
+            val snapshot = firestore.collection("promotions").get().await()
+            val promotions = snapshot.documents.mapNotNull { doc ->
+                // Map Firestore fields back to Entity
+                val id = doc.getString("promotionId") ?: return@mapNotNull null
+
+                PromotionEntity(
+                    promotionId = id,
+                    adminId = doc.getString("adminId") ?: "",
+                    code = doc.getString("code") ?: "",
+                    name = doc.getString("name") ?: "",
+                    description = doc.getString("description") ?: "",
+                    discountRate = doc.getDouble("discountRate") ?: 0.0,
+                    startDate = doc.getLong("startDate") ?: 0L,
+                    endDate = doc.getLong("endDate") ?: 0L,
+                    isPercentage = doc.getBoolean("isPercentage") ?: true
+                )
+            }
+
+            if (promotions.isNotEmpty()) {
+                promotionDao.insertPromotions(promotions)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     suspend fun deletePromotion(promoId: String) {
         try {
             promotionDao.deletePromotionById(promoId)

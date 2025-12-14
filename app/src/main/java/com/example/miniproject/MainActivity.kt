@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
@@ -40,6 +41,7 @@ import com.example.miniproject.screen.LoginScreen
 import com.example.miniproject.screen.PaymentMethodScreen
 import com.example.miniproject.screen.ProfileScreen
 import com.example.miniproject.screen.SignupScreen
+import com.example.miniproject.screen.admin.AdminAnalyticsScreen
 import com.example.miniproject.screen.admin.AdminDashboardScreen
 import com.example.miniproject.screen.admin.AdminLoginScreen
 import com.example.miniproject.screen.admin.AdminPOSDetailsScreen
@@ -205,9 +207,12 @@ fun App(
         factory = AddressViewModelFactory(addressRepo, AuthPreferences(context))
     )
 
+    val promoRepo = PromotionRepository(db.PromotionDao(), FirebaseFirestore.getInstance())
+
+
     val cartRepository = CartRepository(db.CartDao())
     val cartViewModel: CartViewModel = viewModel(
-        factory = CartViewModelFactory(cartRepository)
+        factory = CartViewModelFactory(cartRepository, promoRepo)
     )
 
     val productDetailViewModel: ProductDetailScreenViewModel = viewModel(
@@ -242,6 +247,7 @@ fun App(
             addressRepository = addressRepo,
             paymentRepository = paymentRepo,
             orderRepository = orderRepo,
+            promotionRepository = promoRepo,
             authPreferences = AuthPreferences(context)
         )
     )
@@ -250,7 +256,6 @@ fun App(
         factory = OrderSuccessViewModelFactory(orderRepo)
     )
 
-    val promoRepo = PromotionRepository(db.PromotionDao(), FirebaseFirestore.getInstance())
 
     val adminPOSViewModel: AdminPOSViewModel = viewModel(
         factory = AdminPOSViewModelFactory(
@@ -265,7 +270,9 @@ fun App(
     )
 
     val salesHistoryViewModel: SalesHistoryViewModel = viewModel(
-        factory = SalesHistoryViewModelFactory(posRepository)
+        factory = SalesHistoryViewModelFactory(
+            posRepository
+            )
     )
 
     // --- Navigation Host ---
@@ -406,7 +413,19 @@ fun App(
             )
         }
         //checkout
-        composable("checkout") {
+        composable(
+            route = "checkout?promo={promo}",
+            arguments = listOf(navArgument("promo") { defaultValue = "" })
+        ) { backStackEntry ->
+            val promoArg = backStackEntry.arguments?.getString("promo") ?: ""
+
+            // Pass the code to CheckoutViewModel immediately
+            LaunchedEffect(promoArg) {
+                if (promoArg.isNotEmpty()) {
+                    checkoutViewModel.setInitialPromoCode(promoArg)
+                }
+            }
+
             CheckOutScreen(
                 navController = navController,
                 viewModel = checkoutViewModel
@@ -435,5 +454,8 @@ fun App(
             AdminPOSSuccessScreen(navController = navController, viewModel = adminPOSViewModel)
         }
 
+        composable("admin_analytics") {
+            AdminAnalyticsScreen(navController = navController)
+        }
     }
 }
