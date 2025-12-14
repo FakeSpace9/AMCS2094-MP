@@ -26,6 +26,8 @@ import com.example.miniproject.repository.EditProfileRepository
 import com.example.miniproject.repository.SignupRepository
 import com.example.miniproject.repository.ForgotPasswordRepository
 import com.example.miniproject.repository.LoginRepository
+import com.example.miniproject.repository.OrderRepository
+import com.example.miniproject.repository.POSRepository
 import com.example.miniproject.repository.PaymentRepository
 import com.example.miniproject.screen.AddAddressScreen
 import com.example.miniproject.screen.AddEditPaymentScreen
@@ -39,15 +41,22 @@ import com.example.miniproject.screen.ProfileScreen
 import com.example.miniproject.screen.SignupScreen
 import com.example.miniproject.screen.admin.AdminDashboardScreen
 import com.example.miniproject.screen.admin.AdminLoginScreen
+import com.example.miniproject.screen.admin.AdminPOSDetailsScreen
+import com.example.miniproject.screen.admin.AdminPOSScanScreen
+import com.example.miniproject.screen.admin.AdminPOSSuccessScreen
 import com.example.miniproject.screen.admin.AdminProfileScreen
 import com.example.miniproject.screen.admin.AdminSignupScreen
 import com.example.miniproject.screen.customer.CartScreen
+import com.example.miniproject.screen.customer.CheckOutScreen
 import com.example.miniproject.screen.customer.NewArrivalScreen
+import com.example.miniproject.screen.customer.OrderSuccessScreen
 import com.example.miniproject.screen.customer.ProductDetailScreen
 import com.example.miniproject.ui.theme.MiniProjectTheme
 import com.example.miniproject.viewmodel.AddProductViewModelFactory
 import com.example.miniproject.viewmodel.AddressViewModel
 import com.example.miniproject.viewmodel.AddressViewModelFactory
+import com.example.miniproject.viewmodel.AdminPOSViewModel
+import com.example.miniproject.viewmodel.AdminPOSViewModelFactory
 import com.example.miniproject.viewmodel.CartViewModel
 import com.example.miniproject.viewmodel.CartViewModelFactory
 import com.example.miniproject.viewmodel.EditProfileViewModel
@@ -64,11 +73,16 @@ import com.example.miniproject.viewmodel.ProductFormViewModel
 import com.example.miniproject.viewmodel.ProductSearchViewModel
 import com.example.miniproject.viewmodel.SignupViewModel
 import com.example.miniproject.viewmodel.SignupViewModelFactory
+import com.example.miniproject.viewmodel.CheckoutViewModel
+import com.example.miniproject.viewmodel.CheckoutViewModelFactory
+import com.example.miniproject.viewmodel.OrderSuccessViewModel
+import com.example.miniproject.viewmodel.OrderSuccessViewModelFactory
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
+import kotlinx.serialization.builtins.BooleanArraySerializer
 
 class MainActivity : ComponentActivity() {
 
@@ -204,6 +218,37 @@ fun App(
         factory = PaymentViewModelFactory(paymentRepo, AuthPreferences(context))
     )
 
+    val orderRepo = OrderRepository(
+        orderDao = db.OrderDao(),
+        cartDao = db.CartDao(),
+        firestore = FirebaseFirestore.getInstance()
+    )
+
+    val checkoutViewModel: CheckoutViewModel = viewModel(
+        factory = CheckoutViewModelFactory(
+            cartRepository = cartRepository,
+            addressRepository = addressRepo,
+            paymentRepository = paymentRepo,
+            orderRepository = orderRepo,
+            authPreferences = AuthPreferences(context)
+        )
+    )
+
+    val orderSuccessViewModel: OrderSuccessViewModel = viewModel(
+        factory = OrderSuccessViewModelFactory(orderRepo)
+    )
+
+    val posRepository = POSRepository(
+        posOrderDao = db.POSOrderDao(),
+        firestore = FirebaseFirestore.getInstance()
+    )
+
+    val adminPOSViewModel: AdminPOSViewModel = viewModel(
+        factory = AdminPOSViewModelFactory(
+            productDao = db.ProductDao(),
+            posRepository = posRepository
+        )
+    )
 
 
     // --- Navigation Host ---
@@ -269,10 +314,15 @@ fun App(
             )
         }
 
-        composable("address") {
+        composable(
+            route = "address?selectMode={selectMode}",
+            arguments = listOf(navArgument("selectMode") { defaultValue = false })
+        ) { backStackEntry ->
+            val selectMode = backStackEntry.arguments?.getBoolean("selectMode") ?: false
             AddressScreen(
                 navController = navController,
-                viewModel = addressViewModel
+                viewModel = addressViewModel,
+                selectMode = selectMode
             )
         }
 
@@ -309,10 +359,15 @@ fun App(
             )
         }
 
-        composable("payment") {
+        composable(
+            route = "payment?selectMode={selectMode}",
+            arguments = listOf(navArgument("selectMode") { defaultValue = false })
+        ) { backStackEntry ->
+            val selectMode = backStackEntry.arguments?.getBoolean("selectMode") ?: false
             PaymentMethodScreen(
                 navController = navController,
-                viewModel = paymentViewModel
+                viewModel = paymentViewModel,
+                selectMode = selectMode
             )
         }
 
@@ -331,5 +386,35 @@ fun App(
                 viewModel = paymentViewModel
             )
         }
+        //checkout
+        composable("checkout") {
+            CheckOutScreen(
+                navController = navController,
+                viewModel = checkoutViewModel
+            )
+        }
+
+        composable(
+            route = "order_success/{orderId}",
+            arguments = listOf(navArgument("orderId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val orderId = backStackEntry.arguments?.getLong("orderId") ?: 0L
+            OrderSuccessScreen(
+                navController = navController,
+                orderId = orderId,
+                viewModel = orderSuccessViewModel
+            )
+        }
+
+        composable("admin_pos_scan") {
+            AdminPOSScanScreen(navController = navController, viewModel = adminPOSViewModel)
+        }
+        composable("admin_pos_details") {
+            AdminPOSDetailsScreen(navController = navController, viewModel = adminPOSViewModel)
+        }
+        composable("admin_pos_success") {
+            AdminPOSSuccessScreen(navController = navController, viewModel = adminPOSViewModel)
+        }
+
     }
 }

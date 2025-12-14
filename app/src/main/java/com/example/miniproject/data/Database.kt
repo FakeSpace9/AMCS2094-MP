@@ -8,12 +8,18 @@ import com.example.miniproject.data.dao.AddressDao
 import com.example.miniproject.data.dao.AdminDao
 import com.example.miniproject.data.dao.CartDao
 import com.example.miniproject.data.dao.CustomerDao
+import com.example.miniproject.data.dao.OrderDao
+import com.example.miniproject.data.dao.POSOrderDao
 import com.example.miniproject.data.dao.PaymentDao
 import com.example.miniproject.data.dao.ProductDao
 import com.example.miniproject.data.entity.AddressEntity
 import com.example.miniproject.data.entity.AdminEntity
 import com.example.miniproject.data.entity.CartEntity
 import com.example.miniproject.data.entity.CustomerEntity
+import com.example.miniproject.data.entity.OrderEntity
+import com.example.miniproject.data.entity.OrderItemEntity
+import com.example.miniproject.data.entity.POSOrderEntity
+import com.example.miniproject.data.entity.POSOrderItemEntity
 import com.example.miniproject.data.entity.PaymentEntity
 import com.example.miniproject.data.entity.ProductEntity
 import com.example.miniproject.data.entity.ProductImageEntity
@@ -28,10 +34,14 @@ import com.example.miniproject.data.entity.ProductVariantEntity
         ProductVariantEntity::class,
         AddressEntity::class,
         CartEntity::class,
-        PaymentEntity::class
+        PaymentEntity::class ,
+        OrderEntity::class,
+        OrderItemEntity::class,
+        POSOrderEntity::class,
+        POSOrderItemEntity::class
 
     ],
-    version = 7,
+    version = 9,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -43,6 +53,11 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun AddressDao(): AddressDao
     abstract fun CartDao(): CartDao
     abstract fun PaymentDao(): PaymentDao
+
+    abstract fun OrderDao(): OrderDao
+
+    abstract fun POSOrderDao(): POSOrderDao
+
 
     companion object {
         @Volatile

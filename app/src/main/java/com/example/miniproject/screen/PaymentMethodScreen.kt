@@ -24,7 +24,8 @@ import com.example.miniproject.viewmodel.PaymentViewModel
 @Composable
 fun PaymentMethodScreen(
     navController: NavController,
-    viewModel: PaymentViewModel
+    viewModel: PaymentViewModel,
+    selectMode: Boolean
 ) {
     val payments by viewModel.payments.collectAsState()
 
@@ -65,8 +66,15 @@ fun PaymentMethodScreen(
             PaymentItem(
                 payment = payment,
                 onClick = {
-                    viewModel.editPayment(payment.paymentId)
-                    navController.navigate("edit_payment")
+                    if (selectMode) {
+                        // SELECTION LOGIC
+                        navController.previousBackStackEntry?.savedStateHandle?.set("selected_payment_id", payment.paymentId)
+                        navController.popBackStack()
+                    } else {
+                        // EDIT LOGIC
+                        viewModel.editPayment(payment.paymentId)
+                        navController.navigate("edit_payment")
+                    }
                 },
                 onDelete = {
                     viewModel.delete(payment.paymentId) {}

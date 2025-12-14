@@ -2,6 +2,8 @@ package com.example.miniproject.data.dao
 
 import androidx.room.*
 import com.example.miniproject.data.entity.PaymentEntity
+import com.example.miniproject.data.entity.ProductEntity
+import com.example.miniproject.data.entity.ProductVariantEntity
 
 @Dao
 interface PaymentDao {
@@ -26,4 +28,6 @@ interface PaymentDao {
 
     @Query("UPDATE payment SET isDefault = 1 WHERE paymentId = :id")
     suspend fun setDefault(id: Long)
+
+
 }

@@ -71,7 +71,15 @@ fun AdminDashboardScreen(
                 .padding(innerPadding)
         ) {
             when (selectedItem) {
-                0 -> PlaceholderScreen("POS Feature Coming Soon")
+                0 -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                        androidx.compose.material3.Button(
+                            onClick = { navController.navigate("admin_pos_scan") }
+                        ) {
+                            Text("Start New POS Session")
+                        }
+                    }
+                }
                 1 -> PlaceholderScreen("Analytics Feature Coming Soon")
                 2 -> PlaceholderScreen("Orders Feature Coming Soon")
                 3 -> AdminProductSection(navController, formViewModel, searchViewModel,loginViewModel)

@@ -1,6 +1,5 @@
 package com.example.miniproject.screen
 
-import android.R.attr.onClick
 import android.R.attr.top
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,9 +10,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -58,7 +54,7 @@ fun AddressScreen(
                 modifier = Modifier
                     .size(28.dp)
                     .clickable {
-                        navController.popBackStack()
+                        navController.navigate("profile")
                     }
             )
             Spacer(modifier = Modifier.width(16.dp))
@@ -95,11 +91,8 @@ fun AddressScreen(
                     AddressItem(
                         address = address,
                         onClick = {
-                            viewModel.editAddress(address.addressId)
+                            viewModel.loadAddressForEdit(address.addressId)
                             navController.navigate("edit_address")
-                        },
-                        onDelete = {
-                            viewModel.deleteAddress(address.addressId) {}
                         }
                     )
                 }
@@ -130,58 +123,22 @@ fun AddAddressButton(onClick: () -> Unit) {
 }
 
 @Composable
-fun AddressItem(
-    address: AddressEntity,
-    onClick: () -> Unit,
-    onDelete: () -> Unit
-) {
-    Card(
+fun AddressItem(address: AddressEntity, onClick: () -> Unit) {
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            .padding(vertical = 8.dp)
+            .background(Color(0xF0F0F0), RoundedCornerShape(10.dp))
+            .padding(16.dp)
+            .clickable { onClick() }
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onClick() }
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text("${address.fullName} • ${address.phone}", fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(address.addressLine1)
-                Text(address.postcode)
-
-                if (address.isDefault) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Box(
-                        modifier = Modifier
-                            .background(Color.Red.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text(
-                            "Default Address",
-                            color = Color.Red,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-            }
-
-            Icon(
-                imageVector = Icons.Default.Delete,
-                contentDescription = "Delete Address",
-                tint = Color.Red,
-                modifier = Modifier
-                    .size(28.dp)
-                    .clickable { onDelete() }
-            )
+        Text("${address.fullName} • ${address.phone}", fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(4.dp))
+        Text("${address.addressLine1}, ${address.addressLine2}")
+        Text("${address.city}, ${address.state} ${address.postcode}")
+        if (address.isDefault) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text("Default Address", color = Color.Red, fontSize = 12.sp)
         }
     }
 }
-
