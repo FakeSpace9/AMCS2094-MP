@@ -27,6 +27,7 @@ import com.example.miniproject.repository.SignupRepository
 import com.example.miniproject.repository.ForgotPasswordRepository
 import com.example.miniproject.repository.LoginRepository
 import com.example.miniproject.repository.OrderRepository
+import com.example.miniproject.repository.POSRepository
 import com.example.miniproject.repository.PaymentRepository
 import com.example.miniproject.screen.AddAddressScreen
 import com.example.miniproject.screen.AddEditPaymentScreen
@@ -40,6 +41,9 @@ import com.example.miniproject.screen.ProfileScreen
 import com.example.miniproject.screen.SignupScreen
 import com.example.miniproject.screen.admin.AdminDashboardScreen
 import com.example.miniproject.screen.admin.AdminLoginScreen
+import com.example.miniproject.screen.admin.AdminPOSDetailsScreen
+import com.example.miniproject.screen.admin.AdminPOSScanScreen
+import com.example.miniproject.screen.admin.AdminPOSSuccessScreen
 import com.example.miniproject.screen.admin.AdminProfileScreen
 import com.example.miniproject.screen.admin.AdminSignupScreen
 import com.example.miniproject.screen.customer.CartScreen
@@ -51,6 +55,8 @@ import com.example.miniproject.ui.theme.MiniProjectTheme
 import com.example.miniproject.viewmodel.AddProductViewModelFactory
 import com.example.miniproject.viewmodel.AddressViewModel
 import com.example.miniproject.viewmodel.AddressViewModelFactory
+import com.example.miniproject.viewmodel.AdminPOSViewModel
+import com.example.miniproject.viewmodel.AdminPOSViewModelFactory
 import com.example.miniproject.viewmodel.CartViewModel
 import com.example.miniproject.viewmodel.CartViewModelFactory
 import com.example.miniproject.viewmodel.EditProfileViewModel
@@ -232,6 +238,18 @@ fun App(
         factory = OrderSuccessViewModelFactory(orderRepo)
     )
 
+    val posRepository = POSRepository(
+        posOrderDao = db.POSOrderDao(),
+        firestore = FirebaseFirestore.getInstance()
+    )
+
+    val adminPOSViewModel: AdminPOSViewModel = viewModel(
+        factory = AdminPOSViewModelFactory(
+            productDao = db.ProductDao(),
+            posRepository = posRepository
+        )
+    )
+
 
     // --- Navigation Host ---
     NavHost(navController = navController, startDestination = startDest) {
@@ -387,5 +405,16 @@ fun App(
                 viewModel = orderSuccessViewModel
             )
         }
+
+        composable("admin_pos_scan") {
+            AdminPOSScanScreen(navController = navController, viewModel = adminPOSViewModel)
+        }
+        composable("admin_pos_details") {
+            AdminPOSDetailsScreen(navController = navController, viewModel = adminPOSViewModel)
+        }
+        composable("admin_pos_success") {
+            AdminPOSSuccessScreen(navController = navController, viewModel = adminPOSViewModel)
+        }
+
     }
 }
