@@ -4,22 +4,26 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockClock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -62,8 +66,18 @@ fun AdminSignupScreen(navController: NavController, viewModel: SignupViewModel) 
     var confirmPassword by remember { mutableStateOf("") }
     var adminCode by remember { mutableStateOf("") }
 
+    // --- PASSWORD VALIDATION LOGIC ---
+    val hasLength = password.length >= 6
+    val hasUppercase = password.any { it.isUpperCase() }
+    val hasLowercase = password.any { it.isLowerCase() }
+    val hasDigit = password.any { it.isDigit() }
+    val hasSymbol = password.any { !it.isLetterOrDigit() }
+    val isPasswordValid = hasLength && hasUppercase && hasLowercase && hasDigit && hasSymbol
+    // --------------------------------
+
     // UI Colors
     val primaryColor = Color(0xFF573BFF)
+    val successColor = Color(0xFF4CAF50) // Green
 
     Box(
         modifier = Modifier
@@ -156,6 +170,17 @@ fun AdminSignupScreen(navController: NavController, viewModel: SignupViewModel) 
                 keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = primaryColor, focusedLabelColor = primaryColor)
             )
+
+            // --- PASSWORD STRENGTH INDICATORS ---
+            if (password.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Column(modifier = Modifier.fillMaxWidth().padding(start = 8.dp)) {
+                    PasswordRequirementRow("At least 6 characters", hasLength, successColor)
+                    PasswordRequirementRow("Small & Capital Letters", hasLowercase && hasUppercase, successColor)
+                    PasswordRequirementRow("At least one number (0-9)", hasDigit, successColor)
+                    PasswordRequirementRow("At least one symbol (!@#$)", hasSymbol, successColor)
+                }
+            }
             Spacer(modifier = Modifier.height(16.dp))
 
             // Confirm Password
@@ -199,6 +224,8 @@ fun AdminSignupScreen(navController: NavController, viewModel: SignupViewModel) 
                         confirmPassword.isBlank() || adminCode.isBlank()
                     ) {
                         Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
+                    } else if (!isPasswordValid) {
+                        Toast.makeText(context, "Password does not meet requirements", Toast.LENGTH_SHORT).show()
                     } else if (password != confirmPassword) {
                         Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
                     } else if (adminCode != "ADMIN123") {
@@ -252,5 +279,27 @@ fun AdminSignupScreen(navController: NavController, viewModel: SignupViewModel) 
             }
             else -> {}
         }
+    }
+}
+
+// --- HELPER COMPOSABLE ---
+@Composable
+fun PasswordRequirementRow(text: String, isMet: Boolean, successColor: Color) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(vertical = 2.dp)
+    ) {
+        Icon(
+            imageVector = if (isMet) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+            contentDescription = null,
+            tint = if (isMet) successColor else Color.Gray,
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = text,
+            fontSize = 12.sp,
+            color = if (isMet) successColor else Color.Gray
+        )
     }
 }
