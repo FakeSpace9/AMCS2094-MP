@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import com.example.miniproject.data.entity.BestSellerItem
 import com.example.miniproject.data.entity.POSOrderEntity
 import com.example.miniproject.data.entity.POSOrderItemEntity
 import java.util.Date
@@ -29,34 +30,42 @@ interface POSOrderDao {
     @Query("DELETE FROM pos_order_items WHERE posOrderId IN (:orderIds)")
     suspend fun deleteItemsForOrders(orderIds: List<Long>)
 
-    @Query("SELECT SUM(grandTotal) FROM pos_orders WHERE orderDate BETWEEN :startDate AND :endDate")
-    suspend fun getSalesInRange(startDate: Date, endDate: Date): Double?
-
-    @Query("""
-        SELECT SUM(i.quantity) 
-        FROM pos_order_items i 
-        INNER JOIN pos_orders o ON i.posOrderId = o.id 
-        WHERE o.orderDate BETWEEN :startDate AND :endDate
-    """)
-    suspend fun getItemsSoldInRange(startDate: Date, endDate: Date): Int?
-
-    @Query("SELECT COUNT(*) FROM pos_orders WHERE orderDate BETWEEN :startDate AND :endDate")
-    suspend fun getOrderCountInRange(startDate: Date, endDate: Date): Int
-
     @Transaction
     suspend fun syncPOSData(orders: List<POSOrderEntity>, items: List<POSOrderItemEntity>) {
-        // 1. Insert/Update Orders
         if (orders.isNotEmpty()) {
             insertOrders(orders)
-
-            // 2. Clear existing items for these orders to prevent duplicates
             val orderIds = orders.map { it.id }
             deleteItemsForOrders(orderIds)
         }
-
-        // 3. Insert fresh items from Firestore
         if (items.isNotEmpty()) {
             insertOrderItems(items)
         }
     }
+
+    @Query("SELECT COALESCE(SUM(grandTotal), 0.0) FROM pos_orders WHERE orderDate BETWEEN :start AND :end")
+    suspend fun getRevenueInRange(start: Date, end: Date): Double
+
+    @Query("SELECT COUNT(*) FROM pos_orders WHERE orderDate BETWEEN :start AND :end")
+    suspend fun getOrderCountInRange(start: Date, end: Date): Int
+
+    @Query("""
+        SELECT COALESCE(SUM(i.quantity), 0)
+        FROM pos_order_items i
+        JOIN pos_orders o ON i.posOrderId = o.id
+        WHERE o.orderDate BETWEEN :start AND :end
+    """)
+    suspend fun getItemsSoldInRange(start: Date, end: Date): Int
+
+    // Note: We join with 'products' table to get the Image URL
+    @Query("""
+        SELECT i.productName as name, p.imageUrl, SUM(i.quantity) as totalQty, SUM(i.price * i.quantity) as totalPrice
+        FROM pos_order_items i
+        JOIN pos_orders o ON i.posOrderId = o.id
+        LEFT JOIN products p ON i.productId = p.productId
+        WHERE o.orderDate BETWEEN :start AND :end
+        GROUP BY i.productId
+        ORDER BY totalQty DESC
+        LIMIT 3
+    """)
+    suspend fun getBestSellersInRange(start: Date, end: Date): List<BestSellerItem>
 }

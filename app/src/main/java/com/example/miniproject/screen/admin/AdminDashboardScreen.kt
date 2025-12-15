@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.miniproject.viewmodel.AnalyticsViewModel
 import com.example.miniproject.viewmodel.LoginViewModel
 import com.example.miniproject.viewmodel.ProductFormViewModel
 import com.example.miniproject.viewmodel.ProductSearchViewModel
@@ -32,7 +33,8 @@ fun AdminDashboardScreen(
     searchViewModel: ProductSearchViewModel,
     loginViewModel: LoginViewModel,
     promoViewModel: PromotionViewModel,
-    salesViewModel: SalesHistoryViewModel
+    salesViewModel: SalesHistoryViewModel,
+    analyticsViewModel: AnalyticsViewModel
 ) {
     var selectedItem by remember { mutableIntStateOf(0) } // Default to POS (index 0) to see stats immediately
     val items = listOf(
@@ -140,7 +142,7 @@ fun AdminDashboardScreen(
                         }
                     }
                 }
-                1 -> PlaceholderScreen("Analytics Feature Coming Soon")
+                1 -> AdminAnalyticsScreen(navController, analyticsViewModel)
                 2 -> PlaceholderScreen("Orders Feature Coming Soon")
                 3 -> AdminProductSection(navController, formViewModel, searchViewModel, loginViewModel, promoViewModel)
             }

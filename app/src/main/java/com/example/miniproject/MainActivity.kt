@@ -90,6 +90,10 @@ import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
+import com.example.miniproject.repository.AnalyticsRepository
+import com.example.miniproject.viewmodel.AnalyticsViewModel
+import com.example.miniproject.viewmodel.AnalyticsViewModelFactory
+import com.example.miniproject.screen.admin.AdminAnalyticsScreen
 import kotlinx.serialization.builtins.BooleanArraySerializer
 
 class MainActivity : ComponentActivity() {
@@ -279,6 +283,17 @@ fun App(
             )
     )
 
+    val analyticsRepo = AnalyticsRepository(
+        orderDao = db.OrderDao(),
+        posDao = db.POSOrderDao(),
+        orderRepo = orderRepo,
+        posRepo = posRepository
+    )
+
+    val analyticsViewModel: AnalyticsViewModel = viewModel(
+        factory = AnalyticsViewModelFactory(analyticsRepo)
+    )
+
     // --- Navigation Host ---
     NavHost(navController = navController, startDestination = startDest) {
 
@@ -326,7 +341,8 @@ fun App(
                 searchViewModel = productSearchViewModel,
                 loginViewModel = loginViewModel,
                 promoViewModel = promoViewModel,
-                salesViewModel = salesHistoryViewModel
+                salesViewModel = salesHistoryViewModel,
+                analyticsViewModel = analyticsViewModel
             )
         }
 
@@ -459,7 +475,7 @@ fun App(
         }
 
         composable("admin_analytics") {
-            AdminAnalyticsScreen(navController = navController)
+            AdminAnalyticsScreen(navController = navController, viewModel = analyticsViewModel)
         }
     }
 }
