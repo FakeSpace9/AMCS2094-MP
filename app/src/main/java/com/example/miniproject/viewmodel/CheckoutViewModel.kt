@@ -12,6 +12,7 @@ import com.example.miniproject.repository.AddressRepository
 import com.example.miniproject.repository.CartRepository
 import com.example.miniproject.repository.OrderRepository
 import com.example.miniproject.repository.PaymentRepository
+import com.example.miniproject.repository.PromotionRepository
 import com.example.miniproject.repository.ReceiptItem
 import com.example.miniproject.repository.ReceiptRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +27,7 @@ class CheckoutViewModel(
     private val addressRepo: AddressRepository,
     private val paymentRepo: PaymentRepository,
     private val orderRepo: OrderRepository,
+    private val promotionRepo: PromotionRepository,
     private val authPrefs: AuthPreferences,
     private val receiptRepository: ReceiptRepository
 ) : ViewModel() {
@@ -46,6 +48,12 @@ class CheckoutViewModel(
 
     private val _selectedPayment = MutableStateFlow<PaymentEntity?>(null)
     val selectedPayment: StateFlow<PaymentEntity?> = _selectedPayment
+
+    val promoCode = MutableStateFlow("")
+    val promoCodeError = MutableStateFlow<String?>(null)
+
+    private val _discountAmount = MutableStateFlow(0.0)
+    val discountAmount: StateFlow<Double> = _discountAmount
 
     // --- Totals Calculation ---
     val shippingFee = 10.0
@@ -103,6 +111,38 @@ class CheckoutViewModel(
     fun selectPaymentById(id: Long) {
         val pay = _userPayments.value.find { it.paymentId == id }
         if (pay != null) _selectedPayment.value = pay
+    }
+
+    // Add this method inside CheckoutViewModel class
+
+    fun setInitialPromoCode(code: String) {
+        if (promoCode.value.isEmpty()) { // Only set if not already set
+            promoCode.value = code
+            applyPromoCode() // Reuse the logic we created in the previous step
+        }
+    }
+
+    fun applyPromoCode()
+    {
+        val code = promoCode.value
+        if(code.isEmpty()) return
+
+        viewModelScope.launch {
+            val promo = promotionRepo.getPromotionByCode(code)
+
+            if(promo == null){
+                promoCodeError.value = "Invalid promo code"
+                _discountAmount.value = 0.0
+            }else{
+                val now = System.currentTimeMillis()
+                if(now < promo.startDate || now > promo.endDate){
+                    promoCodeError.value = "Promotion expired"
+                    _discountAmount.value = 0.0
+                }else{
+                    promoCodeError.value = "Code Applied: ${promo.name}"
+                }
+            }
+        }
     }
 
     fun payNow() {

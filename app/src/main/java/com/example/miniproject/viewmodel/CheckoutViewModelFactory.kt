@@ -7,6 +7,7 @@ import com.example.miniproject.repository.AddressRepository
 import com.example.miniproject.repository.CartRepository
 import com.example.miniproject.repository.OrderRepository
 import com.example.miniproject.repository.PaymentRepository
+import com.example.miniproject.repository.PromotionRepository
 import com.example.miniproject.repository.ReceiptRepository
 
 class CheckoutViewModelFactory(
@@ -14,8 +15,9 @@ class CheckoutViewModelFactory(
     private val addressRepository: AddressRepository,
     private val paymentRepository: PaymentRepository,
     private val orderRepository: OrderRepository,
-    private val authPreferences: AuthPreferences,
-    private val receiptRepository: ReceiptRepository
+    private val promotionRepository: PromotionRepository,
+    private val receiptRepository: ReceiptRepository,
+    private val authPreferences: AuthPreferences
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
@@ -26,6 +28,7 @@ class CheckoutViewModelFactory(
                 addressRepository,
                 paymentRepository,
                 orderRepository,
+                promotionRepository,
                 authPreferences,
                 receiptRepository
             ) as T
