@@ -12,6 +12,7 @@ import com.example.miniproject.repository.AddressRepository
 import com.example.miniproject.repository.CartRepository
 import com.example.miniproject.repository.OrderRepository
 import com.example.miniproject.repository.PaymentRepository
+import com.example.miniproject.repository.ReceiptItem
 import com.example.miniproject.repository.ReceiptRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -110,6 +111,7 @@ class CheckoutViewModel(
         val payment = _selectedPayment.value
         val items = cartItems.value
         val total = grandTotal.value
+        val currentSubtotal = subtotal.value
 
         if (userId == null || address == null || payment == null || items.isEmpty()) {
             _orderState.value = Result.failure(Exception("Missing details"))
@@ -123,7 +125,7 @@ class CheckoutViewModel(
             val order = OrderEntity(
                 customerId = userId,
                 orderDate = System.currentTimeMillis(),
-                totalAmount = subtotal.value,
+                totalAmount = currentSubtotal,
                 shippingFee = shippingFee,
                 discount = discount,
                 grandTotal = total,
@@ -151,31 +153,30 @@ class CheckoutViewModel(
 
             // 2. Trigger Email Receipt (Fixed Logic)
             if (result.isSuccess) {
-                val email = authPrefs.getLoggedInEmail() ?: "customer@example.com" // Use AuthPrefs
+                val email = authPrefs.getLoggedInEmail() ?: "customer@example.com"
 
-                // Convert CartEntity items to HTML
-                val itemsHtml = items.joinToString("") { item ->
-                    """
-                    <tr>
-                        <td style="padding: 8px; border-bottom: 1px solid #ddd;">
-                            ${item.productName} (${item.selectedSize})<br>
-                            <span style="color: #888; font-size: 12px;">Qty: ${item.quantity}</span>
-                        </td>
-                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">
-                            RM ${String.format("%.2f", item.price * item.quantity)}
-                        </td>
-                    </tr>
-                    """.trimIndent()
+                // 1. Convert CartItems to ReceiptItems
+                val receiptItems = items.map {
+                    ReceiptItem(
+                        name = it.productName,
+                        variant = "${it.selectedSize} / ${it.selectedColour}",
+                        quantity = it.quantity,
+                        unitPrice = it.price,
+                        totalPrice = it.price * it.quantity
+                    )
                 }
 
-                // Call the Repository
+                // 2. Call Repo with detailed breakdown
                 receiptRepository.triggerEmail(
                     toEmail = email,
-                    customerName = address.fullName, // Use name from address
-                    itemsDescription = itemsHtml,
-                    totalAmount = total
-                )
+                    orderId = result.getOrNull().toString(),
+                    customerName = address.fullName,
+                    items = receiptItems,          // Pass the list
+                    subTotal = currentSubtotal,     // Pass subtotal
+                    deliveryFee = shippingFee,     // Pass 10.0
+                    discountAmount = discount,      // Pass discount
 
+                )
             }
         }
     }

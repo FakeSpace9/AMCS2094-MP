@@ -8,6 +8,7 @@ import com.example.miniproject.data.entity.POSOrderEntity
 import com.example.miniproject.data.entity.POSOrderItemEntity
 import com.example.miniproject.repository.POSRepository
 import com.example.miniproject.repository.PromotionRepository
+import com.example.miniproject.repository.ReceiptItem
 import com.example.miniproject.repository.ReceiptRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -211,21 +212,33 @@ class AdminPOSViewModel(
             _checkoutState.value = result
 
 
+            // Inside fun completeOrder() in AdminPOSViewModel
+
             if (result.isSuccess) {
                 val email = customerEmail.value
                 if (email.isNotBlank()) {
-                    // Generate a simple HTML list for the email
-                    val itemsHtml = _posItems.joinToString("") { item ->
-                        "<tr><td>${item.name} (${item.size})</td><td align='right'>RM ${item.price}</td></tr>"
+
+                    // 1. Convert POSItems to ReceiptItems
+                    val receiptItems = _posItems.map {
+                        ReceiptItem(
+                            name = it.name,
+                            variant = "${it.size} / ${it.color}",
+                            quantity = it.quantity,
+                            unitPrice = it.price,
+                            totalPrice = it.price * it.quantity
+                        )
                     }
 
+                    // 2. Call Repo (Delivery Fee is 0 for POS)
                     receiptRepository.triggerEmail(
                         toEmail = email,
-                        customerName = "Valued Customer",
-                        itemsDescription = itemsHtml,
-                        totalAmount = _totalAmount.value
+                        orderId = "POS-${System.currentTimeMillis().toString().takeLast(6)}",
+                        customerName = "Walk-in Customer",
+                        items = receiptItems,
+                        subTotal = _subTotal.value,
+                        deliveryFee = 0.0,             // No delivery fee for offline
+                        discountAmount = _discountAmount.value
                     )
-
                 }
             }
         }
