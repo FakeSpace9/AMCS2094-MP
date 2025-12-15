@@ -61,16 +61,35 @@ fun NewArrivalScreen(
     val searchResults by viewModel.searchResults.collectAsState()
     val selectedFilter by viewModel.selectedCategory.collectAsState()
 
+    var currentPage by remember { mutableIntStateOf(1) }
+    val itemsPerPage = 8
+
+    LaunchedEffect(selectedFilter) {
+        currentPage = 1
+        viewModel.loadProducts()
+    }
+
+    // Calculate Pagination Data
+    val totalItems = searchResults.size
+    val totalPages = if (totalItems > 0) (totalItems + itemsPerPage - 1) / itemsPerPage else 1
+
+    // Slice the list for the current page
+    val currentItems = searchResults
+        .drop((currentPage - 1) * itemsPerPage)
+        .take(itemsPerPage)
+
     LaunchedEffect(Unit) {
         viewModel.loadProducts()
     }
 
     Scaffold(
         topBar = {
-            TopHeader(currentTitle = if (selectedFilter == "All") "New Arrivals" else selectedFilter)
+            TopHeader(
+                currentTitle = if (selectedFilter == "All") "All Products" else selectedFilter,
+                onCartClick = {navController.navigate("cart")})
         },
         bottomBar = {
-            BottomNavigationBar()
+            BottomNavigationBar(navController = navController)
         },
         containerColor = Color.White
 
@@ -111,7 +130,6 @@ fun NewArrivalScreen(
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(bottom = 70.dp)
                 ) {
                     items(searchResults) { product ->
                         CustomerProductCard(
@@ -124,7 +142,14 @@ fun NewArrivalScreen(
                     }
                 }
             }
-            PaginationRow()
+            // --- ADDED: Dynamic Pagination Row at the bottom ---
+            if (searchResults.isNotEmpty()) {
+                PaginationRow(
+                    currentPage = currentPage,
+                    totalPages = totalPages,
+                    onPageChange = { newPage -> currentPage = newPage }
+                )
+            }
         }
     }
 }
@@ -225,7 +250,7 @@ fun CustomerProductCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopHeader(currentTitle:String){
+fun TopHeader(currentTitle:String, onCartClick:()->Unit){
     CenterAlignedTopAppBar(
         title = {
             Text(
@@ -244,7 +269,7 @@ fun TopHeader(currentTitle:String){
             }
         },
         actions = {
-            IconButton(onClick = { /* Handle search icon click */ }) {
+            IconButton(onClick = { onCartClick }) {
                 Icon(
                     imageVector = Icons.Outlined.ShoppingCart,
                     contentDescription = "Cart",
@@ -331,7 +356,11 @@ fun FilterRow(
 }
 
 @Composable
-fun PaginationRow() {
+fun PaginationRow(
+    currentPage: Int,
+    totalPages: Int,
+    onPageChange: (Int) -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -339,7 +368,7 @@ fun PaginationRow() {
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = {}) {
+        IconButton(onClick = {if(currentPage > 1) onPageChange(currentPage - 1)}, enabled = currentPage > 1) {
             Icon(
                 Icons.Default.KeyboardArrowLeft,
                 contentDescription = "Previous",
@@ -347,41 +376,44 @@ fun PaginationRow() {
             )
         }
 
-        Box(
-            modifier = Modifier
-                .width(40.dp)
-                .height(40.dp)
-                .background(Purple, shape = CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("1", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        val startPage = maxOf(1, currentPage - 2)
+        val endPage = minOf(totalPages, startPage + 4)
 
+        for (i in startPage..endPage) {
+            val isSelected = i == currentPage
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = 4.dp)
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(if (isSelected) Purple else Color.Transparent)
+                    .clickable { onPageChange(i) },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "$i",
+                    fontSize = 16.sp,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    color = if (isSelected) Color.White else Color.Gray
+                )
+            }
         }
-        Spacer(modifier = Modifier.width(8.dp))
-        Text("2", color = BlueAccentColor, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-        Text(
-            "3",
-            color = Color.Gray,
-            modifier = Modifier.padding(8.dp),
-            fontWeight = FontWeight.Medium
-        )
-        Text(
-            "4",
-            color = Color.Gray,
-            modifier = Modifier.padding(8.dp),
-            fontWeight = FontWeight.Medium
-        )
 
-        Spacer(modifier = Modifier.width(8.dp))
-
-        IconButton(onClick = { /* Next */ }) {
-            Icon(Icons.Default.KeyboardArrowRight, contentDescription = "Next", tint = Color.Gray)
+        IconButton(
+            onClick = { if (currentPage < totalPages) onPageChange(currentPage + 1) },
+            enabled = currentPage < totalPages
+        ) {
+            Icon(
+                Icons.Default.KeyboardArrowRight,
+                contentDescription = "Next",
+                tint = if (currentPage < totalPages) Color.Gray else Color.LightGray
+            )
         }
     }
 }
 
 @Composable
-fun BottomNavigationBar(){
+fun BottomNavigationBar(navController: NavController){
     NavigationBar(
         containerColor = Color.White,
         tonalElevation = 8.dp
@@ -396,7 +428,7 @@ fun BottomNavigationBar(){
                 )
             },
             selected = false,
-            onClick = { /* Handle navigation */ },
+            onClick = { navController.navigate("home"){popUpTo("home"){inclusive = true} } },
             label = { Text("Home") },
             colors = NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent,selectedIconColor = Color.Black,unselectedIconColor = Color.Gray)
         )
