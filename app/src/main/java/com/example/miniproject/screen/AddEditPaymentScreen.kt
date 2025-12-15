@@ -2,6 +2,7 @@ package com.example.miniproject.screen
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
@@ -10,6 +11,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -26,6 +29,7 @@ fun AddEditPaymentScreen(
             .padding(horizontal = 16.dp, vertical = 24.dp)
     ) {
 
+        // ===== HEADER =====
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -38,60 +42,90 @@ fun AddEditPaymentScreen(
                     .clickable { navController.popBackStack() }
             )
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(Modifier.width(16.dp))
 
             Text(
-                text = if (viewModel.paymentId == null) "Add Payment Method" else "Edit Payment Method",
+                text = if (viewModel.paymentId == null)
+                    "Add Payment Method"
+                else
+                    "Edit Payment Method",
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentWidth(Alignment.CenterHorizontally)
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
             )
         }
 
-        Spacer(modifier = Modifier.height(30.dp))
+        Spacer(Modifier.height(24.dp))
 
-        PaymentTypeSelector(viewModel)
-        Spacer(modifier = Modifier.height(20.dp))
+        // ===== PAYMENT TYPE (READ ONLY) =====
+        OutlinedTextField(
+            value = viewModel.paymentType.value,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Payment Type") },
+            modifier = Modifier.fillMaxWidth()
+        )
 
+        Spacer(Modifier.height(16.dp))
+
+        // ===== CARD FORM =====
         if (viewModel.paymentType.value == "CARD") {
+
+            OutlinedTextField(
+                value = viewModel.cardName.value,
+                onValueChange = { viewModel.cardName.value = it },
+                label = { Text("Card Name") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
             OutlinedTextField(
                 value = viewModel.cardHolderName.value,
                 onValueChange = { viewModel.cardHolderName.value = it },
                 label = { Text("Card Holder Name") },
                 modifier = Modifier.fillMaxWidth()
             )
+
             OutlinedTextField(
                 value = viewModel.cardNumber.value,
-                onValueChange = { viewModel.cardNumber.value = it },
+                onValueChange = { viewModel.cardNumber.value = it.filter(Char::isDigit) },
                 label = { Text("Card Number") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            OutlinedTextField(
-                value = viewModel.expiryMonth.value,
-                onValueChange = { viewModel.expiryMonth.value = it },
-                label = { Text("Expiry Month (MM)") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            OutlinedTextField(
-                value = viewModel.expiryYear.value,
-                onValueChange = { viewModel.expiryYear.value = it },
-                label = { Text("Expiry Year (YY)") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            OutlinedTextField(
-                value = viewModel.cvv.value,
-                onValueChange = { viewModel.cvv.value = it },
-                label = { Text("CVV") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(15.dp))
+            Row {
+                OutlinedTextField(
+                    value = viewModel.expiryMonth.value,
+                    onValueChange = { viewModel.expiryMonth.value = it.filter(Char::isDigit) },
+                    label = { Text("MM") },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+
+                Spacer(Modifier.width(8.dp))
+
+                OutlinedTextField(
+                    value = viewModel.expiryYear.value,
+                    onValueChange = { viewModel.expiryYear.value = it.filter(Char::isDigit) },
+                    label = { Text("YY") },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+            }
+
+            OutlinedTextField(
+                value = viewModel.cvv.value,
+                onValueChange = { viewModel.cvv.value = it.filter(Char::isDigit) },
+                label = { Text("CVV") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                modifier = Modifier.fillMaxWidth()
+            )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("Set as default")
                 Switch(
@@ -101,34 +135,31 @@ fun AddEditPaymentScreen(
             }
         }
 
+        // ===== TNG FORM =====
         if (viewModel.paymentType.value == "TNG") {
             OutlinedTextField(
                 value = viewModel.walletId.value,
-                onValueChange = { viewModel.walletId.value = it },
+                onValueChange = { viewModel.walletId.value = it.filter(Char::isDigit) },
                 label = { Text("Touch 'n Go Phone Number") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 modifier = Modifier.fillMaxWidth()
             )
-
-            Spacer(modifier = Modifier.height(15.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-
-                Text("Set as default")
-                Switch(
-                    checked = viewModel.isDefault.value,
-                    onCheckedChange = { viewModel.isDefault.value = it }
-                )
-            }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(Modifier.height(16.dp))
+
+        viewModel.errorMessage.value?.let { msg ->
+            Text(
+                text = msg,
+                color = MaterialTheme.colorScheme.error,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
 
         Button(
             onClick = {
-                viewModel.save { success ->
+                viewModel.savePayment { success ->
                     if (success) navController.popBackStack()
                 }
             },
@@ -139,48 +170,5 @@ fun AddEditPaymentScreen(
     }
 }
 
-@Composable
-fun PaymentTypeSelector(viewModel: PaymentViewModel) {
-    var expanded by remember { mutableStateOf(false) }
-    val options = listOf("CARD", "TNG")
 
-    Column {
-        Text("Select Payment Type", fontWeight = FontWeight.Medium)
 
-        Box {
-            OutlinedTextField(
-                value = viewModel.paymentType.value,
-                onValueChange = {},
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { expanded = true },
-                readOnly = true,
-                label = { Text("Payment Type") },
-                trailingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .rotate(270f) // make arrow point downward
-                            .clickable { expanded = !expanded }
-                    )
-                }
-            )
-
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-            ) {
-                options.forEach { type ->
-                    DropdownMenuItem(
-                        text = { Text(type) },
-                        onClick = {
-                            viewModel.paymentType.value = type
-                            expanded = false
-                        }
-                    )
-                }
-            }
-        }
-    }
-}

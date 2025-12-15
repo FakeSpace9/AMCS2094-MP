@@ -1,6 +1,7 @@
 package com.example.miniproject.data.dao
 
 import androidx.room.*
+import com.example.miniproject.data.entity.AddressEntity
 import com.example.miniproject.data.entity.PaymentEntity
 import com.example.miniproject.data.entity.ProductEntity
 import com.example.miniproject.data.entity.ProductVariantEntity
@@ -28,6 +29,12 @@ interface PaymentDao {
 
     @Query("UPDATE payment SET isDefault = 1 WHERE paymentId = :id")
     suspend fun setDefault(id: Long)
+
+    @Query("DELETE FROM payment WHERE customerId = :customerId")
+    suspend fun deletePaymentByCustomerId(customerId: String)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllPayment(payment: List<PaymentEntity>)
 
 
 }

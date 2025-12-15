@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.example.miniproject.data.entity.OrderEntity
 import com.example.miniproject.data.entity.OrderItemEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface OrderDao{
@@ -20,4 +21,7 @@ interface OrderDao{
 
     @Query("SELECT * FROM order_items WHERE orderId = :orderId")
     suspend fun getOrderItems(orderId: Long): List<OrderItemEntity>
+
+    @Query("""SELECT * FROM orders WHERE customerId = :customerId ORDER BY orderDate DESC""")
+    suspend fun getOrdersByCustomer(customerId: String): List<OrderEntity>
 }

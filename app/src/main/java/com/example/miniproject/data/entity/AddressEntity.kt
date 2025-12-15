@@ -7,11 +7,11 @@ import androidx.room.PrimaryKey
 data class AddressEntity(
     @PrimaryKey(autoGenerate = true)
     val addressId: Long = 0L,
-    val customerId: String,
-    val fullName: String,
-    val phone: String,
-    val addressLine1: String,
-    val postcode: String,
+    val customerId: String = "",
+    val fullName: String = "",
+    val phone: String = "",
+    val addressLine1: String = "",
+    val postcode: String = "",
     val label: String = "Home",
     val isDefault: Boolean = false
 )

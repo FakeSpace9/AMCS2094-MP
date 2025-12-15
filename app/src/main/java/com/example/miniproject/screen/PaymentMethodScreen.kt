@@ -9,8 +9,11 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.miniproject.data.entity.PaymentEntity
 import com.example.miniproject.viewmodel.PaymentViewModel
+import androidx.compose.runtime.setValue
 
 @Composable
 fun PaymentMethodScreen(
@@ -28,6 +32,11 @@ fun PaymentMethodScreen(
     selectMode: Boolean
 ) {
     val payments by viewModel.payments.collectAsState()
+    var showTypeDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        viewModel.syncPayments()
+    }
 
     Column(
         modifier = Modifier
@@ -67,17 +76,17 @@ fun PaymentMethodScreen(
                 payment = payment,
                 onClick = {
                     if (selectMode) {
-                        // SELECTION LOGIC
+
                         navController.previousBackStackEntry?.savedStateHandle?.set("selected_payment_id", payment.paymentId)
                         navController.popBackStack()
                     } else {
-                        // EDIT LOGIC
+
                         viewModel.editPayment(payment.paymentId)
                         navController.navigate("edit_payment")
                     }
                 },
                 onDelete = {
-                    viewModel.delete(payment.paymentId) {}
+                    viewModel.deletePayment(payment.paymentId) {}
                 }
             )
         }
@@ -85,9 +94,21 @@ fun PaymentMethodScreen(
         Spacer(Modifier.height(20.dp))
 
         AddPaymentButton {
-            viewModel.startNew()
-            navController.navigate("add_payment")
+            showTypeDialog = true
         }
+
+        if (showTypeDialog) {
+            SelectPaymentTypeDialog(
+                onDismiss = { showTypeDialog = false },
+                onSelect = { type ->
+                    showTypeDialog = false
+                    viewModel.newPayment()
+                    viewModel.paymentType.value = type
+                    navController.navigate("add_payment")
+                }
+            )
+        }
+
     }
 }
 
@@ -160,3 +181,51 @@ fun PaymentItem(
         }
     }
 }
+
+@Composable
+fun SelectPaymentTypeDialog(
+    onDismiss: () -> Unit,
+    onSelect: (String) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Choose Payment Method",
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column {
+                Text(
+                    text = "Credit / Debit Card",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            onSelect("CARD")
+                        }
+                        .padding(12.dp)
+                )
+
+                Divider()
+
+                Text(
+                    text = "Touch 'n Go",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            onSelect("TNG")
+                        }
+                        .padding(12.dp)
+                )
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+

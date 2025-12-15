@@ -36,6 +36,8 @@ import com.example.miniproject.screen.EditProfileScreen
 import com.example.miniproject.screen.ForgotPasswordScreen
 import com.example.miniproject.screen.HomeScreenWithDrawer
 import com.example.miniproject.screen.LoginScreen
+import com.example.miniproject.screen.OrderDetailScreen
+import com.example.miniproject.screen.OrderHistoryScreen
 import com.example.miniproject.screen.PaymentMethodScreen
 import com.example.miniproject.screen.ProfileScreen
 import com.example.miniproject.screen.SignupScreen
@@ -75,6 +77,8 @@ import com.example.miniproject.viewmodel.SignupViewModel
 import com.example.miniproject.viewmodel.SignupViewModelFactory
 import com.example.miniproject.viewmodel.CheckoutViewModel
 import com.example.miniproject.viewmodel.CheckoutViewModelFactory
+import com.example.miniproject.viewmodel.OrderHistoryViewModel
+import com.example.miniproject.viewmodel.OrderHistoryViewModelFactory
 import com.example.miniproject.viewmodel.OrderSuccessViewModel
 import com.example.miniproject.viewmodel.OrderSuccessViewModelFactory
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -250,6 +254,10 @@ fun App(
         )
     )
 
+    val orderHistoryViewModel: OrderHistoryViewModel = viewModel(
+        factory = OrderHistoryViewModelFactory(orderRepo, AuthPreferences(context))
+    )
+
 
     // --- Navigation Host ---
     NavHost(navController = navController, startDestination = startDest) {
@@ -321,8 +329,7 @@ fun App(
             val selectMode = backStackEntry.arguments?.getBoolean("selectMode") ?: false
             AddressScreen(
                 navController = navController,
-                viewModel = addressViewModel,
-                selectMode = selectMode
+                viewModel = addressViewModel
             )
         }
 
@@ -415,6 +422,21 @@ fun App(
         composable("admin_pos_success") {
             AdminPOSSuccessScreen(navController = navController, viewModel = adminPOSViewModel)
         }
+
+        composable("order_history") {
+            OrderHistoryScreen(navController = navController, viewModel = orderHistoryViewModel)
+        }
+
+        composable("order_detail/{orderId}") { backStackEntry ->
+            val orderId = backStackEntry.arguments
+                ?.getString("orderId")
+                ?.toLong() ?: return@composable
+
+            OrderDetailScreen(orderId, orderHistoryViewModel , navController)
+        }
+
+
+
 
     }
 }

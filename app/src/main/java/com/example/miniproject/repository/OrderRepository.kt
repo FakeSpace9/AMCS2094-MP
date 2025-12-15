@@ -5,6 +5,7 @@ import com.example.miniproject.data.dao.OrderDao
 import com.example.miniproject.data.entity.OrderEntity
 import com.example.miniproject.data.entity.OrderItemEntity
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.tasks.await
 
 class OrderRepository(
@@ -60,5 +61,9 @@ class OrderRepository(
 
     suspend fun getOrderItems(orderId: Long): List<OrderItemEntity> {
         return orderDao.getOrderItems(orderId)
+    }
+
+    suspend fun getOrdersByCustomer(customerId: String): List<OrderEntity> {
+        return orderDao.getOrdersByCustomer(customerId)
     }
 }

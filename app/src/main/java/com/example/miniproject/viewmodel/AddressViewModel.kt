@@ -1,5 +1,6 @@
 package com.example.miniproject.viewmodel
 
+import android.R.attr.name
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -18,8 +19,8 @@ class AddressViewModel(
     private val _addresses = MutableStateFlow<List<AddressEntity>>(emptyList())
     val addresses: StateFlow<List<AddressEntity>> = _addresses
 
-    var fullName = mutableStateOf("")
-    var phone = mutableStateOf("")
+    var recipientName = mutableStateOf("")
+    var addressPhone = mutableStateOf("")
     var addressLine1 = mutableStateOf("")
     var postcode = mutableStateOf("")
     var label = mutableStateOf("Home")
@@ -33,6 +34,27 @@ class AddressViewModel(
         loadAddresses()
     }
 
+    fun isValidPostcode(postcode: String): Boolean {
+        return Regex("^\\d{5}$").matches(postcode)
+    }
+
+    fun isValidPhone(phone: String): Boolean {
+        return Regex("^01\\d{8,9}$").matches(phone)
+    }
+
+
+    fun validateAddress(): String? {
+        if (recipientName.value.isBlank()) return "Name cannot be empty"
+        if (addressLine1.value.isBlank()) return "Address cannot be empty"
+        if (addressPhone.value.isBlank()) return "Phone Number cannot be empty"
+        if (postcode.value.isBlank()) return "Postcode cannot be empty"
+        if (!isValidPostcode(postcode.value)) return "Invalid Postcode"
+        if (!isValidPhone(addressPhone.value)) return "Invalid Phone Number"
+
+
+        return null
+    }
+
     fun loadAddresses() {
         viewModelScope.launch {
             currentCustomerId = authPrefs.getUserId() ?: return@launch
@@ -40,14 +62,13 @@ class AddressViewModel(
         }
     }
 
-    fun startNewAddress() {
+    fun newAddress() {
         editingAddressId = null
-        fullName.value = ""
-        phone.value = ""
+        recipientName.value = ""
+        addressPhone.value = ""
         addressLine1.value = ""
         postcode.value = ""
         label.value = "Home"
-        isDefault.value = false
         message.value = ""
     }
 
@@ -57,27 +78,34 @@ class AddressViewModel(
             editingAddressId = address.addressId
             currentCustomerId = address.customerId
 
-            fullName.value = address.fullName
-            phone.value = address.phone
+            recipientName.value = address.fullName
+            addressPhone.value = address.phone
             addressLine1.value = address.addressLine1
             postcode.value = address.postcode
             label.value = address.label
-            isDefault.value = address.isDefault
             message.value = ""
         }
     }
 
-    fun save(onResult: (Boolean) -> Unit) {
+    fun saveAddress(onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
+
             if (currentCustomerId.isEmpty()) {
                 currentCustomerId = authPrefs.getUserId() ?: ""
+            }
+
+            val error = validateAddress()
+            if (error != null) {
+                message.value = error
+                onResult(false)
+                return@launch
             }
 
             val address = AddressEntity(
                 addressId = editingAddressId ?: 0L,
                 customerId = currentCustomerId,
-                fullName = fullName.value,
-                phone = phone.value,
+                fullName = recipientName.value,
+                phone = addressPhone.value,
                 addressLine1 = addressLine1.value,
                 postcode = postcode.value,
                 label = label.value,
@@ -101,16 +129,24 @@ class AddressViewModel(
         }
     }
 
-    fun deleteAddress(addressId: Long, onResult: (Boolean) -> Unit) {
+    fun deleteAddress(addressId: Long) {
         viewModelScope.launch {
             val result = repo.deleteAddress(currentCustomerId , addressId)
             if (result.isSuccess) {
                 loadAddresses()
-                onResult(true)
-            } else {
-                onResult(false)
+
             }
         }
     }
+
+    fun syncAddresses() {
+        val userId = authPrefs.getUserId() ?: return
+
+        viewModelScope.launch {
+            repo.getAddressesFromFirebase(userId)
+            loadAddresses()
+        }
+    }
+
 
 }
