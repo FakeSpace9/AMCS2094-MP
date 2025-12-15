@@ -35,6 +35,13 @@ class CartViewModel(
     val promoCode = MutableStateFlow("")
     val promoCodeError = MutableStateFlow<String?>(null)
 
+    private val _toastMessage = MutableStateFlow<String?>(null)
+    val toastMessage: StateFlow<String?> = _toastMessage
+
+    fun clearToastMessage() {
+        _toastMessage.value = null
+    }
+
     fun updateQuantity(item: CartEntity, newQuantity: Int){
         viewModelScope.launch {
             repository.updateQuantity(item, newQuantity)
@@ -85,6 +92,7 @@ class CartViewModel(
                         promo.discountRate // Fixed amount
                     }
                     _discountAmount.value = discount
+                    _toastMessage.value = "Voucher Applied: RM${String.format("%.2f", discount)} Off!"
                 }
             }
         }
