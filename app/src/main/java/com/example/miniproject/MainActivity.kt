@@ -235,14 +235,17 @@ fun App(
         productDao = db.ProductDao(), // PASS PRODUCT DAO HERE
         firestore = FirebaseFirestore.getInstance()
     )
-
+//for email function
+    val receiptRepository = ReceiptRepository(FirebaseFirestore.getInstance())
+    //end
     val checkoutViewModel: CheckoutViewModel = viewModel(
         factory = CheckoutViewModelFactory(
             cartRepository = cartRepository,
             addressRepository = addressRepo,
             paymentRepository = paymentRepo,
             orderRepository = orderRepo,
-            authPreferences = AuthPreferences(context)
+            authPreferences = AuthPreferences(context),
+            receiptRepository = receiptRepository
         )
     )
 
@@ -251,9 +254,7 @@ fun App(
     )
 
     val promoRepo = PromotionRepository(db.PromotionDao(), FirebaseFirestore.getInstance())
-    //for email function
-    val receiptRepository = ReceiptRepository(FirebaseFirestore.getInstance())
-    //end
+
     val adminPOSViewModel: AdminPOSViewModel = viewModel(
         factory = AdminPOSViewModelFactory(
             productDao = db.ProductDao(),
