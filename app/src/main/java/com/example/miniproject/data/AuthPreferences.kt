@@ -6,11 +6,12 @@ class AuthPreferences(context: Context) {
 
     private val prefs = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
 
-    fun saveLogin(userType: String, uid: String) {
+    fun saveLogin(userType: String, uid: String,email: String) {
         prefs.edit().apply {
             putBoolean("isLoggedIn", true)
             putString("userType", userType) // "customer" or "admin"
             putString("uid", uid)
+            putString("email", email)
             putLong("loginTime", System.currentTimeMillis())
             apply()
         }
