@@ -12,6 +12,9 @@ import com.example.miniproject.repository.AddressRepository
 import com.example.miniproject.repository.CartRepository
 import com.example.miniproject.repository.OrderRepository
 import com.example.miniproject.repository.PaymentRepository
+import com.example.miniproject.repository.PromotionRepository
+import com.example.miniproject.repository.ReceiptItem
+import com.example.miniproject.repository.ReceiptRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -25,7 +28,7 @@ class CheckoutViewModel(
     private val paymentRepo: PaymentRepository,
     private val orderRepo: OrderRepository,
     private val promotionRepo: PromotionRepository,
-    private val authPrefs: AuthPreferences
+    private val authPrefs: AuthPreferences,
     private val receiptRepository: ReceiptRepository
 ) : ViewModel() {
 

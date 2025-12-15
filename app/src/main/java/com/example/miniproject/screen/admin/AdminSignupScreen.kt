@@ -4,27 +4,34 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockClock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -44,6 +51,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -62,8 +70,24 @@ fun AdminSignupScreen(navController: NavController, viewModel: SignupViewModel) 
     var confirmPassword by remember { mutableStateOf("") }
     var adminCode by remember { mutableStateOf("") }
 
-    // UI Colors
+    // --- VISIBILITY STATES ---
+    var isPasswordVisible by remember { mutableStateOf(false) }
+    var isConfirmPasswordVisible by remember { mutableStateOf(false) }
+    var isAdminCodeVisible by remember { mutableStateOf(false) }
+
+    // --- VALIDATION LOGIC ---
+    val hasLength = password.length >= 6
+    val hasUppercase = password.any { it.isUpperCase() }
+    val hasLowercase = password.any { it.isLowerCase() }
+    val hasDigit = password.any { it.isDigit() }
+    val hasSymbol = password.any { !it.isLetterOrDigit() }
+    val isPasswordValid = hasLength && hasUppercase && hasLowercase && hasDigit && hasSymbol
+
+    val isPhoneValid = phone.matches(Regex("^01[0-9]{8,9}$"))
+    // ------------------------
+
     val primaryColor = Color(0xFF573BFF)
+    val successColor = Color(0xFF4CAF50) // Green
 
     Box(
         modifier = Modifier
@@ -92,8 +116,6 @@ fun AdminSignupScreen(navController: NavController, viewModel: SignupViewModel) 
                 color = Color.Gray,
                 modifier = Modifier.padding(top = 8.dp, bottom = 32.dp)
             )
-
-            // --- Form Fields ---
 
             // Full Name
             OutlinedTextField(
@@ -129,8 +151,12 @@ fun AdminSignupScreen(navController: NavController, viewModel: SignupViewModel) 
             // Phone
             OutlinedTextField(
                 value = phone,
-                onValueChange = { phone = it },
-                label = { Text("Phone Number") },
+                onValueChange = {
+                    if (it.all { char -> char.isDigit() }) {
+                        phone = it
+                    }
+                },
+                label = { Text("Phone Number (e.g. 0123456789)") },
                 leadingIcon = { Icon(Icons.Default.Phone, null, tint = primaryColor) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -139,8 +165,17 @@ fun AdminSignupScreen(navController: NavController, viewModel: SignupViewModel) 
                     keyboardType = KeyboardType.Phone,
                     imeAction = ImeAction.Next
                 ),
+                isError = phone.isNotEmpty() && !isPhoneValid,
                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = primaryColor, focusedLabelColor = primaryColor)
             )
+            if (phone.isNotEmpty() && !isPhoneValid) {
+                Text(
+                    text = "Invalid Malaysia format (e.g. 0112345678)",
+                    color = Color.Red,
+                    fontSize = 12.sp,
+                    modifier = Modifier.align(Alignment.Start).padding(start = 8.dp)
+                )
+            }
             Spacer(modifier = Modifier.height(16.dp))
 
             // Password
@@ -149,13 +184,33 @@ fun AdminSignupScreen(navController: NavController, viewModel: SignupViewModel) 
                 onValueChange = { password = it },
                 label = { Text("Password") },
                 leadingIcon = { Icon(Icons.Default.Lock, null, tint = primaryColor) },
+                trailingIcon = {
+                    IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                        Icon(
+                            imageVector = if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                            contentDescription = if (isPasswordVisible) "Hide Password" else "Show Password",
+                            tint = Color.Gray
+                        )
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = primaryColor, focusedLabelColor = primaryColor)
             )
+
+            // Password Strength Indicators
+            if (password.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Column(modifier = Modifier.fillMaxWidth().padding(start = 8.dp)) {
+                    PasswordRequirementRow("At least 6 characters", hasLength, successColor)
+                    PasswordRequirementRow("Small & Capital Letters", hasLowercase && hasUppercase, successColor)
+                    PasswordRequirementRow("At least one number (0-9)", hasDigit, successColor)
+                    PasswordRequirementRow("At least one symbol (!@#$)", hasSymbol, successColor)
+                }
+            }
             Spacer(modifier = Modifier.height(16.dp))
 
             // Confirm Password
@@ -164,10 +219,19 @@ fun AdminSignupScreen(navController: NavController, viewModel: SignupViewModel) 
                 onValueChange = { confirmPassword = it },
                 label = { Text("Confirm Password") },
                 leadingIcon = { Icon(Icons.Default.LockClock, null, tint = primaryColor) },
+                trailingIcon = {
+                    IconButton(onClick = { isConfirmPasswordVisible = !isConfirmPasswordVisible }) {
+                        Icon(
+                            imageVector = if (isConfirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                            contentDescription = if (isConfirmPasswordVisible) "Hide Password" else "Show Password",
+                            tint = Color.Gray
+                        )
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = if (isConfirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = primaryColor, focusedLabelColor = primaryColor)
             )
@@ -179,10 +243,19 @@ fun AdminSignupScreen(navController: NavController, viewModel: SignupViewModel) 
                 onValueChange = { adminCode = it },
                 label = { Text("Admin Code") },
                 leadingIcon = { Icon(Icons.Default.VpnKey, null, tint = primaryColor) },
+                trailingIcon = {
+                    IconButton(onClick = { isAdminCodeVisible = !isAdminCodeVisible }) {
+                        Icon(
+                            imageVector = if (isAdminCodeVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                            contentDescription = if (isAdminCodeVisible) "Hide Code" else "Show Code",
+                            tint = Color.Gray
+                        )
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
-                visualTransformation = PasswordVisualTransformation(), // Hide code like password
+                visualTransformation = if (isAdminCodeVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions.Default.copy(
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done
@@ -192,13 +265,17 @@ fun AdminSignupScreen(navController: NavController, viewModel: SignupViewModel) 
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // --- Signup Button ---
+            // Signup Button
             Button(
                 onClick = {
                     if (name.isBlank() || email.isBlank() || password.isBlank() ||
-                        confirmPassword.isBlank() || adminCode.isBlank()
+                        confirmPassword.isBlank() || adminCode.isBlank() || phone.isBlank()
                     ) {
                         Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
+                    } else if (!isPhoneValid) {
+                        Toast.makeText(context, "Please enter a valid Malaysia phone number", Toast.LENGTH_SHORT).show()
+                    } else if (!isPasswordValid) {
+                        Toast.makeText(context, "Password does not meet requirements", Toast.LENGTH_SHORT).show()
                     } else if (password != confirmPassword) {
                         Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
                     } else if (adminCode != "ADMIN123") {
@@ -252,5 +329,27 @@ fun AdminSignupScreen(navController: NavController, viewModel: SignupViewModel) 
             }
             else -> {}
         }
+    }
+}
+
+// --- HELPER COMPOSABLE ---
+@Composable
+fun PasswordRequirementRow(text: String, isMet: Boolean, successColor: Color) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(vertical = 2.dp)
+    ) {
+        Icon(
+            imageVector = if (isMet) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+            contentDescription = null,
+            tint = if (isMet) successColor else Color.Gray,
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = text,
+            fontSize = 12.sp,
+            color = if (isMet) successColor else Color.Gray
+        )
     }
 }

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
@@ -30,6 +31,7 @@ import com.example.miniproject.repository.OrderRepository
 import com.example.miniproject.repository.POSRepository
 import com.example.miniproject.repository.PaymentRepository
 import com.example.miniproject.repository.PromotionRepository
+import com.example.miniproject.repository.ReceiptRepository
 import com.example.miniproject.screen.AddAddressScreen
 import com.example.miniproject.screen.AddEditPaymentScreen
 import com.example.miniproject.screen.AddressScreen
@@ -258,13 +260,12 @@ fun App(
         factory = OrderSuccessViewModelFactory(orderRepo)
     )
 
-    val promoRepo = PromotionRepository(db.PromotionDao(), FirebaseFirestore.getInstance())
-
     val adminPOSViewModel: AdminPOSViewModel = viewModel(
         factory = AdminPOSViewModelFactory(
             productDao = db.ProductDao(),
             posRepository = posRepository,
-            promotionRepository = promoRepo
+            promotionRepository = promoRepo,
+            receiptRepository = receiptRepository
         )
     )
 
