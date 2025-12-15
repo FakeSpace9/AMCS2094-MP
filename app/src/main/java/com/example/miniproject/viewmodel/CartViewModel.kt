@@ -48,7 +48,7 @@ class CartViewModel(
     }
 
     fun onPromoCodeChange(newCode:String){
-        promoCodeError.value = newCode
+        promoCode.value = newCode
         //clear error and type again
         if(promoCodeError.value != null){
             promoCodeError.value = null
