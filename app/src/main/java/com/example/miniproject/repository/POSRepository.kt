@@ -107,7 +107,7 @@ class POSRepository(
 
     suspend fun getTodaySales(): Double {
         val (start, end) = getTodayRange()
-        return posOrderDao.getSalesInRange(start, end) ?: 0.0
+        return posOrderDao.getRevenueInRange(start, end)
     }
 
 
