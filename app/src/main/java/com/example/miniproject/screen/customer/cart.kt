@@ -50,6 +50,8 @@ fun CartScreen(
     val total by viewModel.total.collectAsState()
     val promoCode by viewModel.promoCode.collectAsState()
     val promoCodeError by viewModel.promoCodeError.collectAsState()
+    val appliedDiscount by viewModel.discountAmount.collectAsState()
+    val currentPromoCode by viewModel.promoCode.collectAsState()
 
     Scaffold(
         topBar = {
@@ -73,7 +75,16 @@ fun CartScreen(
         },
                 bottomBar = {
                     if(cartItems.isNotEmpty()){
-                        CheckoutBottomBar(total = total, onCheckoutClick = { navController.navigate("checkout") })
+                        CheckoutBottomBar(
+                            total = total,
+                            onCheckoutClick = {
+                                if(appliedDiscount> 0 && currentPromoCode.isNotEmpty()){
+                                    navController.navigate("checkout?promo=$currentPromoCode")
+                                }else{
+                                    navController.navigate("checkout")
+                                }
+                            }
+                        )
                     }
                 },
                 containerColor = Color(0xFFF9FAFB)
@@ -126,6 +137,8 @@ fun CartScreen(
                             PriceBreakDownSection(
                                 subtotal = subtotal,
                                 shippingFee = viewModel.shippingFee,
+                                discount = appliedDiscount
+
                             )
                         }
                     }
@@ -299,7 +312,7 @@ fun PromoCodeSection(
 }
 
 @Composable
-fun PriceBreakDownSection(subtotal: Double, shippingFee: Double) {
+fun PriceBreakDownSection(subtotal: Double, shippingFee: Double, discount:Double) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -320,6 +333,21 @@ fun PriceBreakDownSection(subtotal: Double, shippingFee: Double) {
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
             )
+        }
+
+        if (discount > 0) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(text = "Discount", fontSize = 16.sp, color = Color(0xFF4CAF50)) // Green color
+                Text(
+                    "-RM${String.format("%.2f", discount)}",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF4CAF50)
+                )
+            }
         }
         Row(
             modifier = Modifier.fillMaxWidth(),
