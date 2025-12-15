@@ -2,13 +2,13 @@ package com.example.miniproject.viewmodel
 
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.miniproject.data.dao.ProductDao
 import com.example.miniproject.data.entity.POSOrderEntity
 import com.example.miniproject.data.entity.POSOrderItemEntity
 import com.example.miniproject.repository.POSRepository
 import com.example.miniproject.repository.PromotionRepository
+import com.example.miniproject.repository.ReceiptRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -31,7 +31,8 @@ data class POSItem(
 class AdminPOSViewModel(
     private val productDao: ProductDao,
     private val posRepository: POSRepository,
-    private val promotionRepository: PromotionRepository
+    private val promotionRepository: PromotionRepository,
+    private val receiptRepository: ReceiptRepository
 ) : ViewModel() {
 
     private val _subTotal = MutableStateFlow(0.0)
@@ -206,7 +207,27 @@ class AdminPOSViewModel(
                 )
             }
 
-            _checkoutState.value = posRepository.placePOSOrder(order, orderItems)
+            val result = posRepository.placePOSOrder(order, orderItems)
+            _checkoutState.value = result
+
+
+            if (result.isSuccess) {
+                val email = customerEmail.value
+                if (email.isNotBlank()) {
+                    // Generate a simple HTML list for the email
+                    val itemsHtml = _posItems.joinToString("") { item ->
+                        "<tr><td>${item.name} (${item.size})</td><td align='right'>RM ${item.price}</td></tr>"
+                    }
+
+                    receiptRepository.triggerEmail(
+                        toEmail = email,
+                        customerName = "Valued Customer",
+                        itemsDescription = itemsHtml,
+                        totalAmount = _totalAmount.value
+                    )
+
+                }
+            }
         }
     }
 

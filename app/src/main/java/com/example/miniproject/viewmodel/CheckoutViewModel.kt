@@ -12,6 +12,7 @@ import com.example.miniproject.repository.AddressRepository
 import com.example.miniproject.repository.CartRepository
 import com.example.miniproject.repository.OrderRepository
 import com.example.miniproject.repository.PaymentRepository
+import com.example.miniproject.repository.ReceiptRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +25,8 @@ class CheckoutViewModel(
     private val addressRepo: AddressRepository,
     private val paymentRepo: PaymentRepository,
     private val orderRepo: OrderRepository,
-    private val authPrefs: AuthPreferences
+    private val authPrefs: AuthPreferences,
+    private val receiptRepository: ReceiptRepository
 ) : ViewModel() {
 
     // --- Data Streams ---
@@ -144,7 +146,37 @@ class CheckoutViewModel(
                 )
             }
 
-            _orderState.value = orderRepo.placeOrder(order, orderItems)
+            val result = orderRepo.placeOrder(order, orderItems)
+            _orderState.value = result
+
+            // 2. Trigger Email Receipt (Fixed Logic)
+            if (result.isSuccess) {
+                val email = authPrefs.getLoggedInEmail() ?: "customer@example.com" // Use AuthPrefs
+
+                // Convert CartEntity items to HTML
+                val itemsHtml = items.joinToString("") { item ->
+                    """
+                    <tr>
+                        <td style="padding: 8px; border-bottom: 1px solid #ddd;">
+                            ${item.productName} (${item.selectedSize})<br>
+                            <span style="color: #888; font-size: 12px;">Qty: ${item.quantity}</span>
+                        </td>
+                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">
+                            RM ${String.format("%.2f", item.price * item.quantity)}
+                        </td>
+                    </tr>
+                    """.trimIndent()
+                }
+
+                // Call the Repository
+                receiptRepository.triggerEmail(
+                    toEmail = email,
+                    customerName = address.fullName, // Use name from address
+                    itemsDescription = itemsHtml,
+                    totalAmount = total
+                )
+
+            }
         }
     }
 

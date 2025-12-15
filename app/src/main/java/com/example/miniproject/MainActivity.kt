@@ -11,7 +11,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -23,13 +22,14 @@ import com.example.miniproject.data.AuthPreferences
 import com.example.miniproject.repository.AddressRepository
 import com.example.miniproject.repository.CartRepository
 import com.example.miniproject.repository.EditProfileRepository
-import com.example.miniproject.repository.SignupRepository
 import com.example.miniproject.repository.ForgotPasswordRepository
 import com.example.miniproject.repository.LoginRepository
 import com.example.miniproject.repository.OrderRepository
 import com.example.miniproject.repository.POSRepository
 import com.example.miniproject.repository.PaymentRepository
 import com.example.miniproject.repository.PromotionRepository
+import com.example.miniproject.repository.ReceiptRepository
+import com.example.miniproject.repository.SignupRepository
 import com.example.miniproject.screen.AddAddressScreen
 import com.example.miniproject.screen.AddEditPaymentScreen
 import com.example.miniproject.screen.AddressScreen
@@ -61,34 +61,33 @@ import com.example.miniproject.viewmodel.AdminPOSViewModel
 import com.example.miniproject.viewmodel.AdminPOSViewModelFactory
 import com.example.miniproject.viewmodel.CartViewModel
 import com.example.miniproject.viewmodel.CartViewModelFactory
+import com.example.miniproject.viewmodel.CheckoutViewModel
+import com.example.miniproject.viewmodel.CheckoutViewModelFactory
 import com.example.miniproject.viewmodel.EditProfileViewModel
 import com.example.miniproject.viewmodel.EditProfileViewModelFactory
 import com.example.miniproject.viewmodel.ForgotPasswordViewModel
 import com.example.miniproject.viewmodel.ForgotPasswordViewModelFactory
 import com.example.miniproject.viewmodel.LoginViewModel
 import com.example.miniproject.viewmodel.LoginViewModelFactory
+import com.example.miniproject.viewmodel.OrderSuccessViewModel
+import com.example.miniproject.viewmodel.OrderSuccessViewModelFactory
 import com.example.miniproject.viewmodel.PaymentViewModel
 import com.example.miniproject.viewmodel.PaymentViewModelFactory
 import com.example.miniproject.viewmodel.ProductDetailScreenViewModel
 import com.example.miniproject.viewmodel.ProductDetailScreenViewModelFactory
 import com.example.miniproject.viewmodel.ProductFormViewModel
 import com.example.miniproject.viewmodel.ProductSearchViewModel
-import com.example.miniproject.viewmodel.SignupViewModel
-import com.example.miniproject.viewmodel.SignupViewModelFactory
-import com.example.miniproject.viewmodel.CheckoutViewModel
-import com.example.miniproject.viewmodel.CheckoutViewModelFactory
-import com.example.miniproject.viewmodel.OrderSuccessViewModel
-import com.example.miniproject.viewmodel.OrderSuccessViewModelFactory
 import com.example.miniproject.viewmodel.PromotionViewModel
 import com.example.miniproject.viewmodel.PromotionViewModelFactory
 import com.example.miniproject.viewmodel.SalesHistoryViewModel
 import com.example.miniproject.viewmodel.SalesHistoryViewModelFactory
+import com.example.miniproject.viewmodel.SignupViewModel
+import com.example.miniproject.viewmodel.SignupViewModelFactory
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
-import kotlinx.serialization.builtins.BooleanArraySerializer
 
 class MainActivity : ComponentActivity() {
 
@@ -252,12 +251,15 @@ fun App(
     )
 
     val promoRepo = PromotionRepository(db.PromotionDao(), FirebaseFirestore.getInstance())
-
+    //for email function
+    val receiptRepository = ReceiptRepository(FirebaseFirestore.getInstance())
+    //end
     val adminPOSViewModel: AdminPOSViewModel = viewModel(
         factory = AdminPOSViewModelFactory(
             productDao = db.ProductDao(),
             posRepository = posRepository,
-            promotionRepository = promoRepo
+            promotionRepository = promoRepo,
+            receiptRepository = receiptRepository
         )
     )
 
@@ -270,6 +272,9 @@ fun App(
             posRepository
             )
     )
+
+
+
 
     // --- Navigation Host ---
     NavHost(navController = navController, startDestination = startDest) {
