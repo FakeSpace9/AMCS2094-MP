@@ -16,6 +16,8 @@ class CheckoutViewModelFactory(
     private val orderRepository: OrderRepository,
     private val promotionRepository: PromotionRepository,
     private val authPreferences: AuthPreferences
+    private val authPreferences: AuthPreferences,
+    private val receiptRepository: ReceiptRepository
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
@@ -28,6 +30,8 @@ class CheckoutViewModelFactory(
                 orderRepository,
                 promotionRepository,
                 authPreferences
+                authPreferences,
+                receiptRepository
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

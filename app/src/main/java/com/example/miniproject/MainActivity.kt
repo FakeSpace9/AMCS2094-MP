@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
@@ -240,7 +239,9 @@ fun App(
         productDao = db.ProductDao(), // PASS PRODUCT DAO HERE
         firestore = FirebaseFirestore.getInstance()
     )
-
+//for email function
+    val receiptRepository = ReceiptRepository(FirebaseFirestore.getInstance())
+    //end
     val checkoutViewModel: CheckoutViewModel = viewModel(
         factory = CheckoutViewModelFactory(
             cartRepository = cartRepository,
@@ -248,7 +249,8 @@ fun App(
             paymentRepository = paymentRepo,
             orderRepository = orderRepo,
             promotionRepository = promoRepo,
-            authPreferences = AuthPreferences(context)
+            authPreferences = AuthPreferences(context),
+            receiptRepository = receiptRepository
         )
     )
 
@@ -256,6 +258,7 @@ fun App(
         factory = OrderSuccessViewModelFactory(orderRepo)
     )
 
+    val promoRepo = PromotionRepository(db.PromotionDao(), FirebaseFirestore.getInstance())
 
     val adminPOSViewModel: AdminPOSViewModel = viewModel(
         factory = AdminPOSViewModelFactory(

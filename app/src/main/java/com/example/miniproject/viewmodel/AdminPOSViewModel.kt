@@ -2,13 +2,14 @@ package com.example.miniproject.viewmodel
 
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.miniproject.data.dao.ProductDao
 import com.example.miniproject.data.entity.POSOrderEntity
 import com.example.miniproject.data.entity.POSOrderItemEntity
 import com.example.miniproject.repository.POSRepository
 import com.example.miniproject.repository.PromotionRepository
+import com.example.miniproject.repository.ReceiptItem
+import com.example.miniproject.repository.ReceiptRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -31,7 +32,8 @@ data class POSItem(
 class AdminPOSViewModel(
     private val productDao: ProductDao,
     private val posRepository: POSRepository,
-    private val promotionRepository: PromotionRepository
+    private val promotionRepository: PromotionRepository,
+    private val receiptRepository: ReceiptRepository
 ) : ViewModel() {
 
     private val _subTotal = MutableStateFlow(0.0)
@@ -206,7 +208,39 @@ class AdminPOSViewModel(
                 )
             }
 
-            _checkoutState.value = posRepository.placePOSOrder(order, orderItems)
+            val result = posRepository.placePOSOrder(order, orderItems)
+            _checkoutState.value = result
+
+
+            // Inside fun completeOrder() in AdminPOSViewModel
+
+            if (result.isSuccess) {
+                val email = customerEmail.value
+                if (email.isNotBlank()) {
+
+                    // 1. Convert POSItems to ReceiptItems
+                    val receiptItems = _posItems.map {
+                        ReceiptItem(
+                            name = it.name,
+                            variant = "${it.size} / ${it.color}",
+                            quantity = it.quantity,
+                            unitPrice = it.price,
+                            totalPrice = it.price * it.quantity
+                        )
+                    }
+
+                    // 2. Call Repo (Delivery Fee is 0 for POS)
+                    receiptRepository.triggerEmail(
+                        toEmail = email,
+                        orderId = "POS-${System.currentTimeMillis().toString().takeLast(6)}",
+                        customerName = "Walk-in Customer",
+                        items = receiptItems,
+                        subTotal = _subTotal.value,
+                        deliveryFee = 0.0,             // No delivery fee for offline
+                        discountAmount = _discountAmount.value
+                    )
+                }
+            }
         }
     }
 

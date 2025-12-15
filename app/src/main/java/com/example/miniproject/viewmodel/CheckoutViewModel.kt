@@ -12,11 +12,9 @@ import com.example.miniproject.repository.AddressRepository
 import com.example.miniproject.repository.CartRepository
 import com.example.miniproject.repository.OrderRepository
 import com.example.miniproject.repository.PaymentRepository
-import com.example.miniproject.repository.PromotionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -28,6 +26,7 @@ class CheckoutViewModel(
     private val orderRepo: OrderRepository,
     private val promotionRepo: PromotionRepository,
     private val authPrefs: AuthPreferences
+    private val receiptRepository: ReceiptRepository
 ) : ViewModel() {
 
     // --- Data Streams ---
@@ -62,9 +61,9 @@ class CheckoutViewModel(
         items.sumOf { it.price * it.quantity }
     }.stateIn(viewModelScope, SharingStarted.Lazily, 0.0)
 
-    // Update Grand Total to use combine
-    val grandTotal: StateFlow<Double> = combine(subtotal, _discountAmount) { sub, disc ->
-        (sub + shippingFee - disc).coerceAtLeast(0.0)
+    // FIXED: Use .map instead of combine
+    val grandTotal: StateFlow<Double> = subtotal.map { sub ->
+        sub + shippingFee - discount
     }.stateIn(viewModelScope, SharingStarted.Lazily, 0.0)
 
     private val _orderState = MutableStateFlow<Result<Long>?>(null)
@@ -149,6 +148,7 @@ class CheckoutViewModel(
         val payment = _selectedPayment.value
         val items = cartItems.value
         val total = grandTotal.value
+        val currentSubtotal = subtotal.value
 
         if (userId == null || address == null || payment == null || items.isEmpty()) {
             _orderState.value = Result.failure(Exception("Missing details"))
@@ -162,7 +162,7 @@ class CheckoutViewModel(
             val order = OrderEntity(
                 customerId = userId,
                 orderDate = System.currentTimeMillis(),
-                totalAmount = subtotal.value,
+                totalAmount = currentSubtotal,
                 shippingFee = shippingFee,
                 discount = discount,
                 grandTotal = total,
@@ -185,7 +185,36 @@ class CheckoutViewModel(
                 )
             }
 
-            _orderState.value = orderRepo.placeOrder(order, orderItems)
+            val result = orderRepo.placeOrder(order, orderItems)
+            _orderState.value = result
+
+            // 2. Trigger Email Receipt (Fixed Logic)
+            if (result.isSuccess) {
+                val email = authPrefs.getLoggedInEmail() ?: "customer@example.com"
+
+                // 1. Convert CartItems to ReceiptItems
+                val receiptItems = items.map {
+                    ReceiptItem(
+                        name = it.productName,
+                        variant = "${it.selectedSize} / ${it.selectedColour}",
+                        quantity = it.quantity,
+                        unitPrice = it.price,
+                        totalPrice = it.price * it.quantity
+                    )
+                }
+
+                // 2. Call Repo with detailed breakdown
+                receiptRepository.triggerEmail(
+                    toEmail = email,
+                    orderId = result.getOrNull().toString(),
+                    customerName = address.fullName,
+                    items = receiptItems,          // Pass the list
+                    subTotal = currentSubtotal,     // Pass subtotal
+                    deliveryFee = shippingFee,     // Pass 10.0
+                    discountAmount = discount,      // Pass discount
+
+                )
+            }
         }
     }
 
