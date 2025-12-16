@@ -97,6 +97,7 @@ import com.example.miniproject.repository.AnalyticsRepository
 import com.example.miniproject.viewmodel.AnalyticsViewModel
 import com.example.miniproject.viewmodel.AnalyticsViewModelFactory
 import com.example.miniproject.screen.admin.AdminOrdersScreen
+import com.example.miniproject.screen.customer.SearchScreen
 import com.example.miniproject.screen.customer.SelectShippingAddressScreen
 import com.example.miniproject.viewmodel.AdminOrderViewModel
 import com.example.miniproject.viewmodel.AdminOrderViewModelFactory
@@ -527,6 +528,13 @@ fun App(
                 ?.toLong() ?: return@composable
 
             OrderDetailScreen(orderId, orderHistoryViewModel , navController)
+        }
+
+        composable("search_screen") {
+            SearchScreen(
+                navController = navController,
+                viewModel = productSearchViewModel
+            )
         }
 
         composable(

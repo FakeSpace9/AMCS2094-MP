@@ -435,7 +435,7 @@ fun BottomNavigationBar(navController: NavController){
         NavigationBarItem(
             icon={ Icon(Icons.Outlined.Search, contentDescription = "Search", tint = Color.Gray, modifier = Modifier.size(28.dp)) },
             selected = false,
-            onClick = { /* Handle navigation */ },
+            onClick = { navController.navigate("search_screen") },
             colors = NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent,selectedIconColor = Color.Black,unselectedIconColor = Color.Gray),
             label = { Text("Search") }
         )
