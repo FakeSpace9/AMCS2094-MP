@@ -35,4 +35,11 @@ interface AddressDao {
     @Query("DELETE FROM addresses WHERE addressId = :id")
     suspend fun deleteAddressById(id: Long)
 
+    @Query("DELETE FROM addresses WHERE customerId = :customerId")
+    suspend fun deleteAddressByCustomerId(customerId: String)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllAddress(addresses: List<AddressEntity>)
+
+
 }

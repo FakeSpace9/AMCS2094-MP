@@ -8,6 +8,7 @@ import androidx.room.Transaction
 import com.example.miniproject.data.entity.BestSellerItem
 import com.example.miniproject.data.entity.OrderEntity
 import com.example.miniproject.data.entity.OrderItemEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface OrderDao {
@@ -44,6 +45,8 @@ interface OrderDao {
     @Query("SELECT * FROM order_items WHERE orderId = :orderId")
     suspend fun getOrderItems(orderId: Long): List<OrderItemEntity>
 
+    @Query("""SELECT * FROM orders WHERE customerId = :customerId ORDER BY orderDate DESC""")
+    suspend fun getOrdersByCustomer(customerId: String): List<OrderEntity>
     // --- ANALYTICS QUERIES (Keep existing) ---
     @Query("SELECT COALESCE(SUM(grandTotal), 0.0) FROM orders WHERE orderDate BETWEEN :start AND :end")
     suspend fun getRevenueInRange(start: Long, end: Long): Double

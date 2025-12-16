@@ -61,7 +61,7 @@ fun EditProfileScreen(
             OutlinedTextField(
                 value = viewModel.name.value,
                 onValueChange = { viewModel.name.value = it },
-                label = { Text("Full Name") },
+                label = { Text("Username") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -88,7 +88,7 @@ fun EditProfileScreen(
 
             Button(
                 onClick = {
-                    viewModel.saveChanges { success ->
+                    viewModel.saveProfile { success ->
                         if (success) {
                             navController.popBackStack()
                         }

@@ -5,12 +5,12 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "payment")
 data class PaymentEntity(
-    @PrimaryKey(autoGenerate = true)
-    val paymentId: Long = 0,
-    val customerId: String,
-    val paymentType: String,
+    @PrimaryKey
+    val paymentId: Long = 0L ,
+    val customerId: String = "",
+    val paymentType: String = "",
 
-    val displayName: String,
+    val displayName: String = "",
     val cardHolderName: String? = null,
     val cardNumber: String? = null,
     val expiryMonth: Int? = null,

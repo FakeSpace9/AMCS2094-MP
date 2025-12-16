@@ -1,8 +1,8 @@
 package com.example.miniproject.screen
 
-import android.R.attr.onClick
 import android.R.attr.top
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,9 +12,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,13 +33,12 @@ import com.example.miniproject.viewmodel.AddressViewModel
 @Composable
 fun AddressScreen(
     navController: NavController,
-    viewModel: AddressViewModel,
-    selectMode: Boolean
+    viewModel: AddressViewModel
 ) {
     val addressList by viewModel.addresses.collectAsState()
 
     LaunchedEffect(Unit) {
-        viewModel.loadAddresses()
+        viewModel.syncAddresses()
     }
 
     Column(
@@ -59,7 +58,7 @@ fun AddressScreen(
                 modifier = Modifier
                     .size(28.dp)
                     .clickable {
-                        navController.popBackStack()
+                        navController.navigate("profile")
                     }
             )
             Spacer(modifier = Modifier.width(16.dp))
@@ -85,7 +84,7 @@ fun AddressScreen(
                     Text("No address added yet.", fontSize = 16.sp)
                     Spacer(modifier = Modifier.height(16.dp))
                     AddAddressButton {
-                        viewModel.startNewAddress()
+                        viewModel.newAddress()
                         navController.navigate("add_address")
                     }
                 }
@@ -96,19 +95,10 @@ fun AddressScreen(
                     AddressItem(
                         address = address,
                         onClick = {
-                            if (selectMode) {
-                                // SELECTION LOGIC
-                                navController.previousBackStackEntry?.savedStateHandle?.set("selected_address_id", address.addressId)
-                                navController.popBackStack()
-                            } else {
-                                // EDIT LOGIC (Standard)
-                                viewModel.editAddress(address.addressId)
-                                navController.navigate("edit_address")
-                            }
+                            viewModel.editAddress(address.addressId)
+                            navController.navigate("edit_address")
                         },
-                        onDelete = {
-                            viewModel.deleteAddress(address.addressId) {}
-                        }
+                        onDelete = { viewModel.deleteAddress(address.addressId) }
                     )
                 }
             }
@@ -116,7 +106,7 @@ fun AddressScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             AddAddressButton {
-                viewModel.startNewAddress()
+                viewModel.newAddress()
                 navController.navigate("add_address")
             }
         }
@@ -143,53 +133,74 @@ fun AddressItem(
     onClick: () -> Unit,
     onDelete: () -> Unit
 ) {
-    Card(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            .padding(vertical = 8.dp)
+            .background(
+                color = Color.White,
+                shape = RoundedCornerShape(12.dp)
+            )
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.primary,
+                shape = RoundedCornerShape(12.dp)
+            )
+            .clickable { onClick() }
+            .padding(16.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onClick() }
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+
+        IconButton(
+            onClick = onDelete,
+            modifier = Modifier.align(Alignment.CenterEnd)
         ) {
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text("${address.fullName} • ${address.phone}", fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(address.addressLine1)
-                Text(address.postcode)
-
-                if (address.isDefault) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Box(
-                        modifier = Modifier
-                            .background(Color.Red.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text(
-                            "Default Address",
-                            color = Color.Red,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-            }
-
             Icon(
                 imageVector = Icons.Default.Delete,
-                contentDescription = "Delete Address",
-                tint = Color.Red,
-                modifier = Modifier
-                    .size(28.dp)
-                    .clickable { onDelete() }
+                contentDescription = "Delete address",
+                tint = Color.Red
             )
+        }
+
+        Column {
+
+            Text(
+                text = "${address.fullName} • ${address.phone}",
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                color = Color.Black
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = address.addressLine1,
+                fontSize = 14.sp,
+                color = Color.DarkGray
+            )
+
+            Text(
+                text = address.postcode,
+                fontSize = 14.sp,
+                color = Color.DarkGray
+            )
+
+            if (address.isDefault) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "DEFAULT",
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .background(
+                            color = Color(0xFF1A73E8),
+                            shape = RoundedCornerShape(6.dp)
+                        )
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+            }
         }
     }
 }
+
 

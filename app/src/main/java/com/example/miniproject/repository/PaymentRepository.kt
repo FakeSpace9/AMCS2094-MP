@@ -1,6 +1,7 @@
 package com.example.miniproject.repository
 
 import com.example.miniproject.data.dao.PaymentDao
+import com.example.miniproject.data.entity.AddressEntity
 import com.example.miniproject.data.entity.PaymentEntity
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
@@ -23,19 +24,21 @@ class PaymentRepository(
             val id = paymentDao.insertPayment(payment)
 
             val map = hashMapOf(
+                "paymentId" to id,
+                "customerId" to payment.customerId,
                 "paymentType" to payment.paymentType,
                 "displayName" to payment.displayName,
                 "cardHolderName" to payment.cardHolderName,
                 "cardNumber" to payment.cardNumber,
                 "expiryMonth" to payment.expiryMonth,
                 "expiryYear" to payment.expiryYear,
+                "cvv" to payment.cvv,
                 "walletId" to payment.walletId,
                 "isDefault" to payment.isDefault
+
             )
 
-            firestore.collection("customers")
-                .document(payment.customerId)
-                .collection("payments")
+            firestore.collection("payments")
                 .document(id.toString())
                 .set(map)
                 .await()
@@ -50,9 +53,7 @@ class PaymentRepository(
         return try {
             paymentDao.deletePayment(id)
 
-            firestore.collection("customers")
-                .document(customerId)
-                .collection("payments")
+            firestore.collection("payments")
                 .document(id.toString())
                 .delete()
                 .await()
@@ -63,14 +64,34 @@ class PaymentRepository(
         }
     }
 
-    suspend fun setDefault(customerId: String, id: Long) {
+    suspend fun setDefaultPayment(customerId: String, id: Long) {
         paymentDao.clearDefault(customerId)
         paymentDao.setDefault(id)
 
-        firestore.collection("customers")
-            .document(customerId)
-            .collection("payments")
+        firestore.collection("payments")
+
             .document(id.toString())
             .update("isDefault", true)
+            .await()
+    }
+
+
+
+    suspend fun getPaymentsFromFirebase(customerId: String) {
+        try {
+            val snapshot = firestore.collection("payments")
+                .whereEqualTo("customerId", customerId)
+                .get()
+                .await()
+
+            val payments = snapshot.documents.mapNotNull {
+                it.toObject(PaymentEntity::class.java)
+            }
+
+            paymentDao.deletePaymentByCustomerId(customerId)
+
+            paymentDao.insertAllPayment(payments)
+        } catch (e: Exception) {
+        }
     }
 }

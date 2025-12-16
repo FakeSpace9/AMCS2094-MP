@@ -90,7 +90,7 @@ fun ProfileScreen(
         Spacer(modifier = Modifier.height(10.dp))
 
         // ---------- Menu Items ----------
-        ProfileMenuItem("My Orders") { navController.navigate("orders") }
+        ProfileMenuItem("My Orders") { navController.navigate("order_history") }
         ProfileMenuItem("Edit Profile") { navController.navigate("edit") }
         ProfileMenuItem("Shipping Address") { navController.navigate("address") }
         ProfileMenuItem("Payment Methods") { navController.navigate("payment") }

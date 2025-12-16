@@ -1,5 +1,6 @@
 package com.example.miniproject.repository
 
+import android.util.Log
 import com.example.miniproject.data.dao.AddressDao
 import com.example.miniproject.data.entity.AddressEntity
 import com.google.firebase.firestore.FirebaseFirestore
@@ -65,22 +66,49 @@ class AddressRepository(
         addressDao.setDefault(addressId)
     }
 
+
+
+
     suspend fun deleteAddress(customerId: String, addressId: Long): Result<Unit> {
         return try {
             addressDao.deleteAddressById(addressId)
 
-            firestore.collection("customers")
-                .document(customerId)
-                .collection("addresses")
-                .document(addressId.toString())
-                .delete()
+            firestore.collection("addresses")
+                .whereEqualTo("customerId", customerId)
+                .whereEqualTo("addressId", addressId)
+                .get()
                 .await()
+                .documents
+                .firstOrNull()
+                ?.reference
+                ?.delete()
+
 
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
+
+    suspend fun getAddressesFromFirebase(customerId: String) {
+        try {
+            val snapshot = firestore.collection("addresses")
+                .whereEqualTo("customerId", customerId)
+                .get()
+                .await()
+
+            val addresses = snapshot.documents.mapNotNull { doc ->
+                doc.toObject(AddressEntity::class.java)
+            }
+
+            addressDao.deleteAddressByCustomerId(customerId)
+
+            addressDao.insertAllAddress(addresses)
+
+        } catch (e: Exception) {
+        }
+    }
+
 
 
 }
