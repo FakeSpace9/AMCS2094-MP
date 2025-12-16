@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.PointOfSale
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.ShoppingBag // Icon for items
 import androidx.compose.material3.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.miniproject.viewmodel.AdminOrderViewModel
 import com.example.miniproject.viewmodel.AnalyticsViewModel
 import com.example.miniproject.viewmodel.LoginViewModel
 import com.example.miniproject.viewmodel.ProductFormViewModel
@@ -34,9 +36,10 @@ fun AdminDashboardScreen(
     loginViewModel: LoginViewModel,
     promoViewModel: PromotionViewModel,
     salesViewModel: SalesHistoryViewModel,
-    analyticsViewModel: AnalyticsViewModel
+    analyticsViewModel: AnalyticsViewModel,
+    adminOrderViewModel: AdminOrderViewModel
 ) {
-    var selectedItem by remember { mutableIntStateOf(0) } // Default to POS (index 0) to see stats immediately
+    var selectedItem by rememberSaveable { mutableIntStateOf(0) }
     val items = listOf(
         BottomNavItem("POS", Icons.Default.PointOfSale),
         BottomNavItem("Analytics", Icons.Default.Analytics),
@@ -143,7 +146,7 @@ fun AdminDashboardScreen(
                     }
                 }
                 1 -> AdminAnalyticsScreen(navController, analyticsViewModel)
-                2 -> PlaceholderScreen("Orders Feature Coming Soon")
+                2 -> AdminOrdersScreen(navController, adminOrderViewModel)
                 3 -> AdminProductSection(navController, formViewModel, searchViewModel, loginViewModel, promoViewModel)
             }
         }

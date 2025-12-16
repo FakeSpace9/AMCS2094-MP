@@ -77,5 +77,5 @@ interface OrderDao {
     fun getOrdersByStatus(status: String): Flow<List<OrderEntity>>
 
     @Query("UPDATE orders SET status = :newStatus WHERE id = :orderId")
-    suspend fun updateOrderStatus(orderId: String, newStatus: String)
+    suspend fun updateOrderStatus(orderId: Int, newStatus: String)
 }

@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -41,11 +41,7 @@ fun AdminOrdersScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Manage Orders", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, "Back")
-                    }
-                },
+
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
             )
         }
@@ -102,8 +98,7 @@ fun AdminOrdersScreen(
                                 viewModel.updateStatus(order.id, newStatus)
                             },
                             onClick = {
-                                // Optional: Navigate to detailed view if needed
-                                // navController.navigate("admin_order_detail/${order.orderId}")
+                                navController.navigate("admin_order_detail/${order.id}")
                             }
                         )
                     }
@@ -136,7 +131,7 @@ fun AdminOrderCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Order #${order.orderId.takeLast(6).uppercase()}",
+                    text = "Order #${order.id}",
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )

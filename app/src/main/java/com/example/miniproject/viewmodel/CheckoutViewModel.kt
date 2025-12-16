@@ -186,12 +186,13 @@ class CheckoutViewModel(
 
             val order = OrderEntity(
                 customerId = userId,
+                customerEmail = authPrefs.getLoggedInEmail() ?: "",
                 orderDate = System.currentTimeMillis(),
                 totalAmount = currentSubtotal,
                 shippingFee = shippingFee,
                 discount = currentDiscount,
                 grandTotal = total,
-                status = "Paid",
+                status = "New",
                 deliveryAddress = addressSnapshot,
                 paymentMethod = paymentSnapshot
             )
