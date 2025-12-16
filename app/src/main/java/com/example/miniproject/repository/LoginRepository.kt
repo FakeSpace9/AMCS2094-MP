@@ -141,7 +141,7 @@ class LoginRepository(
                 )
             }
 
-
+            customerDao.insertCustomer(customerEntity)
 
             Result.success(customerEntity)
 
