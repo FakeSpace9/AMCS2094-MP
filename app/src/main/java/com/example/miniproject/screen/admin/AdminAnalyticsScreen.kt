@@ -44,11 +44,7 @@ fun AdminAnalyticsScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Analytics", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, "Back")
-                    }
-                },
+
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
             )
         },

@@ -21,6 +21,12 @@ class PromotionViewModel(
     val promotions = repository.allPromotions
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
+    fun syncPromotions() {
+        viewModelScope.launch {
+            repository.syncPromotions()
+        }
+    }
+
     fun createPromo(
         code: String,
         name: String,

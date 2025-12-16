@@ -102,4 +102,6 @@ interface ProductDao {
 
     @Query("UPDATE product_variants SET stockQuantity = stockQuantity - :quantity WHERE sku = :sku")
     suspend fun decreaseStock(sku: String, quantity: Int)
+
+
 }
