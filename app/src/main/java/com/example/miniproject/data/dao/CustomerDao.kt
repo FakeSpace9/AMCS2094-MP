@@ -17,7 +17,7 @@ interface CustomerDao {
     suspend fun login(email: String): CustomerEntity?
 
     @Query("SELECT * FROM customers WHERE customerId = :id")
-    suspend fun getCustomerById(id: String): CustomerEntity
+    suspend fun getCustomerById(id: String): CustomerEntity?
 
     @Query("SELECT EXISTS(SELECT 1 FROM customers WHERE email = :email)")
     suspend fun isEmailRegistered(email: String): Boolean

@@ -46,10 +46,15 @@ class EditProfileViewModel(
 
             val user = repo.getCustomerById(userId)
 
-            name.value = user.name
-            phone.value = user.phone
-            email.value = user.email
-            currentCustomerId = user.customerId
+            if (user != null) {
+                name.value = user.name
+                phone.value = user.phone
+                email.value = user.email
+                currentCustomerId = user.customerId
+            } else {
+                // Handle case where user data is missing (e.g., show error or fetch from remote)
+                message.value = "User data not found"
+            }
         }
     }
 

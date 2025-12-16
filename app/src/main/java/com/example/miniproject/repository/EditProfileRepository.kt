@@ -14,7 +14,7 @@ class EditProfileRepository(
         return customerDao.getCustomerByEmail(email)
     }
 
-    suspend fun getCustomerById(customerId: String): CustomerEntity {
+    suspend fun getCustomerById(customerId: String): CustomerEntity? {
         return customerDao.getCustomerById(customerId)
     }
 
