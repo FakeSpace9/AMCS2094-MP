@@ -24,12 +24,6 @@ interface PaymentDao {
     @Query("DELETE FROM payment WHERE paymentId = :id")
     suspend fun deletePayment(id: Long)
 
-    @Query("UPDATE payment SET isDefault = 0 WHERE customerId = :customerId")
-    suspend fun clearDefault(customerId: String)
-
-    @Query("UPDATE payment SET isDefault = 1 WHERE paymentId = :id")
-    suspend fun setDefault(id: Long)
-
     @Query("DELETE FROM payment WHERE customerId = :customerId")
     suspend fun deletePaymentByCustomerId(customerId: String)
 

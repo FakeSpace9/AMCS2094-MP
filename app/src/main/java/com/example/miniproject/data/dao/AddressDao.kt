@@ -23,12 +23,6 @@ interface AddressDao {
     @Update
     suspend fun updateAddress(address: AddressEntity)
 
-    @Query("UPDATE addresses SET isDefault = 0 WHERE customerId = :customerId")
-    suspend fun clearDefault(customerId: String)
-
-    @Query("UPDATE addresses SET isDefault = 1 WHERE addressId = :addressId")
-    suspend fun setDefault(addressId: Long)
-
     @Delete
     suspend fun deleteAddress(address: AddressEntity)
 

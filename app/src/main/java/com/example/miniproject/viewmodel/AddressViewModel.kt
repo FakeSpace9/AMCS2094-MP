@@ -24,7 +24,6 @@ class AddressViewModel(
     var addressLine1 = mutableStateOf("")
     var postcode = mutableStateOf("")
     var label = mutableStateOf("Home")
-    var isDefault = mutableStateOf(false)
     var message = mutableStateOf("")
 
     private var currentCustomerId: String = ""
@@ -109,17 +108,11 @@ class AddressViewModel(
                 addressLine1 = addressLine1.value,
                 postcode = postcode.value,
                 label = label.value,
-                isDefault = isDefault.value
             )
 
             val result = repo.saveAddress(address)
 
             if (result.isSuccess) {
-                val savedId = result.getOrNull() ?: 0L
-                if (isDefault.value && savedId != 0L) {
-                    repo.setDefaultAddress(currentCustomerId, savedId)
-                }
-                message.value = "Address saved"
                 loadAddresses()
                 onResult(true)
             } else {
