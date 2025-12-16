@@ -225,7 +225,8 @@ class AdminPOSViewModel(
                             variant = "${it.size} / ${it.color}",
                             quantity = it.quantity,
                             unitPrice = it.price,
-                            totalPrice = it.price * it.quantity
+                            totalPrice = it.price * it.quantity,
+                            imageUrl = it.imageUrl
                         )
                     }
 

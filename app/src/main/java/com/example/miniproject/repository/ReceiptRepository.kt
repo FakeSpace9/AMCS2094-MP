@@ -3,13 +3,14 @@ package com.example.miniproject.repository
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
-// 1. Create a helper data class for receipt items
+// 1. Update Data Class to include Image
 data class ReceiptItem(
     val name: String,
-    val variant: String, // e.g., Size/Color
+    val variant: String,
     val quantity: Int,
     val unitPrice: Double,
-    val totalPrice: Double
+    val totalPrice: Double,
+    val imageUrl: String
 )
 
 class ReceiptRepository(private val firestore: FirebaseFirestore) {
@@ -18,20 +19,21 @@ class ReceiptRepository(private val firestore: FirebaseFirestore) {
         toEmail: String,
         orderId: String,
         customerName: String,
-        items: List<ReceiptItem>, // Changed: Pass list of objects, not HTML string
+        items: List<ReceiptItem>,
         subTotal: Double,
         deliveryFee: Double,
         discountAmount: Double
     ): Result<Unit> {
         return try {
-
             val finalTotal = subTotal + deliveryFee - discountAmount
 
-
-            // 2. Generate Rows HTML with 4 Columns
+            // 2. Generate Rows with Image Column
             val itemsRowsHtml = items.joinToString("") { item ->
                 """
                 <tr>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee; width: 60px;">
+                        <img src="${item.imageUrl}" alt="Item" width="50" height="50" style="border-radius: 4px; object-fit: cover; display: block;">
+                    </td>
                     <td style="padding: 10px; border-bottom: 1px solid #eee;">
                         ${item.name} <br>
                         <span style="color: #888; font-size: 12px;">${item.variant}</span>
@@ -43,12 +45,10 @@ class ReceiptRepository(private val firestore: FirebaseFirestore) {
                 """.trimIndent()
             }
 
-            // 3. Build HTML Body
             val htmlBody = """
                 <html>
                 <body style="font-family: Arial, sans-serif; color: #333; padding: 20px;">
-                    
-<div style="max-width: 600px; border: 1px solid #eee; padding: 20px; border-radius: 8px; background-color: #ffffff;">
+                    <div style="max-width: 600px; border: 1px solid #eee; padding: 20px; border-radius: 8px; background-color: #ffffff;">
                         <h2 style="color: #4CAF50;">Order Receipt</h2>
                         <p>Hi <strong>$customerName</strong>,</p>
                         <p>Thank you for your order! <strong>#$orderId</strong></p>
@@ -56,16 +56,16 @@ class ReceiptRepository(private val firestore: FirebaseFirestore) {
                         
                         <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
                             <tr style="background-color: #f8f9fa;">
-                                <th style="padding: 10px; text-align: left;">Item</th>
+                                <th style="padding: 10px; text-align: left; width: 60px;"></th> <th style="padding: 10px; text-align: left;">Item</th>
                                 <th style="padding: 10px; text-align: center;">Qty</th>
                                 <th style="padding: 10px; text-align: right;">Unit Price</th>
                                 <th style="padding: 10px; text-align: right;">Total</th>
                             </tr>
                             $itemsRowsHtml
                         </table>
-
+                        
                         <table style="width: 100%; margin-top: 20px; border-top: 2px solid #333;">
-                            <tr>
+                             <tr>
                                 <td style="padding: 5px; text-align: right;">Subtotal:</td>
                                 <td style="padding: 5px; text-align: right; width: 120px;">RM ${String.format("%.2f", subTotal)}</td>
                             </tr>
@@ -82,10 +82,6 @@ class ReceiptRepository(private val firestore: FirebaseFirestore) {
                                 <td style="padding: 10px; text-align: right; font-weight: bold; font-size: 16px; color: #4CAF50;">RM ${String.format("%.2f", finalTotal)}</td>
                             </tr>
                         </table>
-                        
-                        <p style="font-size: 12px; color: #999; text-align: center; margin-top: 30px;">
-                            This receipt was generated automatically.
-                        </p>
                     </div>
                 </body>
                 </html>
@@ -111,7 +107,7 @@ class ReceiptRepository(private val firestore: FirebaseFirestore) {
         toEmail: String,
         orderId: String,
         newStatus: String,
-        items: List<ReceiptItem> // <--- 1. Add items parameter
+        items: List<ReceiptItem>
     ): Result<Unit> {
         return try {
             val color = when (newStatus) {
@@ -120,10 +116,13 @@ class ReceiptRepository(private val firestore: FirebaseFirestore) {
                 else -> "#2196F3"
             }
 
-            // 2. Generate Items HTML (Same logic as Receipt)
+            // Generate items row with image
             val itemsRowsHtml = items.joinToString("") { item ->
                 """
                 <tr>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee; width: 60px;">
+                        <img src="${item.imageUrl}" alt="Item" width="50" height="50" style="border-radius: 4px; object-fit: cover; display: block;">
+                    </td>
                     <td style="padding: 10px; border-bottom: 1px solid #eee;">
                         ${item.name} <br>
                         <span style="color: #888; font-size: 12px;">${item.variant}</span>
@@ -133,7 +132,6 @@ class ReceiptRepository(private val firestore: FirebaseFirestore) {
                 """.trimIndent()
             }
 
-            // 3. Update HTML Body
             val htmlBody = """
                 <html>
                 <body style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
@@ -148,7 +146,8 @@ class ReceiptRepository(private val firestore: FirebaseFirestore) {
 
                         <p><strong>Items in this order:</strong></p>
                         <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                            <tr style="background-color: #f8f9fa;">
+                             <tr style="background-color: #f8f9fa;">
+                                <th style="padding: 10px; text-align: left; width: 60px;"></th>
                                 <th style="padding: 10px; text-align: left;">Item</th>
                                 <th style="padding: 10px; text-align: center;">Qty</th>
                             </tr>

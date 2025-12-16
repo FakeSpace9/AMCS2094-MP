@@ -225,7 +225,8 @@ class CheckoutViewModel(
                         variant = "${it.selectedSize} / ${it.selectedColour}",
                         quantity = it.quantity,
                         unitPrice = it.price,
-                        totalPrice = it.price * it.quantity
+                        totalPrice = it.price * it.quantity,
+                        imageUrl = it.productImageUrl
                     )
                 }
 
