@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -43,6 +44,7 @@ fun ProfileScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .statusBarsPadding()
             .padding(20.dp)
     ) {
         Box(
@@ -86,20 +88,18 @@ fun ProfileScreen(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-        Divider(thickness = 1.dp, color = Color.Black)
+        HorizontalDivider(thickness = 1.dp, color = Color.Black)
         Spacer(modifier = Modifier.height(10.dp))
 
-        // ---------- Menu Items ----------
         ProfileMenuItem("My Orders") { navController.navigate("order_history") }
         ProfileMenuItem("Edit Profile") { navController.navigate("edit") }
         ProfileMenuItem("Shipping Address") { navController.navigate("address") }
         ProfileMenuItem("Payment Methods") { navController.navigate("payment") }
 
         Spacer(modifier = Modifier.height(20.dp))
-        Divider(thickness = 1.dp, color = Color.Black)
+        HorizontalDivider(thickness = 1.dp, color = Color.Black)
         Spacer(modifier = Modifier.height(20.dp))
 
-        // ---------- Logout ----------
         Row(
             modifier = Modifier
                 .fillMaxWidth()

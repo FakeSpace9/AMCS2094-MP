@@ -31,6 +31,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.miniproject.viewmodel.OrderHistoryViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun OrderHistoryScreen(
@@ -101,7 +104,7 @@ fun OrderHistoryScreen(
                         )
 
                         Text(
-                            text = "Date: ${order.orderDate}",
+                            text = "Date: ${formatOrderDate(order.orderDate)}",
                             fontSize = 14.sp,
                             color = Color.DarkGray
                         )
@@ -113,7 +116,7 @@ fun OrderHistoryScreen(
                         )
 
                         Text(
-                            text = "Total: RM ${order.grandTotal}",
+                            text = "Total: RM %.2f".format(order.grandTotal),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -121,6 +124,10 @@ fun OrderHistoryScreen(
                 }
             }
         }
-
     }
+}
+
+fun formatOrderDate(timestamp: Long): String {
+    val sdf = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
+    return sdf.format(Date(timestamp))
 }
