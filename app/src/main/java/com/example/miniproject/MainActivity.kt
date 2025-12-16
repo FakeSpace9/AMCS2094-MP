@@ -493,9 +493,6 @@ fun App(
             OrderDetailScreen(orderId, orderHistoryViewModel , navController)
         }
 
-
-
-
         composable("admin_analytics") {
             AdminAnalyticsScreen(navController = navController, viewModel = analyticsViewModel)
         }

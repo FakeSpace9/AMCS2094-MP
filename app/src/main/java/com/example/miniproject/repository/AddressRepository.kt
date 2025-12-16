@@ -37,8 +37,7 @@ class AddressRepository(
                 "phone" to finalAddress.phone,
                 "addressLine1" to finalAddress.addressLine1,
                 "postcode" to finalAddress.postcode,
-                "label" to finalAddress.label,
-                "isDefault" to finalAddress.isDefault
+                "label" to finalAddress.label
             )
 
             val collection = firestore.collection("addresses")
@@ -61,10 +60,7 @@ class AddressRepository(
         }
     }
 
-    suspend fun setDefaultAddress(customerId: String, addressId: Long) {
-        addressDao.clearDefault(customerId)
-        addressDao.setDefault(addressId)
-    }
+
 
 
 

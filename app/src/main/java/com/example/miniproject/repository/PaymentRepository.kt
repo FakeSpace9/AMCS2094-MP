@@ -34,7 +34,6 @@ class PaymentRepository(
                 "expiryYear" to payment.expiryYear,
                 "cvv" to payment.cvv,
                 "walletId" to payment.walletId,
-                "isDefault" to payment.isDefault
 
             )
 
@@ -63,19 +62,6 @@ class PaymentRepository(
             Result.failure(e)
         }
     }
-
-    suspend fun setDefaultPayment(customerId: String, id: Long) {
-        paymentDao.clearDefault(customerId)
-        paymentDao.setDefault(id)
-
-        firestore.collection("payments")
-
-            .document(id.toString())
-            .update("isDefault", true)
-            .await()
-    }
-
-
 
     suspend fun getPaymentsFromFirebase(customerId: String) {
         try {

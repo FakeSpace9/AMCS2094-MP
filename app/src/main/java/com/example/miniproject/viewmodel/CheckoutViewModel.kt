@@ -97,19 +97,10 @@ class CheckoutViewModel(
             val addresses = addressRepo.getAddressesByCustomerId(userId)
             _userAddresses.value = addresses
 
-            // Auto-select logic: Keep current selection if valid, else pick Default, else First
-            if (_selectedAddress.value == null || addresses.none { it.addressId == _selectedAddress.value?.addressId }) {
-                _selectedAddress.value = addresses.find { it.isDefault } ?: addresses.firstOrNull()
-            }
-
             // 2. Load Payments
             val payments = paymentRepo.getPayments(userId)
             _userPayments.value = payments
 
-            // Auto-select logic
-            if (_selectedPayment.value == null || payments.none { it.paymentId == _selectedPayment.value?.paymentId }) {
-                _selectedPayment.value = payments.find { it.isDefault } ?: payments.firstOrNull()
-            }
         }
     }
 

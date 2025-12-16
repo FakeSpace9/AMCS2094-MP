@@ -21,16 +21,19 @@ class PaymentViewModel(
     var errorMessage = mutableStateOf<String?>(null)
     var paymentId: Long? = null
     var paymentType = mutableStateOf("CARD")   // default type
-    var cardName = mutableStateOf("")
+    var cardName = mutableStateOf(CardType.OTHER)
     var cardHolderName = mutableStateOf("")
     var cardNumber = mutableStateOf("")
     var expiryMonth = mutableStateOf("")
     var expiryYear = mutableStateOf("")
     var cvv = mutableStateOf("")
     var walletId = mutableStateOf("")
-    var isDefault = mutableStateOf(false)
-
     private var customerId: String = ""
+
+    enum class CardType {
+        VISA, MASTERCARD, OTHER
+    }
+
 
     init {
         loadPayments()
@@ -90,7 +93,6 @@ class PaymentViewModel(
         return when (paymentType.value) {
 
             "CREDIT/DEBIT CARD" -> {
-                if (cardName.value.isBlank()) return "Card name cannot be empty"
                 if (cardHolderName.value.isBlank()) return "Card holder name cannot be empty"
                 if (cardNumber.value.isBlank()) return "Card number cannot be empty"
                 if (expiryMonth.value.isBlank()) return "Expiry month cannot be empty"
@@ -124,16 +126,15 @@ class PaymentViewModel(
 
     fun newPayment() {
         paymentId = null
-        paymentType.value = "CARD"
-        cardName.value = ""
+        errorMessage.value = null
+        paymentType.value = "CREDIT/DEBIT CARD"
+        cardName.value = CardType.OTHER
         cardHolderName.value = ""
         cardNumber.value = ""
         expiryMonth.value = ""
         expiryYear.value = ""
         cvv.value = ""
         walletId.value = ""
-        isDefault.value = false
-
     }
 
     fun editPayment(id: Long) {
@@ -142,14 +143,13 @@ class PaymentViewModel(
 
             paymentId = p.paymentId
             paymentType.value = p.paymentType
-            cardName.value = p.displayName
+            cardName.value = CardType.valueOf(p.displayName)
             cardHolderName.value = p.cardHolderName ?: ""
             cardNumber.value = p.cardNumber ?: ""
             expiryMonth.value = p.expiryMonth?.toString() ?: ""
             expiryYear.value = p.expiryYear?.toString() ?: ""
             cvv.value = p.cvv ?: ""
             walletId.value = p.walletId ?: ""
-            isDefault.value = p.isDefault
         }
     }
 
@@ -174,21 +174,18 @@ class PaymentViewModel(
                 paymentId = paymentId ?: 0,
                 customerId = customerId,
                 paymentType = paymentType.value,
-                displayName = cardName.value,
+                displayName = cardName.value.name,
                 cardHolderName = cardHolderName.value.takeIf { paymentType.value == "CREDIT/DEBIT CARD" },
                 cardNumber = cardNumber.value.takeIf { paymentType.value == "CREDIT/DEBIT CARD" },
                 expiryMonth = expiryMonth.value.toIntOrNull(),
                 expiryYear = expiryYear.value.toIntOrNull(),
                 cvv = cvv.value.takeIf { paymentType.value == "CREDIT/DEBIT CARD" },
                 walletId = walletId.value.takeIf { paymentType.value == "TNG" },
-                isDefault = isDefault.value
             )
 
             val result = repo.savePayment(payment)
 
             if (result.isSuccess) {
-                val newId = result.getOrNull()!!
-                if (isDefault.value) repo.setDefaultPayment(customerId, newId)
                 loadPayments()
                 onResult(true)
             } else {
@@ -215,6 +212,23 @@ class PaymentViewModel(
 
             repo.getPaymentsFromFirebase(userId)
             loadPayments()
+        }
+    }
+
+    fun detectCardNum(input: String) {
+        cardNumber.value = input.filter { it.isDigit() }
+        cardName.value = detectCardType(cardNumber.value)
+    }
+
+    private fun detectCardType(card: String): CardType {
+        return when {
+            card.startsWith("4") -> CardType.VISA
+
+            card.take(2).toIntOrNull() in 51..55 -> CardType.MASTERCARD
+
+            card.take(4).toIntOrNull() in 2221..2720 -> CardType.MASTERCARD
+
+            else -> CardType.OTHER
         }
     }
 
