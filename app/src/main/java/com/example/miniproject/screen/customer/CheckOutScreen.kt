@@ -223,7 +223,7 @@ fun CheckOutScreen(
                     address = selectedAddress,
                     onClick = {
                         // Navigate to Address Screen in SELECTION mode
-                        navController.navigate("address?selectMode=true")
+                        navController.navigate("select_shipping_address")
                     }
                 )
                 Spacer(modifier = Modifier.height(100.dp))

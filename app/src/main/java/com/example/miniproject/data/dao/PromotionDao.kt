@@ -18,9 +18,19 @@ interface PromotionDao {
     @Delete
     suspend fun deletePromotion(promotion: PromotionEntity)
 
+    @Query("DELETE FROM promotions")
+    suspend fun deleteAllPromotions()
+
+
     @Query("DELETE FROM promotions WHERE promotionId = :id")
     suspend fun deletePromotionById(id: String)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPromotions(promotions: List<PromotionEntity>)
+
+    @Transaction
+    suspend fun replaceAllPromotions(promotions: List<PromotionEntity>) {
+        deleteAllPromotions()   // 1. Clear old data
+        insertPromotions(promotions) // 2. Insert fresh data from Cloud
+    }
 }

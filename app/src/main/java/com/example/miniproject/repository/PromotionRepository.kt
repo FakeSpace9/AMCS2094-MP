@@ -91,7 +91,10 @@ class PromotionRepository(
             }
 
             if (promotions.isNotEmpty()) {
-                promotionDao.insertPromotions(promotions)
+                promotionDao.replaceAllPromotions(promotions)
+            } else {
+                // If Firestore is empty, clear local DB too
+                promotionDao.deleteAllPromotions()
             }
         } catch (e: Exception) {
             e.printStackTrace()

@@ -57,7 +57,7 @@ fun ProductDetailScreen(
                 Toast.makeText(context, "Added to Cart!", Toast.LENGTH_SHORT).show()
                 viewModel.resetAddToCartStatus() // Reset so we can add again
 
-                navController.navigate("cart")
+
             }
             is AddToCartStatus.Error -> {
                 Toast.makeText(context, (addToCartStatus as AddToCartStatus.Error).message, Toast.LENGTH_SHORT).show()
