@@ -12,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -97,9 +96,10 @@ import com.google.firebase.storage.FirebaseStorage
 import com.example.miniproject.repository.AnalyticsRepository
 import com.example.miniproject.viewmodel.AnalyticsViewModel
 import com.example.miniproject.viewmodel.AnalyticsViewModelFactory
-import com.example.miniproject.screen.admin.AdminAnalyticsScreen
+import com.example.miniproject.screen.admin.AdminOrdersScreen
 import com.example.miniproject.screen.customer.SelectShippingAddressScreen
-import kotlinx.serialization.builtins.BooleanArraySerializer
+import com.example.miniproject.viewmodel.AdminOrderViewModel
+import com.example.miniproject.viewmodel.AdminOrderViewModelFactory
 
 class MainActivity : ComponentActivity() {
 
@@ -288,7 +288,8 @@ fun App(
 
     val salesHistoryViewModel: SalesHistoryViewModel = viewModel(
         factory = SalesHistoryViewModelFactory(
-            posRepository
+            posRepository,
+            promoRepo
             )
     )
 
@@ -303,12 +304,21 @@ fun App(
         factory = AnalyticsViewModelFactory(analyticsRepo)
     )
 
+
+    val adminOrderViewModel: AdminOrderViewModel = viewModel(
+        factory = AdminOrderViewModelFactory(orderRepo, receiptRepository)
+    )
+
+    val adminOrderDetailViewModel: com.example.miniproject.viewmodel.AdminOrderDetailViewModel = viewModel(
+        factory = com.example.miniproject.viewmodel.AdminOrderDetailViewModelFactory(orderRepo)
+    )
+
     // --- Navigation Host ---
     NavHost(navController = navController, startDestination = startDest) {
 
         // --- CUSTOMER ROUTES ---
         composable("home") {
-            HomeScreenWithDrawer(navController = navController, viewModel = loginViewModel, searchViewModel = productSearchViewModel)
+            HomeScreenWithDrawer(navController = navController, viewModel = loginViewModel, searchViewModel = productSearchViewModel, promoViewModel = promoViewModel)
         }
         composable("Login") {
             LoginScreen(navController = navController, viewModel = loginViewModel)
@@ -351,7 +361,8 @@ fun App(
                 loginViewModel = loginViewModel,
                 promoViewModel = promoViewModel,
                 salesViewModel = salesHistoryViewModel,
-                analyticsViewModel = analyticsViewModel
+                analyticsViewModel = analyticsViewModel,
+                adminOrderViewModel = adminOrderViewModel
             )
         }
 
@@ -504,6 +515,31 @@ fun App(
 
         composable("admin_analytics") {
             AdminAnalyticsScreen(navController = navController, viewModel = analyticsViewModel)
+        }
+
+        composable("admin_orders") {
+            AdminOrdersScreen(navController = navController, viewModel = adminOrderViewModel)
+        }
+
+        composable("order_detail/{orderId}") { backStackEntry ->
+            val orderId = backStackEntry.arguments
+                ?.getString("orderId")
+                ?.toLong() ?: return@composable
+
+            OrderDetailScreen(orderId, orderHistoryViewModel , navController)
+        }
+
+        composable(
+            route = "admin_order_detail/{orderId}",
+            arguments = listOf(navArgument("orderId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val orderId = backStackEntry.arguments?.getLong("orderId") ?: 0L
+
+            com.example.miniproject.screen.admin.AdminOrderDetailScreen(
+                orderId = orderId,
+                viewModel = adminOrderDetailViewModel,
+                navController = navController
+            )
         }
     }
 }

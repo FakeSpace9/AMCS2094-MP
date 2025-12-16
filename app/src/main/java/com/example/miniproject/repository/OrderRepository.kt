@@ -33,6 +33,7 @@ class OrderRepository(
             val orderData = mapOf(
                 "orderId" to newOrderId,
                 "customerId" to order.customerId,
+                "customerEmail" to order.customerEmail,
                 "date" to order.orderDate,
                 "total" to order.grandTotal,
                 "status" to order.status,
@@ -101,6 +102,7 @@ class OrderRepository(
                 orders.add(OrderEntity(
                     id = orderId.toInt(), // Room ID
                     customerId = doc.getString("customerId") ?: "",
+                    customerEmail = doc.getString("customerEmail") ?: "No Email",
                     orderDate = doc.getLong("date") ?: System.currentTimeMillis(),
                     totalAmount = doc.getDouble("total") ?: 0.0,
                     status = doc.getString("status") ?: "Completed",
@@ -138,5 +140,27 @@ class OrderRepository(
 
     suspend fun getOrdersByCustomer(customerId: String): List<OrderEntity> {
         return orderDao.getOrdersByCustomer(customerId)
+    }
+
+    fun getOrdersByStatusFlow(status: String): Flow<List<OrderEntity>> {
+        return orderDao.getOrdersByStatus(status)
+    }
+
+    suspend fun updateOrderStatus(orderId: Int, newStatus: String): Result<Unit> {
+        return try {
+            // 1. Update Local Room DB
+            orderDao.updateOrderStatus(orderId, newStatus)
+
+            // 2. Update Firestore so the user sees the change
+            firestore.collection("orders") // Check your Firestore collection name
+                .document(orderId.toString())
+                .update("status", newStatus)
+                .await()
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
     }
 }

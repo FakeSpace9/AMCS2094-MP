@@ -46,7 +46,7 @@ import com.example.miniproject.data.Converters
         PromotionEntity::class
 
     ],
-    version = 11,
+    version = 15,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

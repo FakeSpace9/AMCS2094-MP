@@ -106,4 +106,74 @@ class ReceiptRepository(private val firestore: FirebaseFirestore) {
             Result.failure(e)
         }
     }
+
+    suspend fun sendStatusUpdateEmail(
+        toEmail: String,
+        orderId: String,
+        newStatus: String,
+        items: List<ReceiptItem> // <--- 1. Add items parameter
+    ): Result<Unit> {
+        return try {
+            val color = when (newStatus) {
+                "Shipped" -> "#9C27B0"
+                "Completed" -> "#4CAF50"
+                else -> "#2196F3"
+            }
+
+            // 2. Generate Items HTML (Same logic as Receipt)
+            val itemsRowsHtml = items.joinToString("") { item ->
+                """
+                <tr>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;">
+                        ${item.name} <br>
+                        <span style="color: #888; font-size: 12px;">${item.variant}</span>
+                    </td>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+                </tr>
+                """.trimIndent()
+            }
+
+            // 3. Update HTML Body
+            val htmlBody = """
+                <html>
+                <body style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                    <div style="max-width: 500px; border: 1px solid #eee; padding: 20px; border-radius: 8px;">
+                        <h2 style="color: $color;">Order Status Update</h2>
+                        <p>Your order <strong>#$orderId</strong> has been updated.</p>
+                        
+                        <div style="background-color: #f9f9f9; padding: 15px; border-left: 5px solid $color; margin: 20px 0;">
+                            <p style="margin: 0; font-size: 14px; color: #666;">New Status:</p>
+                            <h3 style="margin: 5px 0 0 0; color: $color;">$newStatus</h3>
+                        </div>
+
+                        <p><strong>Items in this order:</strong></p>
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                            <tr style="background-color: #f8f9fa;">
+                                <th style="padding: 10px; text-align: left;">Item</th>
+                                <th style="padding: 10px; text-align: center;">Qty</th>
+                            </tr>
+                            $itemsRowsHtml
+                        </table>
+
+                        <p>Thank you for shopping with us!</p>
+                    </div>
+                </body>
+                </html>
+            """.trimIndent()
+
+            val emailData = hashMapOf(
+                "to" to listOf(toEmail),
+                "message" to hashMapOf(
+                    "subject" to "Order #$orderId Update: $newStatus",
+                    "html" to htmlBody
+                )
+            )
+
+            firestore.collection("mail").add(emailData).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
 }

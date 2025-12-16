@@ -32,6 +32,7 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,12 +50,14 @@ import androidx.navigation.NavController
 import com.example.miniproject.viewmodel.LoginStateCustomer
 import com.example.miniproject.viewmodel.LoginViewModel
 import com.example.miniproject.viewmodel.ProductSearchViewModel
+import com.example.miniproject.viewmodel.PromotionViewModel
 import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreenWithDrawer(navController: NavController,
                          viewModel: LoginViewModel,
-                         searchViewModel: ProductSearchViewModel
+                         searchViewModel: ProductSearchViewModel,
+                         promoViewModel: PromotionViewModel
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -72,7 +75,8 @@ fun HomeScreenWithDrawer(navController: NavController,
                 scope.launch { drawerState.open() }
             },
             loginViewModel = viewModel,
-            searchViewModel = searchViewModel
+            searchViewModel = searchViewModel,
+            promoViewModel = promoViewModel
         )
     }
 }
@@ -81,9 +85,14 @@ fun HomeScreenWithDrawer(navController: NavController,
 fun HomeScreen(navController: NavController,
                onMenuClick: () -> Unit,
                loginViewModel: LoginViewModel,
-               searchViewModel: ProductSearchViewModel
+               searchViewModel: ProductSearchViewModel,
+               promoViewModel: PromotionViewModel
 ) {
     val customerLoginState by loginViewModel.customerState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        promoViewModel.syncPromotions()
+    }
 
     LazyColumn(
         modifier = Modifier
