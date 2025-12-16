@@ -61,7 +61,7 @@ fun CheckOutScreen(
     val subtotal by viewModel.subtotal.collectAsState()
     val grandTotal by viewModel.grandTotal.collectAsState()
     val shippingFee = viewModel.shippingFee
-    val discount = viewModel.discount
+    val discount by viewModel.discountAmount.collectAsState()
 
     val selectedAddress by viewModel.selectedAddress.collectAsState()
     val selectedPayment by viewModel.selectedPayment.collectAsState()
@@ -182,6 +182,26 @@ fun CheckOutScreen(
         ) {
             items(cartItems) { items ->
                 CheckOutProductCard(items)
+            }
+
+            item {
+                Column(modifier = Modifier.padding(vertical = 16.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Subtotal", color = Color.Gray)
+                        Text("RM ${String.format("%.2f", subtotal)}")
+                    }
+                    if (discount > 0) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Discount", color = Color(0xFF4CAF50))
+                            Text("-RM ${String.format("%.2f", discount)}", color = Color(0xFF4CAF50))
+                        }
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Shipping", color = Color.Gray)
+                        Text("RM ${String.format("%.2f", shippingFee)}")
+                    }
+                }
+                Divider()
             }
 
             item {

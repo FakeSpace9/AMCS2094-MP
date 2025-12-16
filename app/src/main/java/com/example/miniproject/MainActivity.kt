@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
@@ -29,6 +30,8 @@ import com.example.miniproject.repository.LoginRepository
 import com.example.miniproject.repository.OrderRepository
 import com.example.miniproject.repository.POSRepository
 import com.example.miniproject.repository.PaymentRepository
+import com.example.miniproject.repository.PromotionRepository
+import com.example.miniproject.repository.ReceiptRepository
 import com.example.miniproject.screen.AddAddressScreen
 import com.example.miniproject.screen.AddEditPaymentScreen
 import com.example.miniproject.screen.AddressScreen
@@ -41,6 +44,7 @@ import com.example.miniproject.screen.OrderHistoryScreen
 import com.example.miniproject.screen.PaymentMethodScreen
 import com.example.miniproject.screen.ProfileScreen
 import com.example.miniproject.screen.SignupScreen
+import com.example.miniproject.screen.admin.AdminAnalyticsScreen
 import com.example.miniproject.screen.admin.AdminDashboardScreen
 import com.example.miniproject.screen.admin.AdminLoginScreen
 import com.example.miniproject.screen.admin.AdminPOSDetailsScreen
@@ -81,11 +85,19 @@ import com.example.miniproject.viewmodel.OrderHistoryViewModel
 import com.example.miniproject.viewmodel.OrderHistoryViewModelFactory
 import com.example.miniproject.viewmodel.OrderSuccessViewModel
 import com.example.miniproject.viewmodel.OrderSuccessViewModelFactory
+import com.example.miniproject.viewmodel.PromotionViewModel
+import com.example.miniproject.viewmodel.PromotionViewModelFactory
+import com.example.miniproject.viewmodel.SalesHistoryViewModel
+import com.example.miniproject.viewmodel.SalesHistoryViewModelFactory
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
+import com.example.miniproject.repository.AnalyticsRepository
+import com.example.miniproject.viewmodel.AnalyticsViewModel
+import com.example.miniproject.viewmodel.AnalyticsViewModelFactory
+import com.example.miniproject.screen.admin.AdminAnalyticsScreen
 import kotlinx.serialization.builtins.BooleanArraySerializer
 
 class MainActivity : ComponentActivity() {
@@ -204,9 +216,12 @@ fun App(
         factory = AddressViewModelFactory(addressRepo, AuthPreferences(context))
     )
 
+    val promoRepo = PromotionRepository(db.PromotionDao(), FirebaseFirestore.getInstance())
+
+
     val cartRepository = CartRepository(db.CartDao())
     val cartViewModel: CartViewModel = viewModel(
-        factory = CartViewModelFactory(cartRepository)
+        factory = CartViewModelFactory(cartRepository, promoRepo)
     )
 
     val productDetailViewModel: ProductDetailScreenViewModel = viewModel(
@@ -225,16 +240,27 @@ fun App(
     val orderRepo = OrderRepository(
         orderDao = db.OrderDao(),
         cartDao = db.CartDao(),
+        productDao = db.ProductDao(), // PASS PRODUCT DAO HERE
         firestore = FirebaseFirestore.getInstance()
     )
 
+    val posRepository = POSRepository(
+        posOrderDao = db.POSOrderDao(),
+        productDao = db.ProductDao(), // PASS PRODUCT DAO HERE
+        firestore = FirebaseFirestore.getInstance()
+    )
+//for email function
+    val receiptRepository = ReceiptRepository(FirebaseFirestore.getInstance())
+    //end
     val checkoutViewModel: CheckoutViewModel = viewModel(
         factory = CheckoutViewModelFactory(
             cartRepository = cartRepository,
             addressRepository = addressRepo,
             paymentRepository = paymentRepo,
             orderRepository = orderRepo,
-            authPreferences = AuthPreferences(context)
+            promotionRepository = promoRepo,
+            authPreferences = AuthPreferences(context),
+            receiptRepository = receiptRepository
         )
     )
 
@@ -242,15 +268,12 @@ fun App(
         factory = OrderSuccessViewModelFactory(orderRepo)
     )
 
-    val posRepository = POSRepository(
-        posOrderDao = db.POSOrderDao(),
-        firestore = FirebaseFirestore.getInstance()
-    )
-
     val adminPOSViewModel: AdminPOSViewModel = viewModel(
         factory = AdminPOSViewModelFactory(
             productDao = db.ProductDao(),
-            posRepository = posRepository
+            posRepository = posRepository,
+            promotionRepository = promoRepo,
+            receiptRepository = receiptRepository
         )
     )
 
@@ -258,6 +281,26 @@ fun App(
         factory = OrderHistoryViewModelFactory(orderRepo, AuthPreferences(context))
     )
 
+    val promoViewModel: PromotionViewModel = viewModel(
+        factory = PromotionViewModelFactory(promoRepo, AuthPreferences(context))
+    )
+
+    val salesHistoryViewModel: SalesHistoryViewModel = viewModel(
+        factory = SalesHistoryViewModelFactory(
+            posRepository
+            )
+    )
+
+    val analyticsRepo = AnalyticsRepository(
+        orderDao = db.OrderDao(),
+        posDao = db.POSOrderDao(),
+        orderRepo = orderRepo,
+        posRepo = posRepository
+    )
+
+    val analyticsViewModel: AnalyticsViewModel = viewModel(
+        factory = AnalyticsViewModelFactory(analyticsRepo)
+    )
 
     // --- Navigation Host ---
     NavHost(navController = navController, startDestination = startDest) {
@@ -304,7 +347,10 @@ fun App(
                 navController = navController,
                 formViewModel = productFormViewModel,
                 searchViewModel = productSearchViewModel,
-                loginViewModel = loginViewModel
+                loginViewModel = loginViewModel,
+                promoViewModel = promoViewModel,
+                salesViewModel = salesHistoryViewModel,
+                analyticsViewModel = analyticsViewModel
             )
         }
 
@@ -394,7 +440,19 @@ fun App(
             )
         }
         //checkout
-        composable("checkout") {
+        composable(
+            route = "checkout?promo={promo}",
+            arguments = listOf(navArgument("promo") { defaultValue = "" })
+        ) { backStackEntry ->
+            val promoArg = backStackEntry.arguments?.getString("promo") ?: ""
+
+            // Pass the code to CheckoutViewModel immediately
+            LaunchedEffect(promoArg) {
+                if (promoArg.isNotEmpty()) {
+                    checkoutViewModel.setInitialPromoCode(promoArg)
+                }
+            }
+
             CheckOutScreen(
                 navController = navController,
                 viewModel = checkoutViewModel
@@ -438,5 +496,8 @@ fun App(
 
 
 
+        composable("admin_analytics") {
+            AdminAnalyticsScreen(navController = navController, viewModel = analyticsViewModel)
+        }
     }
 }

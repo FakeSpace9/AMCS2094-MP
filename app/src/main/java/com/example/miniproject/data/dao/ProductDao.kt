@@ -100,4 +100,6 @@ interface ProductDao {
     @Query("SELECT * FROM product_variants WHERE sku = :sku LIMIT 1")
     suspend fun getVariantBySku(sku: String): ProductVariantEntity?
 
+    @Query("UPDATE product_variants SET stockQuantity = stockQuantity - :quantity WHERE sku = :sku")
+    suspend fun decreaseStock(sku: String, quantity: Int)
 }

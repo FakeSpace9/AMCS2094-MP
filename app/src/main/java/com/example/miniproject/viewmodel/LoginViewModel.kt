@@ -36,7 +36,7 @@ class LoginViewModel(
                 val user = result.getOrNull()!!
 
                 // UPDATE: Save 'user.customerId'
-                authPrefs.saveLogin("customer", user.customerId)
+                authPrefs.saveLogin("customer", user.customerId,email)
 
                 _customerState.value = LoginStateCustomer.Success(user)
             } else {
@@ -54,7 +54,7 @@ class LoginViewModel(
                 val admin = result.getOrNull()!!
 
                 // UPDATE: Save 'admin.adminId'
-                authPrefs.saveLogin("admin", admin.adminId)
+                authPrefs.saveLogin("admin", admin.adminId,email)
 
                 _adminState.value = LoginStateAdmin.Success(admin)
             } else {
@@ -102,7 +102,7 @@ class LoginViewModel(
             if (result.isSuccess) {
                 val user = result.getOrNull()!!
 
-                authPrefs.saveLogin("customer", user.customerId)
+                authPrefs.saveLogin("customer", user.customerId,user.email)
 
                 _customerState.value = LoginStateCustomer.Success(user)
             } else {

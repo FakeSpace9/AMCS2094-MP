@@ -43,6 +43,13 @@ class ProductDetailScreenViewModel (
     val priceRange: StateFlow<String> = MutableStateFlow("")
 
     fun loadProductData(productId: String) {
+
+        _product.value = null
+        _variants.value = emptyList()
+        _selectedVariant.value = null
+        _selectedSize.value = "" // Reset size so it doesn't carry over
+        (availableSizes as MutableStateFlow).value = emptyList()
+
         viewModelScope.launch {
             val productResult = productDao.getProductById(productId)
             _product.value = productResult
@@ -56,12 +63,12 @@ class ProductDetailScreenViewModel (
                 .sortedBy { _sizeOrder.indexOf(it) }
             (availableSizes as MutableStateFlow).value = uniqueSizes
 
-            if(_selectedSize.value.isEmpty()&&uniqueSizes.isNotEmpty()){
+            if (uniqueSizes.isNotEmpty()) {
                 _selectedSize.value = uniqueSizes.first()
                 updateSelectedVariant()
-            }else if(_selectedSize.value.isNotEmpty()){
-                updateSelectedVariant()
-
+            } else {
+                _selectedSize.value = ""
+                _selectedVariant.value = null
             }
 
             if(variantsResult.isNotEmpty()){
@@ -79,6 +86,7 @@ class ProductDetailScreenViewModel (
 
     fun selectSize(size:String){
         _selectedSize.value = size
+        updateSelectedVariant()
     }
 
     private fun updateSelectedVariant() {

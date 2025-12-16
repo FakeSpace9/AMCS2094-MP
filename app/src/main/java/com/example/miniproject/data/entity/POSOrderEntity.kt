@@ -2,13 +2,14 @@ package com.example.miniproject.data.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.util.Date
 
 @Entity(tableName = "pos_orders")
 data class POSOrderEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val cashierId: String,       // Who processed the order (Admin ID)
     val customerEmail: String?,  // Optional for Walk-in
-    val orderDate: Long,
+    val orderDate: Date,
     val totalAmount: Double,
     val discount: Double,
     val grandTotal: Double,

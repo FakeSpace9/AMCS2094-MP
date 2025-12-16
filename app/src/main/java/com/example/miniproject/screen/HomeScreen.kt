@@ -15,12 +15,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -37,6 +40,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -90,23 +94,18 @@ fun HomeScreen(navController: NavController,
         item { MenuTabs( navController = navController, searchViewModel = searchViewModel) }
         item { SalesBanner() }
 
-        item { ProductSection(title = "New Arrival →") }
-        item { ProductSection(title = "Superman Collab →") }
-
         item {
-            when (customerLoginState) {
-                is LoginStateCustomer.Success -> {
-                    val customer = (customerLoginState as LoginStateCustomer.Success).user
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(text = "Customer Name: ${customer.name}", fontSize = 20.sp)
-                        Text(text = "Email: ${customer.email}", fontSize = 20.sp)
-                        Text(text = "Phone: ${customer.phone}", fontSize = 20.sp)
-                    }
+            CategoryRow(
+                categories = searchViewModel.getAvailableCategories().filter { it != "All" },
+                onCategoryClick = { category ->
+                    searchViewModel.selectedCategory.value = category
+                    navController.navigate("menu")
                 }
-                else -> {
-                }
-            }
+            )
         }
+
+        item { ProductSection(title = "New Arrival →") }
+
     }
 }
 
@@ -205,6 +204,7 @@ fun MenuTabs(
             },
             fontWeight = FontWeight.Medium
         )
+        Box{
         Text(
             text = "Categories ▼",
             modifier = Modifier.clickable {
@@ -217,7 +217,7 @@ fun MenuTabs(
             onDismissRequest = { showCategories = false },
             modifier = Modifier.background(Color.White)
         ) {
-            categories.filter { it != "All" }.forEach {categories ->
+            categories.filter { it != "All" }.forEach { categories ->
                 DropdownMenuItem(
                     text = { Text(categories) },
                     onClick = {
@@ -226,7 +226,7 @@ fun MenuTabs(
                         showCategories = false
                     }
                 )
-
+            }
             }
         }
     }
@@ -242,6 +242,60 @@ fun SalesBanner() {
         contentAlignment = Alignment.Center
     ) {
         Text("Sales Banner Here", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+fun CategoryRow(
+    categories: List<String>,
+    onCategoryClick: (String) -> Unit
+) {
+    Column(modifier = Modifier.padding(16.dp)) {
+        Text(
+            text = "Shop by Category",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(categories) { category ->
+                CategoryCard(category, onClick = { onCategoryClick(category) })
+            }
+        }
+    }
+}
+
+@Composable
+fun CategoryCard(title: String, onClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .width(100.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0xFFF3F4F6)) // Light Gray Background
+            .clickable { onClick() }
+            .padding(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        // Placeholder Icon for Category
+        Icon(
+            imageVector = Icons.Outlined.Category, // You can swap this based on category name
+            contentDescription = null,
+            tint = Color.Gray,
+            modifier = Modifier.size(32.dp)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = title,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color.Black
+        )
     }
 }
 
