@@ -98,7 +98,10 @@ import com.example.miniproject.repository.AnalyticsRepository
 import com.example.miniproject.viewmodel.AnalyticsViewModel
 import com.example.miniproject.viewmodel.AnalyticsViewModelFactory
 import com.example.miniproject.screen.admin.AdminAnalyticsScreen
+import com.example.miniproject.screen.admin.AdminOrdersScreen
 import com.example.miniproject.screen.customer.SelectShippingAddressScreen
+import com.example.miniproject.viewmodel.AdminOrderViewModel
+import com.example.miniproject.viewmodel.AdminOrderViewModelFactory
 import kotlinx.serialization.builtins.BooleanArraySerializer
 
 class MainActivity : ComponentActivity() {
@@ -288,7 +291,8 @@ fun App(
 
     val salesHistoryViewModel: SalesHistoryViewModel = viewModel(
         factory = SalesHistoryViewModelFactory(
-            posRepository
+            posRepository,
+            promoRepo
             )
     )
 
@@ -303,12 +307,18 @@ fun App(
         factory = AnalyticsViewModelFactory(analyticsRepo)
     )
 
+    val orderRepository = OrderRepository(database.OrderDao(), firestore)
+
+    val adminOrderViewModel: AdminOrderViewModel = viewModel(
+        factory = AdminOrderViewModelFactory(orderRepository)
+    )
+
     // --- Navigation Host ---
     NavHost(navController = navController, startDestination = startDest) {
 
         // --- CUSTOMER ROUTES ---
         composable("home") {
-            HomeScreenWithDrawer(navController = navController, viewModel = loginViewModel, searchViewModel = productSearchViewModel)
+            HomeScreenWithDrawer(navController = navController, viewModel = loginViewModel, searchViewModel = productSearchViewModel, promoViewModel = promoViewModel)
         }
         composable("Login") {
             LoginScreen(navController = navController, viewModel = loginViewModel)
@@ -504,6 +514,10 @@ fun App(
 
         composable("admin_analytics") {
             AdminAnalyticsScreen(navController = navController, viewModel = analyticsViewModel)
+        }
+
+        composable("admin_orders") {
+            AdminOrdersScreen(navController = navController, viewModel = adminOrderViewModel)
         }
     }
 }

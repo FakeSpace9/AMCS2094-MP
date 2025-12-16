@@ -139,4 +139,26 @@ class OrderRepository(
     suspend fun getOrdersByCustomer(customerId: String): List<OrderEntity> {
         return orderDao.getOrdersByCustomer(customerId)
     }
+
+    fun getOrdersByStatusFlow(status: String): Flow<List<OrderEntity>> {
+        return orderDao.getOrdersByStatus(status)
+    }
+
+    suspend fun updateOrderStatus(orderId: String, newStatus: String): Result<Unit> {
+        return try {
+            // 1. Update Local Room DB
+            orderDao.updateOrderStatus(orderId, newStatus)
+
+            // 2. Update Firestore so the user sees the change
+            firestore.collection("orders") // Check your Firestore collection name
+                .document(orderId)
+                .update("status", newStatus)
+                .await()
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
 }

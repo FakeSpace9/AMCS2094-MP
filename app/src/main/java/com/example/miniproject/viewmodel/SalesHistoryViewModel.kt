@@ -4,13 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.miniproject.repository.POSRepository
+import com.example.miniproject.repository.PromotionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class SalesHistoryViewModel(
-    private val posRepository: POSRepository
-
+    private val posRepository: POSRepository,
+    private val promotionRepository: PromotionRepository
 ) : ViewModel() {
 
     // --- Stats State ---
@@ -26,6 +27,7 @@ class SalesHistoryViewModel(
         viewModelScope.launch {
             // 1. Sync Cloud to Local
             posRepository.syncPOSOrders()
+            promotionRepository.syncPromotions()
 
             // 2. Refresh Stats from Local DB
             loadDashboardStats()
@@ -41,12 +43,13 @@ class SalesHistoryViewModel(
 }
 
 class SalesHistoryViewModelFactory(
-    private val posRepository: POSRepository
+    private val posRepository: POSRepository,
+    private val promotionRepository: PromotionRepository
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(SalesHistoryViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return SalesHistoryViewModel(posRepository) as T
+            return SalesHistoryViewModel(posRepository, promotionRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

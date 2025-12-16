@@ -72,4 +72,10 @@ interface OrderDao {
         LIMIT 3
     """)
     suspend fun getBestSellersInRange(start: Long, end: Long): List<BestSellerItem>
+
+    @Query("SELECT * FROM orders WHERE status = :status ORDER BY orderDate DESC")
+    fun getOrdersByStatus(status: String): Flow<List<OrderEntity>>
+
+    @Query("UPDATE orders SET status = :newStatus WHERE id = :orderId")
+    suspend fun updateOrderStatus(orderId: String, newStatus: String)
 }
