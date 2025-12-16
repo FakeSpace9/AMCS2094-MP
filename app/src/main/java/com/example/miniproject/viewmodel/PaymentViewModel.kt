@@ -89,7 +89,7 @@ class PaymentViewModel(
     fun validatePayment(): String? {
         return when (paymentType.value) {
 
-            "CARD" -> {
+            "CREDIT/DEBIT CARD" -> {
                 if (cardName.value.isBlank()) return "Card name cannot be empty"
                 if (cardHolderName.value.isBlank()) return "Card holder name cannot be empty"
                 if (cardNumber.value.isBlank()) return "Card number cannot be empty"
@@ -175,11 +175,11 @@ class PaymentViewModel(
                 customerId = customerId,
                 paymentType = paymentType.value,
                 displayName = cardName.value,
-                cardHolderName = cardHolderName.value.takeIf { paymentType.value == "CARD" },
-                cardNumber = cardNumber.value.takeIf { paymentType.value == "CARD" },
+                cardHolderName = cardHolderName.value.takeIf { paymentType.value == "CREDIT/DEBIT CARD" },
+                cardNumber = cardNumber.value.takeIf { paymentType.value == "CREDIT/DEBIT CARD" },
                 expiryMonth = expiryMonth.value.toIntOrNull(),
                 expiryYear = expiryYear.value.toIntOrNull(),
-                cvv = cvv.value.takeIf { paymentType.value == "CARD" },
+                cvv = cvv.value.takeIf { paymentType.value == "CREDIT/DEBIT CARD" },
                 walletId = walletId.value.takeIf { paymentType.value == "TNG" },
                 isDefault = isDefault.value
             )

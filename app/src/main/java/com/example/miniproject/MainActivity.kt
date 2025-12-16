@@ -98,6 +98,7 @@ import com.example.miniproject.repository.AnalyticsRepository
 import com.example.miniproject.viewmodel.AnalyticsViewModel
 import com.example.miniproject.viewmodel.AnalyticsViewModelFactory
 import com.example.miniproject.screen.admin.AdminAnalyticsScreen
+import com.example.miniproject.screen.customer.SelectShippingAddressScreen
 import kotlinx.serialization.builtins.BooleanArraySerializer
 
 class MainActivity : ComponentActivity() {
@@ -493,7 +494,12 @@ fun App(
             OrderDetailScreen(orderId, orderHistoryViewModel , navController)
         }
 
-
+        composable("select_shipping_address") {
+            SelectShippingAddressScreen(
+                navController = navController,
+                viewModel = addressViewModel // Reuse the existing AddressViewModel
+            )
+        }
 
 
         composable("admin_analytics") {
