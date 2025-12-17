@@ -1,7 +1,7 @@
 package com.example.miniproject.screen
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
-import com.example.miniproject.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -47,13 +47,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.example.miniproject.R
 import com.example.miniproject.data.dao.ProductSearchResult
 import com.example.miniproject.viewmodel.LoginStateCustomer
 import com.example.miniproject.viewmodel.LoginViewModel
@@ -98,11 +99,24 @@ fun HomeScreen(navController: NavController,
 ) {
     val customerLoginState by loginViewModel.customerState.collectAsState()
     val products by searchViewModel.searchResults.collectAsState()
+    val context = LocalContext.current
 
+    // Load data
     LaunchedEffect(Unit) {
         searchViewModel.searchQuery.value = ""
         promoViewModel.syncPromotions()
-        searchViewModel.loadProducts() // Ensure products are loaded
+        searchViewModel.loadProducts()
+    }
+
+    // --- SECURE CLICK HANDLER ---
+    // Checks login status before navigating
+    val onProductClick: (String) -> Unit = { productId ->
+        if (customerLoginState is LoginStateCustomer.Success) {
+            navController.navigate("productDetail/$productId")
+        } else {
+            Toast.makeText(context, "Please login first", Toast.LENGTH_SHORT).show()
+            navController.navigate("Login")
+        }
     }
 
     LazyColumn(
@@ -124,21 +138,11 @@ fun HomeScreen(navController: NavController,
             )
         }
 
-        item {
-            if (products.isNotEmpty()) {
-                val bestSellers = products.take(3)
-                ProductSection(
-                    title = "Best Seller",
-                    products = bestSellers,
-                    navController = navController
-                )
-            }
-        }
-
+        // --- BEST SELLER GRID (Top 6, 2 per row) ---
         item {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "Category Products", // Or "Just For You"
+                    text = "Best Seller",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -146,11 +150,9 @@ fun HomeScreen(navController: NavController,
             }
         }
 
-        // Create a Grid manually inside LazyColumn using chunked
-        val categoryProducts = if (products.size > 3) products.drop(3) else emptyList()
-        // If you want to show ALL products in category section regardless of Best Seller, remove .drop(3)
+        val bestSellers = products.take(6)
 
-        items(categoryProducts.chunked(3)) { rowProducts ->
+        items(bestSellers.chunked(2)) { rowProducts ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -162,23 +164,21 @@ fun HomeScreen(navController: NavController,
                         product = product,
                         modifier = Modifier.weight(1f),
                         onClick = {
-                            navController.navigate("productDetail/${product.product.productId}")
+                            // Use the secure click handler here
+                            onProductClick(product.product.productId)
                         }
                     )
                 }
-                // If row has only 1 item, add a spacer to align it correctly
-                val remainingSlots = 3 - rowProducts.size
+                // Handle odd number of items in the last row for alignment
+                val remainingSlots = 2 - rowProducts.size
                 if (remainingSlots > 0) {
-                    repeat(remainingSlots) {
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
+                    Spacer(modifier = Modifier.weight(remainingSlots.toFloat()))
                 }
             }
         }
 
         // Bottom Spacer
         item { Spacer(modifier = Modifier.height(20.dp)) }
-
     }
 }
 
@@ -278,28 +278,28 @@ fun MenuTabs(
             fontWeight = FontWeight.Medium
         )
         Box{
-        Text(
-            text = "Categories ▼",
-            modifier = Modifier.clickable {
-                showCategories = true
-            },
-            fontWeight = FontWeight.Medium
-        )
-        DropdownMenu(
-            expanded = showCategories,
-            onDismissRequest = { showCategories = false },
-            modifier = Modifier.background(Color.White)
-        ) {
-            categories.filter { it != "All" }.forEach { categories ->
-                DropdownMenuItem(
-                    text = { Text(categories) },
-                    onClick = {
-                        searchViewModel.selectedCategory.value = categories
-                        navController.navigate("menu")
-                        showCategories = false
-                    }
-                )
-            }
+            Text(
+                text = "Categories ▼",
+                modifier = Modifier.clickable {
+                    showCategories = true
+                },
+                fontWeight = FontWeight.Medium
+            )
+            DropdownMenu(
+                expanded = showCategories,
+                onDismissRequest = { showCategories = false },
+                modifier = Modifier.background(Color.White)
+            ) {
+                categories.filter { it != "All" }.forEach { categories ->
+                    DropdownMenuItem(
+                        text = { Text(categories) },
+                        onClick = {
+                            searchViewModel.selectedCategory.value = categories
+                            navController.navigate("menu")
+                            showCategories = false
+                        }
+                    )
+                }
             }
         }
     }
@@ -315,7 +315,7 @@ fun SalesBanner() {
         contentAlignment = Alignment.Center
     ) {
         Image(
-            painter = painterResource(id = R.drawable.promotionbanner), // Change this ID if your file name is different
+            painter = painterResource(id = R.drawable.promotionbanner),
             contentDescription = "Sales Banner",
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
@@ -358,9 +358,8 @@ fun CategoryCard(title: String, onClick: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Placeholder Icon for Category
         Icon(
-            imageVector = Icons.Outlined.Category, // You can swap this based on category name
+            imageVector = Icons.Outlined.Category,
             contentDescription = null,
             tint = Color.Gray,
             modifier = Modifier.size(32.dp)
@@ -412,9 +411,9 @@ fun ProductCard(
     onClick: () -> Unit
 ) {
     Column(
-        modifier = Modifier
-            .width(100.dp)
-            .background(Color(0xFFE0E0E0), RoundedCornerShape(8.dp))
+        modifier = modifier
+            .clickable { onClick() }
+            .background(Color(0xFFF3F4F6), RoundedCornerShape(8.dp))
             .padding(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
