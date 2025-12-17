@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.PointOfSale
@@ -23,12 +25,16 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -38,6 +44,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -52,6 +59,7 @@ import com.example.miniproject.viewmodel.ProductSearchViewModel
 import com.example.miniproject.viewmodel.PromotionViewModel
 import com.example.miniproject.viewmodel.SalesHistoryViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminDashboardScreen(
     navController: NavController,
@@ -65,7 +73,7 @@ fun AdminDashboardScreen(
 ) {
     var selectedItem by rememberSaveable { mutableIntStateOf(0) }
     val items = listOf(
-        BottomNavItem("POS", Icons.Default.PointOfSale),
+        BottomNavItem("Home", Icons.Default.PointOfSale),
         BottomNavItem("Analytics", Icons.Default.Analytics),
         BottomNavItem("Orders", Icons.Default.ShoppingCart),
         BottomNavItem("Product", Icons.Default.Inventory)
@@ -81,7 +89,10 @@ fun AdminDashboardScreen(
 
     Scaffold(
         bottomBar = {
-            NavigationBar(containerColor = Color.White) {
+            NavigationBar(
+                containerColor = Color.White,
+                tonalElevation = 8.dp
+            ) {
                 items.forEachIndexed { index, item ->
                     NavigationBarItem(
                         icon = { Icon(item.icon, contentDescription = item.label) },
@@ -91,7 +102,7 @@ fun AdminDashboardScreen(
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = Color(0xFF573BFF),
                             selectedTextColor = Color(0xFF573BFF),
-                            indicatorColor = Color.Transparent,
+                            indicatorColor = Color(0xFF573BFF).copy(alpha = 0.1f),
                             unselectedIconColor = Color.Gray,
                             unselectedTextColor = Color.Gray
                         )
@@ -109,63 +120,125 @@ fun AdminDashboardScreen(
             when (selectedItem) {
                 0 -> {
                     // --- POS DASHBOARD TAB ---
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            "Today's Overview",
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black,
-                            modifier = Modifier.align(Alignment.Start)
-                        )
-                        Spacer(Modifier.height(24.dp))
-
-                        // Stats Row
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            // Sales Card
-                            StatsCard(
-                                title = "Sales",
-                                value = "RM ${String.format("%.2f", todaySales)}",
-                                icon = Icons.Default.Analytics,
-                                color = Color(0xFF1565C0),
-                                backgroundColor = Color(0xFFE3F2FD),
-                                modifier = Modifier.weight(1f)
+                    Scaffold(
+                        topBar = {
+                            CenterAlignedTopAppBar(
+                                title = { Text("Admin Dashboard", fontWeight = FontWeight.Bold) },
+                                actions = {
+                                    IconButton(onClick = { navController.navigate("admin_profile") }) {
+                                        Icon(
+                                            Icons.Default.AccountCircle,
+                                            contentDescription = "Profile",
+                                            tint = Color(0xFF573BFF),
+                                            modifier = Modifier.size(30.dp)
+                                        )
+                                    }
+                                },
+                                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
                             )
-
-                            // Items Sold Card
-                            StatsCard(
-                                title = "Total Orders",
-                                value = "$todayOrders",
-                                icon = Icons.Default.ShoppingBag,
-                                color = Color(0xFF2E7D32),
-                                backgroundColor = Color(0xFFE8F5E9),
-                                modifier = Modifier.weight(1f),
-                                onClick = { navController.navigate("admin_pos_history") } // <--- ADDED THIS
-                            )
-                        }
-
-                        Spacer(Modifier.height(48.dp))
-
-                        // Start Button
-                        Button(
-                            onClick = { navController.navigate("admin_pos_scan") },
+                        },
+                        containerColor = Color(0xFFF8F9FA)
+                    ) { dashboardPadding ->
+                        Column(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF573BFF))
+                                .fillMaxSize()
+                                .padding(dashboardPadding)
+                                .padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Icon(Icons.Default.PointOfSale, null)
-                            Spacer(Modifier.width(12.dp))
-                            Text("Start New POS Session", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            // Welcome Section
+                            Text(
+                                "Overview",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Gray,
+                                modifier = Modifier.align(Alignment.Start)
+                            )
+                            Spacer(Modifier.height(16.dp))
+
+                            // Stats Row
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                // Sales Card
+                                StatsCard(
+                                    title = "Today's Sales",
+                                    value = "RM ${String.format("%.2f", todaySales)}",
+                                    icon = Icons.Default.Analytics,
+                                    color = Color(0xFF573BFF),
+                                    backgroundColor = Color.White,
+                                    modifier = Modifier.weight(1f)
+                                )
+
+                                // Items Sold Card
+                                StatsCard(
+                                    title = "Orders Today",
+                                    value = "$todayOrders",
+                                    icon = Icons.Default.ShoppingBag,
+                                    color = Color(0xFF00C853),
+                                    backgroundColor = Color.White,
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { navController.navigate("admin_pos_history") }
+                                )
+                            }
+
+                            Spacer(Modifier.height(32.dp))
+
+                            Text(
+                                "Quick Actions",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Gray,
+                                modifier = Modifier.align(Alignment.Start)
+                            )
+                            Spacer(Modifier.height(16.dp))
+
+                            // Start POS Button
+                            Button(
+                                onClick = { navController.navigate("admin_pos_scan") },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(80.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF573BFF)),
+                                elevation = ButtonDefaults.buttonElevation(8.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(48.dp)
+                                            .background(Color.White.copy(alpha = 0.2f), CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(Icons.Default.PointOfSale, null, tint = Color.White)
+                                    }
+                                    Spacer(Modifier.width(16.dp))
+                                    Column {
+                                        Text("New Sale", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                        Text("Start Point of Sale", fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
+                                    }
+                                }
+                            }
+
+                            Spacer(Modifier.height(16.dp))
+
+                            // View History Button (Alternative)
+                            Button(
+                                onClick = { navController.navigate("admin_pos_history") },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(60.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+                                elevation = ButtonDefaults.buttonElevation(2.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.ShoppingBag, null, tint = Color.Gray)
+                                    Spacer(Modifier.width(12.dp))
+                                    Text("View Sales History", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                                }
+                            }
                         }
                     }
                 }
@@ -190,24 +263,26 @@ fun StatsCard(
     Card(
         onClick = onClick,
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = modifier
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(20.dp)
         ) {
-            Icon(icon, null, tint = color, modifier = Modifier.size(28.dp))
-            Spacer(Modifier.height(12.dp))
-            Text(title, fontSize = 14.sp, color = color.copy(alpha = 0.8f), fontWeight = FontWeight.Medium)
-            Text(value, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = color)
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(color.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, null, tint = color, modifier = Modifier.size(20.dp))
+            }
+            Spacer(Modifier.height(16.dp))
+            Text(title, fontSize = 14.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
+            Text(value, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
         }
-    }
-}
-
-@Composable
-fun PlaceholderScreen(text: String) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text, fontSize = 20.sp, color = Color.Gray)
     }
 }
 

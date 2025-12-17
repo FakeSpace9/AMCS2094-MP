@@ -3,17 +3,45 @@ package com.example.miniproject.screen.admin
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
-import androidx.compose.runtime.*
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,7 +70,16 @@ fun AdminOrdersScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Manage Orders", fontWeight = FontWeight.Bold) },
-
+                actions = {
+                    IconButton(onClick = { navController.navigate("admin_profile") }) {
+                        Icon(
+                            Icons.Default.AccountCircle,
+                            contentDescription = "Profile",
+                            tint = Color(0xFF573BFF),
+                            modifier = Modifier.size(30.dp)
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
             )
         }
@@ -122,9 +159,10 @@ fun AdminOrderCard(
 
     Card(
         modifier = Modifier.fillMaxWidth().clickable { onClick() },
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFEEEEEE))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             // Header: ID and Date
@@ -145,16 +183,13 @@ fun AdminOrderCard(
             }
 
             Spacer(Modifier.height(8.dp))
-
-            // Customer Info
             Text(text = order.customerEmail, fontSize = 14.sp, color = Color.DarkGray)
-            // Add address here if available in your entity
 
             Spacer(Modifier.height(12.dp))
-            Divider(color = Color(0xFFEEEEEE))
+            HorizontalDivider(color = Color(0xFFF5F5F5))
             Spacer(Modifier.height(12.dp))
 
-            // Footer: Total and Status Dropdown
+            // Footer
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -170,13 +205,13 @@ fun AdminOrderCard(
                     )
                 }
 
-                // --- Status Dropdown ---
+                // Status Dropdown
                 Box {
                     Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
                             .background(getStatusColor(order.status).copy(alpha = 0.1f))
-                            .border(1.dp, getStatusColor(order.status), RoundedCornerShape(8.dp))
+                            .border(1.dp, getStatusColor(order.status).copy(alpha = 0.5f), RoundedCornerShape(8.dp))
                             .clickable { expanded = true }
                             .padding(horizontal = 12.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -215,13 +250,13 @@ fun AdminOrderCard(
     }
 }
 
-// Helper function for colors
 fun getStatusColor(status: String): Color {
     return when (status) {
-        "New" -> Color(0xFF2196F3) // Blue
-        "Processing" -> Color(0xFFFF9800) // Orange
-        "Shipped" -> Color(0xFF9C27B0) // Purple
-        "Completed" -> Color(0xFF4CAF50) // Green
+        "New" -> Color(0xFF2962FF) // Blue
+        "Processing" -> Color(0xFFFF9100) // Orange
+        "Shipped" -> Color(0xFFAA00FF) // Purple
+        "Completed" -> Color(0xFF00C853) // Green
+        "Cancelled" -> Color(0xFFD50000) // Red
         else -> Color.Gray
     }
 }

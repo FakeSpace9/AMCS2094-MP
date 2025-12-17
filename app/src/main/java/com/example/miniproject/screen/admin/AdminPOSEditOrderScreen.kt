@@ -1,6 +1,7 @@
 package com.example.miniproject.screen.admin
 
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,13 +16,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircleOutline
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -44,16 +44,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.miniproject.viewmodel.SalesHistoryViewModel
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,13 +72,12 @@ fun AdminPOSEditOrderScreen(
     val updateMessage by viewModel.updateMessage.collectAsState()
     val context = LocalContext.current
 
-    // Form State
+    // Form State - Only Email is editable
     var email by remember { mutableStateOf("") }
+
+    // Read-only display states
     var paymentMethod by remember { mutableStateOf("") }
     var status by remember { mutableStateOf("") }
-
-    // Discount Text State
-    var discountText by remember { mutableStateOf("") }
 
     // 1. Load Order Data
     LaunchedEffect(orderId) {
@@ -90,27 +90,15 @@ fun AdminPOSEditOrderScreen(
             email = it.customerEmail ?: ""
             paymentMethod = it.paymentMethod
             status = it.status
-            // Initial Discount Text
-            discountText = if (it.discount == 0.0) "" else String.format(Locale.US, "%.2f", it.discount)
         }
     }
 
-    // 3. Sync ViewModel Discount to Text Field (Auto-Calculation Support)
-    LaunchedEffect(editDiscount) {
-        val currentInput = discountText.toDoubleOrNull() ?: 0.0
-        // Only update text if value is significantly different (avoids cursor jumping)
-        if (kotlin.math.abs(currentInput - editDiscount) > 0.01) {
-            discountText = if (editDiscount == 0.0) "" else String.format(Locale.US, "%.2f", editDiscount)
-        }
-    }
-
-    // 4. Handle Save Success/Failure
+    // 3. Handle Save Success/Failure
     LaunchedEffect(updateMessage) {
         updateMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
             viewModel.clearMessage()
 
-            // FIX: Check for "Updated" OR "Success" to ensure navigation happens
             if (it.contains("Success") || it.contains("Updated")) {
                 navController.popBackStack()
             }
@@ -119,7 +107,7 @@ fun AdminPOSEditOrderScreen(
 
     if (order == null) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
+            CircularProgressIndicator(color = Color(0xFF573BFF))
         }
         return
     }
@@ -136,16 +124,46 @@ fun AdminPOSEditOrderScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        viewModel.saveOrderChanges(currentOrder, email, paymentMethod, status)
-                    }) {
-                        Icon(Icons.Default.Save, "Save", tint = Color(0xFF573BFF))
+                    // Profile Icon
+                    IconButton(onClick = { navController.navigate("admin_profile") }) {
+                        Icon(
+                            Icons.Default.AccountCircle,
+                            contentDescription = "Profile",
+                            tint = Color(0xFF573BFF),
+                            modifier = Modifier.size(30.dp)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
             )
         },
-        containerColor = Color.White
+        bottomBar = {
+            // Save Button at the bottom
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .background(Color.Transparent)
+            ) {
+                Button(
+                    onClick = {
+                        // Pass original paymentMethod and status back since they aren't edited
+                        viewModel.saveOrderChanges(currentOrder, email, paymentMethod, status)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF573BFF)),
+                    elevation = ButtonDefaults.buttonElevation(4.dp)
+                ) {
+                    Icon(Icons.Default.Save, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Save & Send Receipt", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        },
+        containerColor = Color(0xFFF8F9FA)
     ) { padding ->
         Column(
             modifier = Modifier
@@ -153,50 +171,88 @@ fun AdminPOSEditOrderScreen(
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            // --- Customer Info ---
-            Text("Customer Info", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            Spacer(Modifier.height(8.dp))
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text("Customer Email") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-            Spacer(Modifier.height(8.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = paymentMethod,
-                    onValueChange = { paymentMethod = it },
-                    label = { Text("Payment Method") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true
-                )
-                OutlinedTextField(
-                    value = status,
-                    onValueChange = { status = it },
-                    label = { Text("Status") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true
-                )
+            // --- Customer Info Card ---
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(2.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(Modifier.padding(20.dp)) {
+                    Text("Customer Information", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Spacer(Modifier.height(16.dp))
+
+                    // Email (Editable)
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Customer Email") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF573BFF),
+                            focusedLabelColor = Color(0xFF573BFF),
+                            unfocusedContainerColor = Color.White,
+                            focusedContainerColor = Color.White
+                        )
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        // Payment Method (Read Only)
+                        OutlinedTextField(
+                            value = paymentMethod,
+                            onValueChange = {},
+                            label = { Text("Payment Method") },
+                            modifier = Modifier.weight(1f),
+                            readOnly = true,
+                            enabled = false, // Disables interaction
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                disabledContainerColor = Color(0xFFF5F5F5),
+                                disabledBorderColor = Color.Transparent,
+                                disabledTextColor = Color.Gray,
+                                disabledLabelColor = Color.Gray
+                            )
+                        )
+
+                        // Status (Read Only)
+                        OutlinedTextField(
+                            value = status,
+                            onValueChange = {},
+                            label = { Text("Status") },
+                            modifier = Modifier.weight(1f),
+                            readOnly = true,
+                            enabled = false,
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                disabledContainerColor = Color(0xFFF5F5F5),
+                                disabledBorderColor = Color.Transparent,
+                                disabledTextColor = Color.Gray,
+                                disabledLabelColor = Color.Gray
+                            )
+                        )
+                    }
+                }
             }
 
-            Spacer(Modifier.height(24.dp))
-            Divider()
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(20.dp))
 
-            // --- Order Items ---
-            Text("Order Items", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            // --- Order Items (Read Only List with Images) ---
+            Text("Order Items", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
             Spacer(Modifier.height(8.dp))
 
             LazyColumn(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(items) { item ->
+                items(items) { itemState ->
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF9FAFB)),
-                        shape = RoundedCornerShape(8.dp)
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(12.dp),
+                        elevation = CardDefaults.cardElevation(1.dp)
                     ) {
                         Row(
                             modifier = Modifier
@@ -204,90 +260,76 @@ fun AdminPOSEditOrderScreen(
                                 .padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            // --- Product Image (Correctly Referenced) ---
+                            AsyncImage(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(itemState.imageUrl) // <--- FIXED REFERENCE
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = itemState.data.productName,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(60.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color.LightGray)
+                            )
+
+                            Spacer(Modifier.width(16.dp))
+
+                            // --- Item Details ---
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(item.productName, fontWeight = FontWeight.SemiBold)
-                                Text("${item.size} | ${item.color}", fontSize = 12.sp, color = Color.Gray)
-                                Text("RM ${item.price}", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text(itemState.data.productName, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                                Spacer(Modifier.height(4.dp))
+                                Text("${itemState.data.size} | ${itemState.data.color}", fontSize = 12.sp, color = Color.Gray)
+                                Spacer(Modifier.height(4.dp))
+                                Text("SKU: ${itemState.data.variantSku}", fontSize = 10.sp, color = Color.LightGray)
                             }
 
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                IconButton(
-                                    onClick = { viewModel.updateItemQty(item, -1) },
-                                    modifier = Modifier.size(32.dp)
-                                ) {
-                                    Icon(Icons.Default.RemoveCircleOutline, null, tint = Color.Gray)
-                                }
-
+                            // --- Price & Qty ---
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text("x${itemState.data.quantity}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Spacer(Modifier.height(4.dp))
                                 Text(
-                                    text = "${item.quantity}",
-                                    modifier = Modifier.padding(horizontal = 8.dp),
-                                    fontWeight = FontWeight.Bold
+                                    "RM ${String.format("%.2f", itemState.data.price * itemState.data.quantity)}",
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF573BFF),
+                                    fontWeight = FontWeight.SemiBold
                                 )
-
-                                IconButton(
-                                    onClick = { viewModel.updateItemQty(item, 1) },
-                                    modifier = Modifier.size(32.dp)
-                                ) {
-                                    Icon(Icons.Default.AddCircleOutline, null, tint = Color(0xFF573BFF))
-                                }
-                            }
-
-                            Spacer(Modifier.width(8.dp))
-
-                            IconButton(
-                                onClick = { viewModel.removeItem(item) }
-                            ) {
-                                Icon(Icons.Default.Delete, "Remove", tint = Color.Red)
                             }
                         }
                     }
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(20.dp))
 
-            // --- Totals ---
+            // --- Totals Summary (Read Only) ---
             Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF3F4F6)),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(2.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(Modifier.padding(16.dp)) {
+                Column(Modifier.padding(20.dp)) {
                     // Subtotal
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Subtotal", modifier = Modifier.align(Alignment.CenterVertically))
+                        Text("Subtotal", color = Color.Gray)
                         Text("RM ${String.format("%.2f", editTotal)}", fontWeight = FontWeight.SemiBold)
                     }
 
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(8.dp))
 
-                    // Editable Discount Field
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Discount (RM)", color = Color.Gray)
-
-                        OutlinedTextField(
-                            value = discountText,
-                            onValueChange = {
-                                discountText = it
-                                // Manual Edit: Updates ViewModel & Ratio
-                                val newDiscount = it.toDoubleOrNull() ?: 0.0
-                                viewModel.updateDiscount(newDiscount)
-                            },
-                            modifier = Modifier.width(100.dp),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xFF573BFF),
-                                unfocusedContainerColor = Color.White
-                            ),
-                            textStyle = androidx.compose.ui.text.TextStyle(textAlign = TextAlign.End)
+                    // Discount
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Discount", color = Color.Gray)
+                        Text(
+                            "- RM ${String.format("%.2f", editDiscount)}",
+                            color = if (editDiscount > 0) Color(0xFF00C853) else Color.Gray,
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
 
-                    Divider(Modifier.padding(vertical = 12.dp))
+                    Divider(Modifier.padding(vertical = 12.dp), color = Color(0xFFEEEEEE))
 
                     // Grand Total
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -295,7 +337,7 @@ fun AdminPOSEditOrderScreen(
                         Text(
                             "RM ${String.format("%.2f", editGrandTotal)}",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
+                            fontSize = 20.sp,
                             color = Color(0xFF573BFF)
                         )
                     }

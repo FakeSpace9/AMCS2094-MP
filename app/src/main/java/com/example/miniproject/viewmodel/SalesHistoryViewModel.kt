@@ -14,6 +14,12 @@ import kotlinx.coroutines.launch
 import java.math.RoundingMode
 import java.util.Date
 
+// --- UI Wrapper to hold Entity + Image ---
+data class EditedItemUiState(
+    val data: POSOrderItemEntity,
+    val imageUrl: String
+)
+
 class SalesHistoryViewModel(
     private val posRepository: POSRepository,
     private val promotionRepository: PromotionRepository,
@@ -24,33 +30,46 @@ class SalesHistoryViewModel(
     private val _todaySales = MutableStateFlow(0.0)
     val todaySales: StateFlow<Double> = _todaySales
 
-    private val _todayItems = MutableStateFlow(0)
-
-    private var originalItemsList: List<POSOrderItemEntity> = emptyList()
     private val _todayOrders = MutableStateFlow(0)
     val todayOrders: StateFlow<Int> = _todayOrders
 
     // --- TABS & HISTORY STATE ---
-    private val _selectedTab = MutableStateFlow(0) // 0 = Today, 1 = History
+    private val _selectedTab = MutableStateFlow(0)
     val selectedTab: StateFlow<Int> = _selectedTab
 
-    // Orders List (Reused for both tabs)
     private val _displayedOrders = MutableStateFlow<List<POSOrderEntity>>(emptyList())
     val displayedOrders: StateFlow<List<POSOrderEntity>> = _displayedOrders
 
-    // Date Selection for "History" Tab
-    private val _selectedHistoryDate = MutableStateFlow<Long?>(null) // Null means "Select Date"
+    private val _selectedHistoryDate = MutableStateFlow<Long?>(null)
     val selectedHistoryDate: StateFlow<Long?> = _selectedHistoryDate
 
+    private var originalItemsList: List<POSOrderItemEntity> = emptyList()
     private var currentDiscountRatio: Double = 0.0
+
+    private val _updateMessage = MutableStateFlow<String?>(null)
+    val updateMessage: StateFlow<String?> = _updateMessage
+
+    // --- CHANGED: Now holds EditedItemUiState instead of raw Entity ---
+    private val _editingItems = MutableStateFlow<List<EditedItemUiState>>(emptyList())
+    val editingItems: StateFlow<List<EditedItemUiState>> = _editingItems
+
+    private val _currentEditingOrder = MutableStateFlow<POSOrderEntity?>(null)
+    val currentEditingOrder: StateFlow<POSOrderEntity?> = _currentEditingOrder
+
+    private val _editTotal = MutableStateFlow(0.0)
+    val editTotal: StateFlow<Double> = _editTotal
+
+    private val _editDiscount = MutableStateFlow(0.0)
+    val editDiscount: StateFlow<Double> = _editDiscount
+
+    private val _editGrandTotal = MutableStateFlow(0.0)
+    val editGrandTotal: StateFlow<Double> = _editGrandTotal
+
 
     fun syncOrders() {
         viewModelScope.launch {
-            // 1. Sync Cloud to Local
             posRepository.syncPOSOrders()
             promotionRepository.syncPromotions()
-
-            // 2. Refresh Stats from Local DB
             loadDashboardStats()
         }
     }
@@ -62,109 +81,82 @@ class SalesHistoryViewModel(
         }
     }
 
-    private val _posHistory = MutableStateFlow<List<POSOrderEntity>>(emptyList())
-    val posHistory: StateFlow<List<POSOrderEntity>> = _posHistory
-
-    private val _selectedOrderItems = MutableStateFlow<List<POSOrderItemEntity>>(emptyList())
-    val selectedOrderItems: StateFlow<List<POSOrderItemEntity>> = _selectedOrderItems
-
-    private val _updateMessage = MutableStateFlow<String?>(null)
-    val updateMessage: StateFlow<String?> = _updateMessage
-
-    private val _editingItems = MutableStateFlow<List<POSOrderItemEntity>>(emptyList())
-    val editingItems: StateFlow<List<POSOrderItemEntity>> = _editingItems
-
-    private val _currentEditingOrder = MutableStateFlow<POSOrderEntity?>(null)
-    val currentEditingOrder: StateFlow<POSOrderEntity?> = _currentEditingOrder
-
-    // Calculated totals for the edit screen
-    private val _editTotal = MutableStateFlow(0.0)
-    val editTotal: StateFlow<Double> = _editTotal
-
-    private val _editDiscount = MutableStateFlow(0.0)
-    val editDiscount: StateFlow<Double> = _editDiscount
-
-    private val _editGrandTotal = MutableStateFlow(0.0)
-    val editGrandTotal: StateFlow<Double> = _editGrandTotal
-
-
     fun loadOrderDetails(orderId: Long) {
         viewModelScope.launch {
             val order = posRepository.getPOSOrderById(orderId)
             _currentEditingOrder.value = order
 
-            val items = posRepository.getPOSOrderItems(orderId)
-            originalItemsList = items
-            _editingItems.value = items
+            // 1. Fetch raw items
+            val rawItems = posRepository.getPOSOrderItems(orderId)
+            originalItemsList = rawItems
 
-            // 1. CALCULATE RATIO from Original Order
-            // Ratio = Discount / Subtotal
+            // 2. Fetch images and map to UI State
+            val uiItems = rawItems.map { item ->
+                val product = posRepository.getProductById(item.productId)
+                EditedItemUiState(item, product?.imageUrl ?: "")
+            }
+            _editingItems.value = uiItems
+
+            // 3. Calculate Ratio
             val total = order?.totalAmount ?: 0.0
             val discount = order?.discount ?: 0.0
-
             currentDiscountRatio = if (total > 0) discount / total else 0.0
 
             _editDiscount.value = discount
-
-            // Calculate initial totals without changing discount amount yet
             calculateEditTotals(updateDiscount = false)
         }
     }
 
     fun updateDiscount(amount: Double) {
         _editDiscount.value = amount
-
-        // Update the ratio based on the new manual value
-        // So future +/- clicks will follow this NEW ratio
         val currentSubTotal = _editTotal.value
         if (currentSubTotal > 0) {
             currentDiscountRatio = amount / currentSubTotal
         }
-
         calculateEditTotals(updateDiscount = false)
     }
 
-    // Increase/Decrease Quantity
-    fun updateItemQty(item: POSOrderItemEntity, delta: Int) {
+    fun updateItemQty(itemUi: EditedItemUiState, delta: Int) {
         val currentList = _editingItems.value.toMutableList()
-        val index = currentList.indexOfFirst { it.variantSku == item.variantSku && it.size == item.size }
+        val index = currentList.indexOfFirst {
+            it.data.variantSku == itemUi.data.variantSku && it.data.size == itemUi.data.size
+        }
 
         if (index != -1) {
-            val currentItem = currentList[index]
-            val newQty = currentItem.quantity + delta
+            val currentUiItem = currentList[index]
+            val newQty = currentUiItem.data.quantity + delta
 
             if (newQty > 0) {
-                currentList[index] = currentItem.copy(quantity = newQty)
-                _editingItems.value = currentList
+                // Update the Entity inside the UI Wrapper
+                val newEntity = currentUiItem.data.copy(quantity = newQty)
+                currentList[index] = currentUiItem.copy(data = newEntity)
 
-                // Pass TRUE to update discount automatically
+                _editingItems.value = currentList
                 calculateEditTotals(updateDiscount = true)
             }
         }
     }
 
-    fun removeItem(item: POSOrderItemEntity) {
+    fun removeItem(itemUi: EditedItemUiState) {
         val currentList = _editingItems.value.toMutableList()
-        currentList.removeIf { it.variantSku == item.variantSku && it.size == item.size }
+        currentList.removeIf {
+            it.data.variantSku == itemUi.data.variantSku && it.data.size == itemUi.data.size
+        }
         _editingItems.value = currentList
-
-        // Pass TRUE to update discount automatically
         calculateEditTotals(updateDiscount = true)
     }
 
     private fun calculateEditTotals(updateDiscount: Boolean = true) {
-        val subTotal = _editingItems.value.sumOf { it.price * it.quantity }
+        // Sum using item.data
+        val subTotal = _editingItems.value.sumOf { it.data.price * it.data.quantity }
         _editTotal.value = subTotal
 
-        // 2. AUTO-CALCULATE Discount based on Ratio
         if (updateDiscount) {
             val autoDiscount = subTotal * currentDiscountRatio
-            // Round to 2 decimal places to avoid numbers like 10.0000001
             val roundedDiscount = autoDiscount.toBigDecimal().setScale(2, RoundingMode.HALF_UP).toDouble()
             _editDiscount.value = roundedDiscount
         }
 
-        // 3. Calculate Grand Total
         val discount = _editDiscount.value
         val validDiscount = if (discount > subTotal) subTotal else discount
         _editGrandTotal.value = (subTotal - validDiscount).coerceAtLeast(0.0)
@@ -172,15 +164,17 @@ class SalesHistoryViewModel(
 
     fun saveOrderChanges(order: POSOrderEntity, email: String, payment: String, status: String) {
         viewModelScope.launch {
-            val currentItems = _editingItems.value
-            if (currentItems.isEmpty()) {
+            val currentUiItems = _editingItems.value
+            if (currentUiItems.isEmpty()) {
                 _updateMessage.value = "Error: Order must have at least one item."
                 return@launch
             }
 
-            // Use the values from our StateFlows
+            // Extract Entities back from UI State
+            val currentItems = currentUiItems.map { it.data }
+
             val newSubTotal = _editTotal.value
-            val newDiscount = _editDiscount.value // User edited value
+            val newDiscount = _editDiscount.value
             val newGrandTotal = _editGrandTotal.value
 
             val updatedOrder = order.copy(
@@ -192,11 +186,9 @@ class SalesHistoryViewModel(
                 grandTotal = newGrandTotal
             )
 
-            // ... existing DB update logic ...
             val result = posRepository.updatePOSOrderWithItems(updatedOrder, currentItems, originalItemsList)
 
             if (result.isSuccess) {
-                // ... existing email logic ...
                 if (email.isNotBlank()) {
                     try {
                         val receiptItems = posRepository.getReceiptItems(currentItems)
@@ -216,8 +208,6 @@ class SalesHistoryViewModel(
                 } else {
                     _updateMessage.value = "Order Updated Successfully"
                 }
-
-                // Refresh the list to reflect changes
                 refreshCurrentList()
             } else {
                 _updateMessage.value = "Update Failed: ${result.exceptionOrNull()?.message}"
@@ -225,22 +215,15 @@ class SalesHistoryViewModel(
         }
     }
 
-    fun clearMessage() {
-        _updateMessage.value = null
-    }
+    fun clearMessage() { _updateMessage.value = null }
 
     fun setTab(index: Int) {
         _selectedTab.value = index
         if (index == 0) {
-            loadOrdersForDate(Date()) // Load Today
+            loadOrdersForDate(Date())
         } else {
-            // If switching to History, check if a date was previously selected, else clear list
             val dateMillis = _selectedHistoryDate.value
-            if (dateMillis != null) {
-                loadOrdersForDate(Date(dateMillis))
-            } else {
-                _displayedOrders.value = emptyList()
-            }
+            if (dateMillis != null) loadOrdersForDate(Date(dateMillis)) else _displayedOrders.value = emptyList()
         }
     }
 
@@ -255,13 +238,9 @@ class SalesHistoryViewModel(
         }
     }
 
-    // Refresh current view (called after edit/update)
     fun refreshCurrentList() {
-        if (_selectedTab.value == 0) {
-            loadOrdersForDate(Date())
-        } else {
-            _selectedHistoryDate.value?.let { loadOrdersForDate(Date(it)) }
-        }
+        if (_selectedTab.value == 0) loadOrdersForDate(Date())
+        else _selectedHistoryDate.value?.let { loadOrdersForDate(Date(it)) }
     }
 }
 
