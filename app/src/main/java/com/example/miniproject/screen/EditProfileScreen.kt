@@ -78,9 +78,10 @@ fun EditProfileScreen(
 
     // Pre-defined avatars mapping (String Code -> Drawable ID)
     val predefinedAvatars = listOf(
-        "default_1" to R.drawable.profile, // Ensure you have this drawable
-        // Add more drawables to your res/drawable folder and list them here
-        // "default_2" to R.drawable.profile_2 
+        "default_1" to R.drawable.profile,
+        "default_2" to R.drawable.ezgif_5114ed3efc72cedb,
+        "default_3" to R.drawable.ezgif_54e78d35703e3376,
+
     )
 
     Scaffold(

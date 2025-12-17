@@ -69,7 +69,7 @@ fun ProfileScreen(
                 .padding(top = 4.dp)
         ) {
             IconButton(
-                onClick = { navController.popBackStack() },
+                onClick = { navController.navigate("home") },
                 modifier = Modifier.align(Alignment.CenterStart)
             ) {
                 Icon(Icons.Default.ArrowBack, contentDescription = "Back")
