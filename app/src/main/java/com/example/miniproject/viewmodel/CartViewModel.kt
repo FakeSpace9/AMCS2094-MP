@@ -3,6 +3,7 @@ package com.example.miniproject.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.miniproject.data.entity.CartEntity
+import com.example.miniproject.data.entity.PromotionEntity
 import com.example.miniproject.repository.CartRepository
 import com.example.miniproject.repository.PromotionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -96,6 +97,6 @@ class CartViewModel(
                 }
             }
         }
-    }
+       }
 }
 

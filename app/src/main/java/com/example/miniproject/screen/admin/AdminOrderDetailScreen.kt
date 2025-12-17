@@ -27,6 +27,7 @@ import com.example.miniproject.data.entity.OrderItemEntity
 import com.example.miniproject.viewmodel.AdminOrderDetailViewModel
 import java.text.SimpleDateFormat
 import java.util.Locale
+import java.util.TimeZone
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -105,6 +106,7 @@ fun AdminOrderDetailScreen(
 @Composable
 fun OrderHeaderCard(order: com.example.miniproject.data.entity.OrderEntity) {
     val sdf = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
+    sdf.timeZone = TimeZone.getTimeZone("Asia/Kuala_Lumpur")
     val statusColor = getStatusColor(order.status)
 
     Card(

@@ -1,5 +1,7 @@
 package com.example.miniproject.screen
 
+import androidx.compose.foundation.Image
+import com.example.miniproject.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -7,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -43,10 +46,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import com.example.miniproject.data.dao.ProductSearchResult
 import com.example.miniproject.viewmodel.LoginStateCustomer
 import com.example.miniproject.viewmodel.LoginViewModel
 import com.example.miniproject.viewmodel.ProductSearchViewModel
@@ -89,9 +96,11 @@ fun HomeScreen(navController: NavController,
                promoViewModel: PromotionViewModel
 ) {
     val customerLoginState by loginViewModel.customerState.collectAsState()
+    val products by searchViewModel.searchResults.collectAsState()
 
     LaunchedEffect(Unit) {
         promoViewModel.syncPromotions()
+        searchViewModel.loadProducts() // Ensure products are loaded
     }
 
     LazyColumn(
@@ -113,7 +122,60 @@ fun HomeScreen(navController: NavController,
             )
         }
 
-        item { ProductSection(title = "New Arrival →") }
+        item {
+            if (products.isNotEmpty()) {
+                val bestSellers = products.take(3)
+                ProductSection(
+                    title = "Best Seller",
+                    products = bestSellers,
+                    navController = navController
+                )
+            }
+        }
+
+        item {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "Category Products", // Or "Just For You"
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+        }
+
+        // Create a Grid manually inside LazyColumn using chunked
+        val categoryProducts = if (products.size > 3) products.drop(3) else emptyList()
+        // If you want to show ALL products in category section regardless of Best Seller, remove .drop(3)
+
+        items(categoryProducts.chunked(3)) { rowProducts ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                rowProducts.forEach { product ->
+                    ProductCard(
+                        product = product,
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            navController.navigate("productDetail/${product.product.productId}")
+                        }
+                    )
+                }
+                // If row has only 1 item, add a spacer to align it correctly
+                val remainingSlots = 3 - rowProducts.size
+                if (remainingSlots > 0) {
+                    repeat(remainingSlots) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+
+        // Bottom Spacer
+        item { Spacer(modifier = Modifier.height(20.dp)) }
 
     }
 }
@@ -250,7 +312,12 @@ fun SalesBanner() {
             .background(Color(0xFFECECEC)),
         contentAlignment = Alignment.Center
     ) {
-        Text("Sales Banner Here", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        Image(
+            painter = painterResource(id = R.drawable.promotionbanner), // Change this ID if your file name is different
+            contentDescription = "Sales Banner",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
     }
 }
 
@@ -309,7 +376,7 @@ fun CategoryCard(title: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun ProductSection(title: String, onClick:()->Unit = {}) {
+fun ProductSection(title: String, onClick: () -> Unit = {}, products: List<ProductSearchResult>, navController: NavController) {
     Column(modifier = Modifier.padding(16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -323,15 +390,25 @@ fun ProductSection(title: String, onClick:()->Unit = {}) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            repeat(3) {
-                ProductCard()
+            products.forEach { product ->
+                ProductCard(
+                    product = product,
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        navController.navigate("productDetail/${product.product.productId}")
+                    }
+                )
             }
         }
     }
 }
 
 @Composable
-fun ProductCard() {
+fun ProductCard(
+    product: ProductSearchResult,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
     Column(
         modifier = Modifier
             .width(100.dp)
@@ -341,16 +418,37 @@ fun ProductCard() {
     ) {
         Box(
             modifier = Modifier
-                .size(70.dp)
-                .background(Color.LightGray, RoundedCornerShape(6.dp)),
+                .fillMaxWidth()
+                .aspectRatio(1f) // Square image
+                .clip(RoundedCornerShape(6.dp))
+                .background(Color.White),
             contentAlignment = Alignment.Center
         ) {
-            Text("PIC")
+            if (product.product.imageUrl.isNotEmpty()) {
+                AsyncImage(
+                    model = product.product.imageUrl,
+                    contentDescription = product.product.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Text("No Image", fontSize = 10.sp, color = Color.Gray)
+            }
         }
 
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        Text("Details . . .", fontSize = 12.sp)
-        Text("RM 800", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        Text(
+            text = product.product.name,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1
+        )
+        Text(
+            text = "RM ${String.format("%.2f", product.minPrice)}",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.Black
+        )
     }
 }
