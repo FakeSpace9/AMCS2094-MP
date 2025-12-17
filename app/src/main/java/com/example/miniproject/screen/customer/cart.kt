@@ -1,10 +1,19 @@
 package com.example.miniproject.screen.customer
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,8 +23,23 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,7 +57,6 @@ import com.example.miniproject.data.entity.CartEntity
 import com.example.miniproject.ui.theme.PurpleAccent
 import com.example.miniproject.viewmodel.CartViewModel
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CartScreen(
@@ -41,21 +64,10 @@ fun CartScreen(
     viewModel: CartViewModel
 ){
     val cartItems by viewModel.cartItems.collectAsState()
-    val subtotal by viewModel.subtotal.collectAsState()
-    val total by viewModel.total.collectAsState()
-    val promoCode by viewModel.promoCode.collectAsState()
-    val promoCodeError by viewModel.promoCodeError.collectAsState()
-    val appliedDiscount by viewModel.discountAmount.collectAsState()
-    val currentPromoCode by viewModel.promoCode.collectAsState()
-    val context = LocalContext.current
-    val toastMessage by viewModel.toastMessage.collectAsState()
+    val selectedIds by viewModel.selectedItemIds.collectAsState()
+    val selectedTotal by viewModel.selectedTotal.collectAsState()
 
-    LaunchedEffect(toastMessage) {
-        toastMessage?.let {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            viewModel.clearToastMessage()
-        }
-    }
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -77,82 +89,85 @@ fun CartScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
-                bottomBar = {
-                    if(cartItems.isNotEmpty()){
-                        CheckoutBottomBar(
-                            total = total,
-                            onCheckoutClick = {
-                                if(appliedDiscount> 0 && currentPromoCode.isNotEmpty()){
-                                    navController.navigate("checkout?promo=$currentPromoCode")
-                                }else{
-                                    navController.navigate("checkout")
-                                }
+        bottomBar = {
+            if(cartItems.isNotEmpty()){
+                CheckoutBottomBar(
+                    total = selectedTotal,
+                    enabled = selectedIds.isNotEmpty(),
+                    onCheckoutClick = {
+                        // Navigate to checkout with selected IDs
+                        val idsString = selectedIds.joinToString(",")
+                        navController.navigate("checkout?itemIds=$idsString")
+                    }
+                )
+            }
+        },
+        containerColor = Color(0xFFF9FAFB)
+    ){ paddingValues ->
+        if(cartItems.isEmpty()){
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ){
+                Text(
+                    text = "Your cart is empty",
+                    fontSize = 18.sp,
+                    color = Color.Gray
+                )
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                // Select All Header
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = selectedIds.size == cartItems.size && cartItems.isNotEmpty(),
+                        onCheckedChange = { isChecked ->
+                            if (isChecked) viewModel.selectAll() else viewModel.deselectAll()
+                        },
+                        colors = CheckboxDefaults.colors(checkedColor = PurpleAccent)
+                    )
+                    Text("Select All", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                }
+
+                LazyColumn(
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ){
+                    items(cartItems){ item ->
+                        CartItemCard(
+                            item = item,
+                            isSelected = selectedIds.contains(item.id),
+                            onSelectionChange = { viewModel.toggleSelection(item.id) },
+                            onQuantityChange = { newQty ->
+                                viewModel.updateQuantity(item, newQty)
+                            },
+                            onRemoveClick = {
+                                viewModel.removeFromCart(item)
                             }
                         )
                     }
-                },
-                containerColor = Color(0xFFF9FAFB)
-            ){
-                paddingValues ->
-                if(cartItems.isEmpty()){
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(paddingValues),
-                        contentAlignment = Alignment.Center
-                    ){
-                        Text(
-                            text = "Your cart is empty",
-                            fontSize = 18.sp,
-                            color = Color.Gray
-                        )
-                    }
-                }else{
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(paddingValues),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ){
-                        items(cartItems){item->
-                            CartItemCard(
-                                item = item,
-                                onQuantityChange = { newQty ->
-                                    viewModel.updateQuantity(item, newQty)
-                                },
-                                onRemoveClick = {
-                                    viewModel.removeFromCart(item)
-                                }
-                            )
-                        }
-                        item{
-                            Spacer(modifier = Modifier.height(8.dp))
-                            PromoCodeSection(
-                                promoCode = promoCode,
-                                onPromoCodeChange = { viewModel.onPromoCodeChange(it) },
-                                onApplyClick = { viewModel.applyVoucherCode() },
-                                error = promoCodeError
-
-                            )
-                        }
-                        item{
-                            Spacer(modifier = Modifier.height(8.dp))
-                            PriceBreakDownSection(
-                                subtotal = subtotal,
-                                shippingFee = viewModel.shippingFee,
-                                discount = appliedDiscount
-
-                            )
-                        }
-                    }
                 }
+            }
+        }
     }
 }
 
 @Composable
 fun CartItemCard(
     item: CartEntity,
+    isSelected: Boolean,
+    onSelectionChange: (Boolean) -> Unit,
     onQuantityChange: (Int) -> Unit,
     onRemoveClick: () -> Unit
 ) {
@@ -168,10 +183,20 @@ fun CartItemCard(
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ){
+            // Checkbox
+            Checkbox(
+                checked = isSelected,
+                onCheckedChange = onSelectionChange,
+                colors = CheckboxDefaults.colors(checkedColor = PurpleAccent)
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Image
             Box(
                 modifier = Modifier
                     .size(80.dp)
-                    .clip(RoundedCornerShape(12))
+                    .clip(RoundedCornerShape(12.dp))
                     .background(Color(0xFFF3F4F6)),
                 contentAlignment = Alignment.Center
             ){
@@ -236,12 +261,12 @@ fun CartItemCard(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .background(Color(0xFFF3F4F6),
-                        RoundedCornerShape(8.dp))
-                        ){
+                                RoundedCornerShape(8.dp))
+                    ){
                         IconButton(
                             onClick = { onQuantityChange(item.quantity - 1) },
                             modifier = Modifier.size(32.dp)
-                            ){
+                        ){
                             Icon(Icons.Default.Remove, null, tint = Color.Gray,modifier = Modifier.size(16.dp))
                         }
                         Text(
@@ -262,118 +287,10 @@ fun CartItemCard(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun PromoCodeSection(
-    promoCode: String,
-    onPromoCodeChange:(String)-> Unit,
-    onApplyClick:()-> Unit,
-    error: String?
-) {
-    Column {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            OutlinedTextField(
-                value = promoCode,
-                onValueChange = onPromoCodeChange,
-                placeholder = {Text("Enter promo code", color = Color.Gray)},
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedContainerColor = Color.White,
-                    focusedContainerColor = Color.White,
-                    unfocusedBorderColor = Color.Transparent,
-                    focusedBorderColor = PurpleAccent,
-                    errorTextColor = Color.Red
-                    ),
-                isError = error != null,
-                singleLine = true
-            )
-            Button(
-                onClick = onApplyClick,
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.height(56.dp)
-            ){
-                Text(
-                    text = "APPLY",
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-        if(error != null) {
-            Text(
-                text = error,
-                color = Color.Red,
-                fontSize = 12.sp,
-                modifier = Modifier.padding(start = 16.dp,top=4.dp)
-            )
-        }
-    }
-}
-
-@Composable
-fun PriceBreakDownSection(subtotal: Double, shippingFee: Double, discount:Double) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ){
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ){
-            Text(
-                text = "Subtotal",
-                fontSize = 16.sp,
-                color = Color.Gray
-            )
-            Text(
-                "RM${String.format("%.2f",subtotal)}",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-            )
-        }
-
-        if (discount > 0) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(text = "Discount", fontSize = 16.sp, color = Color(0xFF4CAF50)) // Green color
-                Text(
-                    "-RM${String.format("%.2f", discount)}",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF4CAF50)
-                )
-            }
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ){
-            Text(
-                text = "Shipping Fee",
-                fontSize = 16.sp,
-                color = Color.Gray
-            )
-            Text(
-                "RM${String.format("%.2f",shippingFee)}",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-    }
-}
-
 @Composable
 fun CheckoutBottomBar(
     total: Double,
+    enabled: Boolean,
     onCheckoutClick: () -> Unit
 ){
     Surface(
@@ -382,11 +299,15 @@ fun CheckoutBottomBar(
     ) {
         Button(
             onClick = onCheckoutClick,
+            enabled = enabled,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
                 .height(56.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = PurpleAccent),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = PurpleAccent,
+                disabledContainerColor = Color.LightGray
+            ),
             shape = RoundedCornerShape(12.dp)
         ){
             Row(

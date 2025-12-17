@@ -21,9 +21,9 @@ import androidx.navigation.navArgument
 import com.example.miniproject.data.AppDatabase
 import com.example.miniproject.data.AuthPreferences
 import com.example.miniproject.repository.AddressRepository
+import com.example.miniproject.repository.AnalyticsRepository
 import com.example.miniproject.repository.CartRepository
 import com.example.miniproject.repository.EditProfileRepository
-import com.example.miniproject.repository.SignupRepository
 import com.example.miniproject.repository.ForgotPasswordRepository
 import com.example.miniproject.repository.LoginRepository
 import com.example.miniproject.repository.OrderRepository
@@ -31,6 +31,7 @@ import com.example.miniproject.repository.POSRepository
 import com.example.miniproject.repository.PaymentRepository
 import com.example.miniproject.repository.PromotionRepository
 import com.example.miniproject.repository.ReceiptRepository
+import com.example.miniproject.repository.SignupRepository
 import com.example.miniproject.screen.AddAddressScreen
 import com.example.miniproject.screen.AddEditPaymentScreen
 import com.example.miniproject.screen.AddressScreen
@@ -46,6 +47,7 @@ import com.example.miniproject.screen.SignupScreen
 import com.example.miniproject.screen.admin.AdminAnalyticsScreen
 import com.example.miniproject.screen.admin.AdminDashboardScreen
 import com.example.miniproject.screen.admin.AdminLoginScreen
+import com.example.miniproject.screen.admin.AdminOrdersScreen
 import com.example.miniproject.screen.admin.AdminPOSDetailsScreen
 import com.example.miniproject.screen.admin.AdminPOSScanScreen
 import com.example.miniproject.screen.admin.AdminPOSSuccessScreen
@@ -56,51 +58,49 @@ import com.example.miniproject.screen.customer.CheckOutScreen
 import com.example.miniproject.screen.customer.NewArrivalScreen
 import com.example.miniproject.screen.customer.OrderSuccessScreen
 import com.example.miniproject.screen.customer.ProductDetailScreen
+import com.example.miniproject.screen.customer.SearchScreen
+import com.example.miniproject.screen.customer.SelectShippingAddressScreen
 import com.example.miniproject.ui.theme.MiniProjectTheme
 import com.example.miniproject.viewmodel.AddProductViewModelFactory
 import com.example.miniproject.viewmodel.AddressViewModel
 import com.example.miniproject.viewmodel.AddressViewModelFactory
+import com.example.miniproject.viewmodel.AdminOrderViewModel
+import com.example.miniproject.viewmodel.AdminOrderViewModelFactory
 import com.example.miniproject.viewmodel.AdminPOSViewModel
 import com.example.miniproject.viewmodel.AdminPOSViewModelFactory
+import com.example.miniproject.viewmodel.AnalyticsViewModel
+import com.example.miniproject.viewmodel.AnalyticsViewModelFactory
 import com.example.miniproject.viewmodel.CartViewModel
 import com.example.miniproject.viewmodel.CartViewModelFactory
+import com.example.miniproject.viewmodel.CheckoutViewModel
+import com.example.miniproject.viewmodel.CheckoutViewModelFactory
 import com.example.miniproject.viewmodel.EditProfileViewModel
 import com.example.miniproject.viewmodel.EditProfileViewModelFactory
 import com.example.miniproject.viewmodel.ForgotPasswordViewModel
 import com.example.miniproject.viewmodel.ForgotPasswordViewModelFactory
 import com.example.miniproject.viewmodel.LoginViewModel
 import com.example.miniproject.viewmodel.LoginViewModelFactory
+import com.example.miniproject.viewmodel.OrderHistoryViewModel
+import com.example.miniproject.viewmodel.OrderHistoryViewModelFactory
+import com.example.miniproject.viewmodel.OrderSuccessViewModel
+import com.example.miniproject.viewmodel.OrderSuccessViewModelFactory
 import com.example.miniproject.viewmodel.PaymentViewModel
 import com.example.miniproject.viewmodel.PaymentViewModelFactory
 import com.example.miniproject.viewmodel.ProductDetailScreenViewModel
 import com.example.miniproject.viewmodel.ProductDetailScreenViewModelFactory
 import com.example.miniproject.viewmodel.ProductFormViewModel
 import com.example.miniproject.viewmodel.ProductSearchViewModel
-import com.example.miniproject.viewmodel.SignupViewModel
-import com.example.miniproject.viewmodel.SignupViewModelFactory
-import com.example.miniproject.viewmodel.CheckoutViewModel
-import com.example.miniproject.viewmodel.CheckoutViewModelFactory
-import com.example.miniproject.viewmodel.OrderHistoryViewModel
-import com.example.miniproject.viewmodel.OrderHistoryViewModelFactory
-import com.example.miniproject.viewmodel.OrderSuccessViewModel
-import com.example.miniproject.viewmodel.OrderSuccessViewModelFactory
 import com.example.miniproject.viewmodel.PromotionViewModel
 import com.example.miniproject.viewmodel.PromotionViewModelFactory
 import com.example.miniproject.viewmodel.SalesHistoryViewModel
 import com.example.miniproject.viewmodel.SalesHistoryViewModelFactory
+import com.example.miniproject.viewmodel.SignupViewModel
+import com.example.miniproject.viewmodel.SignupViewModelFactory
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
-import com.example.miniproject.repository.AnalyticsRepository
-import com.example.miniproject.viewmodel.AnalyticsViewModel
-import com.example.miniproject.viewmodel.AnalyticsViewModelFactory
-import com.example.miniproject.screen.admin.AdminOrdersScreen
-import com.example.miniproject.screen.customer.SearchScreen
-import com.example.miniproject.screen.customer.SelectShippingAddressScreen
-import com.example.miniproject.viewmodel.AdminOrderViewModel
-import com.example.miniproject.viewmodel.AdminOrderViewModelFactory
 
 class MainActivity : ComponentActivity() {
 
@@ -223,7 +223,7 @@ fun App(
 
     val cartRepository = CartRepository(db.CartDao())
     val cartViewModel: CartViewModel = viewModel(
-        factory = CartViewModelFactory(cartRepository, promoRepo)
+        factory = CartViewModelFactory(cartRepository)
     )
 
     val productDetailViewModel: ProductDetailScreenViewModel = viewModel(
@@ -454,16 +454,14 @@ fun App(
         }
         //checkout
         composable(
-            route = "checkout?promo={promo}",
-            arguments = listOf(navArgument("promo") { defaultValue = "" })
+            route = "checkout?itemIds={itemIds}", // Updated to receive Item IDs
+            arguments = listOf(navArgument("itemIds") { defaultValue = "" })
         ) { backStackEntry ->
-            val promoArg = backStackEntry.arguments?.getString("promo") ?: ""
+            val itemIds = backStackEntry.arguments?.getString("itemIds") ?: ""
 
-            // Pass the code to CheckoutViewModel immediately
-            LaunchedEffect(promoArg) {
-                if (promoArg.isNotEmpty()) {
-                    checkoutViewModel.setInitialPromoCode(promoArg)
-                }
+            // Pass the selected Item IDs to the ViewModel
+            LaunchedEffect(itemIds) {
+                checkoutViewModel.setSelectedItemIds(itemIds)
             }
 
             CheckOutScreen(
