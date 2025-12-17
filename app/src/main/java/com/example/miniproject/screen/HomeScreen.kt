@@ -310,7 +310,7 @@ fun SalesBanner() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(180.dp)
+            .height(200.dp)
             .background(Color(0xFFECECEC)),
         contentAlignment = Alignment.Center
     ) {
