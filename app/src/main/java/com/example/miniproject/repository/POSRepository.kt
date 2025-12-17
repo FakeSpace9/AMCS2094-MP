@@ -179,4 +179,186 @@ class POSRepository(
             e.printStackTrace()
         }
     }
+
+    suspend fun getAllPOSOrders(): List<POSOrderEntity> {
+        return posOrderDao.getAllPOSOrders()
+    }
+
+    suspend fun getPOSOrderItems(orderId: Long): List<POSOrderItemEntity> {
+        return posOrderDao.getPOSOrderItems(orderId)
+    }
+
+    suspend fun updatePOSOrderWithItems(
+        order: POSOrderEntity,
+        newItems: List<POSOrderItemEntity>,
+        oldItems: List<POSOrderItemEntity>
+    ): Result<Boolean> {
+        return try {
+            val db = firestore
+
+            // Run everything inside a Firestore Transaction
+            db.runTransaction { transaction ->
+                // 1. Calculate Stock Adjustments
+                // We map SKU to the quantity difference
+                val stockAdjustments = mutableMapOf<String, Int>() // SKU -> Qty Diff
+
+                // Compare New vs Old to find updates/additions
+                newItems.forEach { newItem ->
+                    val oldItem = oldItems.find { it.variantSku == newItem.variantSku }
+                    val oldQty = oldItem?.quantity ?: 0
+                    val diff = newItem.quantity - oldQty
+
+                    if (diff != 0) {
+                        stockAdjustments[newItem.variantSku] = diff
+                    }
+                }
+
+                // Find removed items (present in Old but not in New)
+                oldItems.forEach { oldItem ->
+                    if (newItems.none { it.variantSku == oldItem.variantSku }) {
+                        // Item removed completely, so we restore the full quantity
+                        stockAdjustments[oldItem.variantSku] = -oldItem.quantity
+                    }
+                }
+
+                // 2. Apply Stock Changes to Firestore Products
+                // We need to fetch the product documents for the affected SKUs
+                stockAdjustments.forEach { (sku, qtyChange) ->
+                    // Find which product has this SKU.
+                    // NOTE: Ideally, we should store productId in the map, but we can look it up.
+                    // For efficiency in this specific app structure, we might need to read the product first.
+                    // We will iterate items to get productId.
+                    val productId = newItems.find { it.variantSku == sku }?.productId
+                        ?: oldItems.find { it.variantSku == sku }?.productId
+
+                    if (productId != null) {
+                        val productRef = db.collection("products").document(productId)
+                        val snapshot = transaction.get(productRef)
+
+                        if (snapshot.exists()) {
+                            val variants = snapshot.get("variants") as? List<Map<String, Any>> ?: emptyList()
+                            val updatedVariants = variants.map { variant ->
+                                if (variant["sku"] == sku) {
+                                    val currentStock = (variant["qty"] as? Number)?.toInt() ?: 0
+                                    // If qtyChange is positive (customer bought more), we reduce stock
+                                    // If qtyChange is negative (customer returned/removed), we add stock
+                                    val newStock = (currentStock - qtyChange).coerceAtLeast(0)
+                                    variant.toMutableMap().apply { put("qty", newStock) }
+                                } else {
+                                    variant
+                                }
+                            }
+                            transaction.update(productRef, "variants", updatedVariants)
+                        }
+                    }
+                }
+
+                // 3. Update Order Document in Firestore
+                val orderRef = db.collection("pos_orders").document(order.id.toString())
+
+                val firestoreItems = newItems.map { item ->
+                    mapOf(
+                        "productId" to item.productId,
+                        "sku" to item.variantSku,
+                        "name" to item.productName,
+                        "size" to item.size,
+                        "color" to item.color,
+                        "qty" to item.quantity,
+                        "price" to item.price
+                    )
+                }
+
+                transaction.update(orderRef, mapOf(
+                    "items" to firestoreItems,
+                    "subTotal" to order.totalAmount,
+                    "grandTotal" to order.grandTotal,
+                    "discount" to order.discount,
+                    "customerEmail" to (order.customerEmail ?: ""),
+                    "paymentMethod" to order.paymentMethod,
+                    "status" to order.status
+                ))
+            }.await()
+
+            // 4. Update Local Room Database (Run this AFTER Firestore succeeds)
+            posOrderDao.insertOrder(order) // Update Order Header
+
+            // For items, easiest way is to delete old ones for this order and insert new ones
+            val oldItemIds = posOrderDao.getPOSOrderItems(order.id).map { it.id } // Get current IDs
+            // We can't easily delete by ID unless we tracked them.
+            // Strategy: Delete ALL items for this OrderID and re-insert.
+            // Note: You need to add a method in DAO: deleteItemsByOrderId(orderId)
+            posOrderDao.deleteItemsByOrderId(order.id)
+            posOrderDao.insertOrderItems(newItems)
+
+            // Update Local Stock
+            // We reuse the logic: if we sold MORE (diff > 0), we decrease local stock.
+            // If we sold LESS (diff < 0), we increase local stock.
+            // Note: For simplicity, we might just want to sync products from cloud,
+            // but let's do a quick local fix to keep UI snappy.
+            newItems.forEach { newItem ->
+                val oldItem = oldItems.find { it.variantSku == newItem.variantSku }
+                val oldQty = oldItem?.quantity ?: 0
+                val diff = newItem.quantity - oldQty
+                if (diff != 0) {
+                    productDao.decreaseStock(newItem.variantSku, diff) // decreaseStock handles negative numbers correctly?
+                    // You might need an 'increaseStock' or ensure decreaseStock allows negative ( - -1 = +1)
+                    // If your DAO only has "quantity = quantity - :amount", then passing -1 works.
+                }
+            }
+            // Handle removed items locally
+            oldItems.forEach { oldItem ->
+                if (newItems.none { it.variantSku == oldItem.variantSku }) {
+                    productDao.decreaseStock(oldItem.variantSku, -oldItem.quantity) // Add stock back
+                }
+            }
+
+            Result.success(true)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getReceiptItems(items: List<POSOrderItemEntity>): List<ReceiptItem> {
+        return items.map { item ->
+            // Fetch product to get the latest Image URL
+            val product = productDao.getProductById(item.productId)
+            ReceiptItem(
+                name = item.productName,
+                variant = "${item.size} / ${item.color}",
+                quantity = item.quantity,
+                unitPrice = item.price,
+                totalPrice = item.price * item.quantity,
+                imageUrl = product?.imageUrl ?: "" // Fallback if image not found
+            )
+        }
+    }
+
+    private fun getDateRange(date: Date): Pair<Date, Date> {
+        val calendar = Calendar.getInstance()
+        calendar.time = date
+
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        val start = calendar.time
+
+        calendar.set(Calendar.HOUR_OF_DAY, 23)
+        calendar.set(Calendar.MINUTE, 59)
+        calendar.set(Calendar.SECOND, 59)
+        calendar.set(Calendar.MILLISECOND, 999)
+        val end = calendar.time
+
+        return Pair(start, end)
+    }
+
+    suspend fun getOrdersForDate(date: Date): List<POSOrderEntity> {
+        val (start, end) = getDateRange(date)
+        return posOrderDao.getOrdersInRange(start, end)
+    }
+
+    suspend fun getPOSOrderById(id: Long): POSOrderEntity? {
+        return posOrderDao.getOrderById(id)
+    }
 }

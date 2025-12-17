@@ -68,4 +68,13 @@ interface POSOrderDao {
         LIMIT 3
     """)
     suspend fun getBestSellersInRange(start: Date, end: Date): List<BestSellerItem>
+
+    @Query("DELETE FROM pos_order_items WHERE posOrderId = :orderId")
+    suspend fun deleteItemsByOrderId(orderId: Long)
+
+    @Query("SELECT * FROM pos_orders WHERE id = :id LIMIT 1")
+    suspend fun getOrderById(id: Long): POSOrderEntity?
+
+    @Query("SELECT * FROM pos_orders WHERE orderDate BETWEEN :start AND :end ORDER BY orderDate DESC")
+    suspend fun getOrdersInRange(start: Date, end: Date): List<POSOrderEntity>
 }

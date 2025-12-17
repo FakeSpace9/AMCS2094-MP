@@ -49,6 +49,8 @@ import com.example.miniproject.screen.admin.AdminDashboardScreen
 import com.example.miniproject.screen.admin.AdminLoginScreen
 import com.example.miniproject.screen.admin.AdminOrdersScreen
 import com.example.miniproject.screen.admin.AdminPOSDetailsScreen
+import com.example.miniproject.screen.admin.AdminPOSEditOrderScreen
+import com.example.miniproject.screen.admin.AdminPOSHistoryScreen
 import com.example.miniproject.screen.admin.AdminPOSScanScreen
 import com.example.miniproject.screen.admin.AdminPOSSuccessScreen
 import com.example.miniproject.screen.admin.AdminProfileScreen
@@ -290,7 +292,8 @@ fun App(
     val salesHistoryViewModel: SalesHistoryViewModel = viewModel(
         factory = SalesHistoryViewModelFactory(
             posRepository,
-            promoRepo
+            promoRepo,
+            receiptRepository
             )
     )
 
@@ -547,5 +550,17 @@ fun App(
                 navController = navController
             )
         }
+
+        composable("admin_pos_history") {
+            AdminPOSHistoryScreen(navController, salesHistoryViewModel)
+        }
+        composable(
+            "admin_pos_edit/{orderId}",
+            arguments = listOf(navArgument("orderId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val orderId = backStackEntry.arguments?.getLong("orderId") ?: 0L
+            AdminPOSEditOrderScreen(navController, salesHistoryViewModel, orderId)
+        }
+
     }
 }
