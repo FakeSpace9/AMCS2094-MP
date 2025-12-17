@@ -51,6 +51,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.miniproject.data.dao.ProductSearchResult
@@ -99,6 +100,7 @@ fun HomeScreen(navController: NavController,
     val products by searchViewModel.searchResults.collectAsState()
 
     LaunchedEffect(Unit) {
+        searchViewModel.searchQuery.value = ""
         promoViewModel.syncPromotions()
         searchViewModel.loadProducts() // Ensure products are loaded
     }

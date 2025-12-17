@@ -39,6 +39,7 @@ fun SearchScreen(
 
     // Trigger initial load or refresh when screen opens
     LaunchedEffect(Unit) {
+        viewModel.selectedCategory.value = "All"
         viewModel.loadProducts()
     }
 
@@ -120,7 +121,7 @@ fun SearchScreen(
                         onClick = {
                             // Navigate to ProductDetailScreen
                             // Assuming your route is "product_detail/{productId}"
-                            navController.navigate("product_detail/${productResult.product.productId}")
+                            navController.navigate("productDetail/${productResult.product.productId}")
                         }
                     )
                 }

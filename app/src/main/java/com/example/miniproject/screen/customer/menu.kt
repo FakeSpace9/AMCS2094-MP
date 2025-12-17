@@ -66,6 +66,7 @@ fun NewArrivalScreen(
 
     LaunchedEffect(selectedFilter) {
         currentPage = 1
+        viewModel.searchQuery.value = ""
         viewModel.loadProducts()
     }
 
