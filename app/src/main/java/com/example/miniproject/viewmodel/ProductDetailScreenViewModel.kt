@@ -1,6 +1,5 @@
 package com.example.miniproject.viewmodel
 
-import android.os.Message
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.miniproject.data.dao.ProductDao
@@ -31,7 +30,7 @@ class ProductDetailScreenViewModel (
     private val _selectedSize = MutableStateFlow("")
     val selectedSize: StateFlow<String> = _selectedSize
 
-    private val _sizeOrder = listOf("XS","S","M","L","XL")
+    private val _sizeOrder = listOf("XS","S","M","L","XL","XXL")
     val availableSizes: StateFlow<List<String>> = MutableStateFlow(emptyList())
 
     private val _selectedVariant = MutableStateFlow<ProductVariantEntity?>(null)
@@ -60,7 +59,11 @@ class ProductDetailScreenViewModel (
             val uniqueSizes = variantsResult.map { it.size }
                 .distinct()
                 .filter { it.isNotEmpty() }
-                .sortedBy { _sizeOrder.indexOf(it) }
+                .sortedBy { size ->
+                    val index = _sizeOrder.indexOf(size)
+                    // If a size is not in the list (index -1), put it at the end
+                    if (index == -1) Int.MAX_VALUE else index
+                }
             (availableSizes as MutableStateFlow).value = uniqueSizes
 
             if (uniqueSizes.isNotEmpty()) {
