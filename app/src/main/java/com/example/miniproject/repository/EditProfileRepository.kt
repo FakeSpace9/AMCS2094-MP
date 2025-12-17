@@ -1,15 +1,19 @@
 package com.example.miniproject.repository
 
+import android.net.Uri
 import com.example.miniproject.data.dao.CustomerDao
 import com.example.miniproject.data.entity.CustomerEntity
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
+import java.util.UUID
 
 class EditProfileRepository(
     private val customerDao: CustomerDao,
     private val firestore: FirebaseFirestore
 ) {
 
+    private val storage = FirebaseStorage.getInstance()
     suspend fun getCustomerByEmail(email: String): CustomerEntity {
         return customerDao.getCustomerByEmail(email)
     }
@@ -18,6 +22,19 @@ class EditProfileRepository(
         return customerDao.getCustomerById(customerId)
     }
 
+    suspend fun uploadProfilePicture(uri: Uri): Result<String> {
+        return try {
+            val filename = UUID.randomUUID().toString()
+            val ref = storage.reference.child("profile_images/$filename")
+
+            ref.putFile(uri).await()
+            val downloadUrl = ref.downloadUrl.await()
+
+            Result.success(downloadUrl.toString())
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
     suspend fun updateProfile(customer: CustomerEntity): Result<Unit> {
         return try {
             // 1. Update Room
@@ -27,7 +44,8 @@ class EditProfileRepository(
             val data = mapOf(
                 "name" to customer.name,
                 "phone" to customer.phone,
-                "email" to customer.email
+                "email" to customer.email,
+                "profilePictureUrl" to customer.profilePictureUrl
             )
 
             firestore.collection("customers")
@@ -37,7 +55,7 @@ class EditProfileRepository(
                 .documents
                 .first()
                 .reference
-                .update(data)
+                .update(data as Map<String, Any>)
                 .await()
 
             Result.success(Unit)

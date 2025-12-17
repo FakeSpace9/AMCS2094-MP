@@ -11,6 +11,7 @@ import com.example.miniproject.repository.LoginRepository
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -26,7 +27,24 @@ class LoginViewModel(
 
     private val _adminState = MutableStateFlow<LoginStateAdmin>(LoginStateAdmin.Idle)
     val adminState: StateFlow<LoginStateAdmin> = _adminState
+    private var customerObserverJob: Job? = null
 
+    // --- HELPER FUNCTION TO OBSERVE DATA ---
+    private fun observeCustomerData(customerId: String) {
+        // Cancel any previous observation to avoid leaks
+        customerObserverJob?.cancel()
+
+        customerObserverJob = viewModelScope.launch {
+            repository.getCustomerFlow(customerId).collect { updatedUser ->
+                if (updatedUser != null) {
+                    _customerState.value = LoginStateCustomer.Success(updatedUser)
+                } else {
+                    // Handle case where user is deleted or null
+                    _customerState.value = LoginStateCustomer.Error("User data not found")
+                }
+            }
+        }
+    }
     fun login(email: String, password: String) {
         viewModelScope.launch {
             _customerState.value = LoginStateCustomer.Loading
@@ -37,7 +55,7 @@ class LoginViewModel(
 
                 // UPDATE: Save 'user.customerId'
                 authPrefs.saveLogin("customer", user.customerId,email)
-
+                observeCustomerData(user.customerId)
                 _customerState.value = LoginStateCustomer.Success(user)
             } else {
                 _customerState.value =
@@ -67,6 +85,7 @@ class LoginViewModel(
 
     fun logout() {
         viewModelScope.launch {
+            customerObserverJob?.cancel()
             repository.logoutFirebase()
             authPrefs.clearLogin()
 
@@ -103,7 +122,7 @@ class LoginViewModel(
                 val user = result.getOrNull()!!
 
                 authPrefs.saveLogin("customer", user.customerId,user.email)
-
+                observeCustomerData(user.customerId)
                 _customerState.value = LoginStateCustomer.Success(user)
             } else {
                 _customerState.value = LoginStateCustomer.Error("Google login failed")
@@ -121,7 +140,7 @@ class LoginViewModel(
 
             if (userType == "customer") {
                 _customerState.value = LoginStateCustomer.Loading
-
+                observeCustomerData(uid)
                 // UPDATE: Use getCustomerById(uid)
                 val result = repository.getCustomerById(uid)
 

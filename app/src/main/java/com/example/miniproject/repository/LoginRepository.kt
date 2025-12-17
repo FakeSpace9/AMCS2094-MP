@@ -8,6 +8,7 @@ import com.example.miniproject.data.entity.CustomerEntity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.tasks.await
 
 
@@ -149,7 +150,9 @@ class LoginRepository(
             Result.failure(e)
         }
     }
-
+    fun getCustomerFlow(id: String): Flow<CustomerEntity?> {
+        return customerDao.getCustomerFlow(id)
+    }
     suspend fun getCustomerById(uid: String): Result<CustomerEntity> {
         return try {
             val snapshot = firestore.collection("customers").document(uid).get().await()

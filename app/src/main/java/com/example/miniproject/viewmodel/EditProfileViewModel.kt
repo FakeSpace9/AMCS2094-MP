@@ -1,5 +1,6 @@
 package com.example.miniproject.viewmodel
 
+import android.net.Uri
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,6 +13,8 @@ class EditProfileViewModel(
     private val repo: EditProfileRepository,
     private val authPrefs: AuthPreferences
 ) : ViewModel() {
+
+    var profilePicture = mutableStateOf<String?>(null)
 
     var name = mutableStateOf("")
     var phone = mutableStateOf("")
@@ -50,6 +53,7 @@ class EditProfileViewModel(
                 name.value = user.name
                 phone.value = user.phone
                 email.value = user.email
+                profilePicture.value = user.profilePictureUrl
                 currentCustomerId = user.customerId
             } else {
                 // Handle case where user data is missing (e.g., show error or fetch from remote)
@@ -58,6 +62,13 @@ class EditProfileViewModel(
         }
     }
 
+    fun onImageSelected(uri: Uri) {
+        profilePicture.value = uri.toString()
+    }
+
+    fun onPredefinedImageSelected(code: String) {
+        profilePicture.value = code
+    }
     fun saveProfile(onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
 
@@ -68,11 +79,26 @@ class EditProfileViewModel(
                 return@launch
             }
 
+            var finalImageUrl = profilePicture.value
+
+                    // Check if it is a local URI (needs upload)
+            if (finalImageUrl != null && finalImageUrl!!.startsWith("content://")) {
+                val uploadResult = repo.uploadProfilePicture(Uri.parse(finalImageUrl))
+                if (uploadResult.isSuccess) {
+                    finalImageUrl = uploadResult.getOrNull()
+                } else {
+                    message.value = "Image upload failed: ${uploadResult.exceptionOrNull()?.message}"
+                    onResult(false)
+                    return@launch
+                }
+            }
+
             val updated = CustomerEntity(
                 customerId = currentCustomerId,
                 name = name.value,
                 phone = phone.value,
-                email = email.value
+                email = email.value,
+                profilePictureUrl = finalImageUrl
             )
 
             val result = repo.updateProfile(updated)
