@@ -26,6 +26,7 @@ import com.example.miniproject.data.entity.OrderEntity
 import com.example.miniproject.viewmodel.AdminOrderViewModel
 import java.text.SimpleDateFormat
 import java.util.Locale
+import java.util.TimeZone
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -116,6 +117,7 @@ fun AdminOrderCard(
     onClick: () -> Unit
 ) {
     val sdf = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
+    sdf.timeZone = TimeZone.getTimeZone("Asia/Kuala_Lumpur")
     var expanded by remember { mutableStateOf(false) }
 
     Card(

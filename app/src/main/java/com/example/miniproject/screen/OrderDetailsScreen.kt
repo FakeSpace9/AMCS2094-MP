@@ -198,5 +198,6 @@ fun ReceiptRow(title: String, value: Double, bold: Boolean = false) {
 
 fun formatDate(timestamp: Long): String {
     val sdf = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
+    sdf.timeZone = TimeZone.getTimeZone("Asia/Kuala_Lumpur")
     return sdf.format(Date(timestamp))
 }

@@ -471,7 +471,7 @@ fun VariantCard(
                 OutlinedTextField(
                     value = variantState.quantity,
                     onValueChange = { onUpdate(variantState.copy(quantity = it)) },
-                    placeholder = { Text("0") },
+                    placeholder = { Text("Quantity") },
                     modifier = Modifier.weight(1f),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     isError = isStockError,

@@ -34,6 +34,7 @@ import com.example.miniproject.viewmodel.OrderHistoryViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 @Composable
 fun OrderHistoryScreen(
@@ -129,5 +130,6 @@ fun OrderHistoryScreen(
 
 fun formatOrderDate(timestamp: Long): String {
     val sdf = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
+    sdf.timeZone = TimeZone.getTimeZone("Asia/Kuala_Lumpur")
     return sdf.format(Date(timestamp))
 }
