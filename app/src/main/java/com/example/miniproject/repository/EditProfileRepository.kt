@@ -10,7 +10,8 @@ import java.util.UUID
 
 class EditProfileRepository(
     private val customerDao: CustomerDao,
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val auth: com.google.firebase.auth.FirebaseAuth
 ) {
 
     private val storage = FirebaseStorage.getInstance()
@@ -58,6 +59,18 @@ class EditProfileRepository(
                 .update(data as Map<String, Any>)
                 .await()
 
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun changePassword(currentPass: String, newPass: String): Result<Unit> {
+        return try {
+            val user = auth.currentUser ?: return Result.failure(Exception("No user logged in"))
+            val credential = com.google.firebase.auth.EmailAuthProvider.getCredential(user.email!!, currentPass)
+            user.reauthenticate(credential).await()
+            user.updatePassword(newPass).await()
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

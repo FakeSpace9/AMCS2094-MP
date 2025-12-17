@@ -199,9 +199,11 @@ fun App(
     val productFormViewModel: ProductFormViewModel = viewModel(factory = productFactory)
     val productSearchViewModel: ProductSearchViewModel = viewModel(factory = productFactory)
 
+    // --- FIX IS HERE: Added auth argument ---
     val editProfileRepo = EditProfileRepository(
         customerDao = db.CustomerDao(),
-        firestore = FirebaseFirestore.getInstance()
+        firestore = FirebaseFirestore.getInstance(),
+        auth = FirebaseAuth.getInstance() // <--- ADDED THIS LINE
     )
 
     val editProfileViewModel: EditProfileViewModel = viewModel(
@@ -294,7 +296,7 @@ fun App(
             posRepository,
             promoRepo,
             receiptRepository
-            )
+        )
     )
 
     val analyticsRepo = AnalyticsRepository(
@@ -377,10 +379,11 @@ fun App(
             )
         }
 
-        composable("edit") {
+        composable("edit_profile") {
             EditProfileScreen(
                 viewModel = editProfileViewModel,
-                navController = navController
+                navController = navController,
+                loginViewModel = loginViewModel,
             )
         }
 

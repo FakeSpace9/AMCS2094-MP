@@ -27,6 +27,9 @@ class LoginViewModel(
 
     private val _adminState = MutableStateFlow<LoginStateAdmin>(LoginStateAdmin.Idle)
     val adminState: StateFlow<LoginStateAdmin> = _adminState
+    private val _updateMessage = MutableStateFlow<String?>(null)
+    val updateMessage: StateFlow<String?> = _updateMessage
+
     private var customerObserverJob: Job? = null
 
     // --- HELPER FUNCTION TO OBSERVE DATA ---
@@ -44,6 +47,28 @@ class LoginViewModel(
                 }
             }
         }
+    }
+
+    fun updateAdminProfile(name: String, phone: String) {
+        val currentState = _adminState.value
+        if (currentState is LoginStateAdmin.Success) {
+            viewModelScope.launch {
+                val currentAdmin = currentState.admin
+                val updatedAdmin = currentAdmin.copy(name = name, phone = phone)
+
+                val result = repository.updateAdmin(updatedAdmin)
+
+                if (result.isSuccess) {
+                    _adminState.value = LoginStateAdmin.Success(updatedAdmin)
+                    _updateMessage.value = "Profile Updated Successfully"
+                } else {
+                    _updateMessage.value = "Update Failed: ${result.exceptionOrNull()?.message}"
+                }
+            }
+        }
+    }
+    fun clearUpdateMessage() {
+        _updateMessage.value = null
     }
     fun login(email: String, password: String) {
         viewModelScope.launch {

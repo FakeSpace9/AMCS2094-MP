@@ -150,6 +150,25 @@ class LoginRepository(
             Result.failure(e)
         }
     }
+    suspend fun updateAdmin(admin: AdminEntity): Result<Boolean> {
+        return try {
+            // 1. Update Firestore
+            val updates = mapOf(
+                "name" to admin.name,
+                "phone" to admin.phone
+            )
+            firestore.collection("admins").document(admin.adminId)
+                .update(updates)
+                .await()
+
+            // 2. Update Local Room
+            adminDao.updateAdmin(admin)
+
+            Result.success(true)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
     fun getCustomerFlow(id: String): Flow<CustomerEntity?> {
         return customerDao.getCustomerFlow(id)
     }
