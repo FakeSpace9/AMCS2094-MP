@@ -29,7 +29,7 @@ class EditProfileViewModel(
 
     // UI State
     var message = mutableStateOf("")
-    var isGoogleAccount = mutableStateOf(false) // <--- Track Google User
+    var isGoogleAccount = mutableStateOf(false)
 
     private var originalProfilePicture: String? = null
     private var originalName: String = ""
@@ -42,9 +42,20 @@ class EditProfileViewModel(
                 profilePicture.value != originalProfilePicture
     }
 
+    // Password Validation
+    val hasLength by derivedStateOf { newPassword.value.length >= 6 }
+    val hasUppercase by derivedStateOf { newPassword.value.any { it.isUpperCase() } }
+    val hasLowercase by derivedStateOf { newPassword.value.any { it.isLowerCase() } }
+    val hasDigit by derivedStateOf { newPassword.value.any { it.isDigit() } }
+    val hasSymbol by derivedStateOf { newPassword.value.any { !it.isLetterOrDigit() } }
+
+    val isPasswordValid by derivedStateOf {
+        hasLength && hasUppercase && hasLowercase && hasDigit && hasSymbol &&
+                (newPassword.value == confirmPassword.value) && currentPassword.value.isNotEmpty()
+    }
+
     fun loadCurrentUser() {
         viewModelScope.launch {
-            // Check provider type immediately
             isGoogleAccount.value = repo.isGoogleUser()
 
             val userId = authPrefs.getUserId() ?: return@launch
@@ -69,7 +80,6 @@ class EditProfileViewModel(
     fun onImageSelected(uri: Uri) { profilePicture.value = uri.toString() }
     fun onPredefinedImageSelected(code: String) { profilePicture.value = code }
 
-    // --- CHANGE PASSWORD LOGIC ---
     fun resetPasswordFields() {
         currentPassword.value = ""
         newPassword.value = ""
@@ -78,25 +88,13 @@ class EditProfileViewModel(
     }
 
     fun changePassword(onSuccess: () -> Unit) {
-        val current = currentPassword.value
-        val newPass = newPassword.value
-        val confirm = confirmPassword.value
-
-        if (current.isBlank() || newPass.isBlank() || confirm.isBlank()) {
-            message.value = "All password fields are required"
-            return
-        }
-        if (newPass.length < 6) {
-            message.value = "New password must be at least 6 characters"
-            return
-        }
-        if (newPass != confirm) {
-            message.value = "New passwords do not match"
+        if (!isPasswordValid) {
+            message.value = "Please ensure all requirements are met."
             return
         }
 
         viewModelScope.launch {
-            val result = repo.changePassword(current, newPass)
+            val result = repo.changePassword(currentPassword.value, newPassword.value)
             if (result.isSuccess) {
                 onSuccess()
             } else {
@@ -117,7 +115,15 @@ class EditProfileViewModel(
                 else { message.value = "Upload failed"; onResult(false); return@launch }
             }
 
-            val updated = CustomerEntity(currentCustomerId, email.value, name.value, phone.value, finalImageUrl)
+            // --- FIX IS HERE: Used Named Arguments ---
+            val updated = CustomerEntity(
+                customerId = currentCustomerId,
+                name = name.value,
+                email = email.value,
+                phone = phone.value,
+                profilePictureUrl = finalImageUrl
+            )
+
             val result = repo.updateProfile(updated)
 
             if (result.isSuccess) {
