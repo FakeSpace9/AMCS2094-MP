@@ -1,7 +1,6 @@
 package com.example.miniproject.screen
 
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -47,7 +46,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -61,15 +59,13 @@ import com.example.miniproject.viewmodel.LoginViewModel
 @Composable
 fun EditProfileScreen(
     viewModel: EditProfileViewModel,
-    loginViewModel: LoginViewModel, // <--- Added LoginViewModel
+    loginViewModel: LoginViewModel,
     navController: NavController
 ) {
-    val context = LocalContext.current
     LaunchedEffect(Unit) { viewModel.loadCurrentUser() }
 
     var showImageSourceDialog by remember { mutableStateOf(false) }
     var showPredefinedDialog by remember { mutableStateOf(false) }
-    var showPasswordDialog by remember { mutableStateOf(false) }
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -127,18 +123,20 @@ fun EditProfileScreen(
                 label = { Text("Phone Number") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), modifier = Modifier.fillMaxWidth()
             )
 
-            // --- Change Password Button ---
-            Button(
-                onClick = { showPasswordDialog = true },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray, contentColor = Color.Black),
-                modifier = Modifier.fillMaxWidth()
-            ) { Text("Change Password") }
+            // --- Change Password Button (Hide if Google Account) ---
+            if (!viewModel.isGoogleAccount.value) {
+                Button(
+                    onClick = { navController.navigate("change_password") }, // <--- Navigate to new screen
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray, contentColor = Color.Black),
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Change Password") }
+            }
 
-            // --- Save Button (Disabled if not modified) ---
+            // --- Save Button ---
             Button(
                 onClick = { viewModel.saveProfile { if (it) navController.popBackStack() } },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
-                enabled = viewModel.isModified, // <--- Disabled State Logic
+                enabled = viewModel.isModified,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF5B4CFF),
                     contentColor = Color.White,
@@ -151,41 +149,7 @@ fun EditProfileScreen(
         }
     }
 
-    // --- Password Change Dialog ---
-    if (showPasswordDialog) {
-        var currentPass by remember { mutableStateOf("") }
-        var newPass by remember { mutableStateOf("") }
-        AlertDialog(
-            onDismissRequest = { showPasswordDialog = false },
-            title = { Text("Change Password") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = currentPass, onValueChange = { currentPass = it }, label = { Text("Current Password") }, singleLine = true)
-                    OutlinedTextField(value = newPass, onValueChange = { newPass = it }, label = { Text("New Password") }, singleLine = true)
-                }
-            },
-            confirmButton = {
-                Button(onClick = {
-                    viewModel.changePassword(currentPass, newPass) {
-                        // --- ON SUCCESS ---
-                        Toast.makeText(context, "Password updated. Please login again.", Toast.LENGTH_LONG).show()
-                        showPasswordDialog = false
-
-                        // 1. Call global logout from LoginViewModel
-                        loginViewModel.logout()
-
-                        // 2. Navigate to Login
-                        navController.navigate("Login") {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    }
-                }) { Text("Update") }
-            },
-            dismissButton = { TextButton(onClick = { showPasswordDialog = false }) { Text("Cancel") } }
-        )
-    }
-
-    // ... (Image dialogs similar to before)
+    // ... (Image dialogs) ...
     if (showImageSourceDialog) {
         AlertDialog(
             onDismissRequest = { showImageSourceDialog = false },

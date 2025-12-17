@@ -3,6 +3,7 @@ package com.example.miniproject.repository
 import android.net.Uri
 import com.example.miniproject.data.dao.CustomerDao
 import com.example.miniproject.data.entity.CustomerEntity
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
@@ -64,7 +65,10 @@ class EditProfileRepository(
             Result.failure(e)
         }
     }
-
+    fun isGoogleUser(): Boolean {
+        val user = auth.currentUser
+        return user?.providerData?.any { it.providerId == GoogleAuthProvider.PROVIDER_ID } ?: false
+    }
     suspend fun changePassword(currentPass: String, newPass: String): Result<Unit> {
         return try {
             val user = auth.currentUser ?: return Result.failure(Exception("No user logged in"))

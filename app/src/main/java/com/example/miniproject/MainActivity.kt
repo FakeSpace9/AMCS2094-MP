@@ -35,6 +35,7 @@ import com.example.miniproject.repository.SignupRepository
 import com.example.miniproject.screen.AddAddressScreen
 import com.example.miniproject.screen.AddEditPaymentScreen
 import com.example.miniproject.screen.AddressScreen
+import com.example.miniproject.screen.ChangePasswordScreen
 import com.example.miniproject.screen.EditProfileScreen
 import com.example.miniproject.screen.ForgotPasswordScreen
 import com.example.miniproject.screen.HomeScreenWithDrawer
@@ -417,6 +418,13 @@ fun App(
             CartScreen(
                 navController = navController,
                 viewModel = cartViewModel
+            )
+        }
+        composable("change_password") {
+            ChangePasswordScreen(
+                navController = navController,
+                viewModel = editProfileViewModel, // Reuse existing VM
+                loginViewModel = loginViewModel
             )
         }
 

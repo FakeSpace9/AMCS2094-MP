@@ -16,60 +16,47 @@ class EditProfileViewModel(
     private val authPrefs: AuthPreferences
 ) : ViewModel() {
 
-    // Current State
+    // Profile State
     var profilePicture = mutableStateOf<String?>(null)
     var name = mutableStateOf("")
     var phone = mutableStateOf("")
     var email = mutableStateOf("")
-    var message = mutableStateOf("")
 
-    // Original State (to check for changes)
+    // Password Change State
+    var currentPassword = mutableStateOf("")
+    var newPassword = mutableStateOf("")
+    var confirmPassword = mutableStateOf("")
+
+    // UI State
+    var message = mutableStateOf("")
+    var isGoogleAccount = mutableStateOf(false) // <--- Track Google User
+
     private var originalProfilePicture: String? = null
     private var originalName: String = ""
     private var originalPhone: String = ""
     private var currentCustomerId: String = ""
 
-    // --- NEW: Check if anything changed ---
     val isModified by derivedStateOf {
         name.value != originalName ||
                 phone.value != originalPhone ||
                 profilePicture.value != originalProfilePicture
     }
 
-    fun isValidPhone(phone: String): Boolean {
-        return Regex("^01\\d{8,9}$").matches(phone)
-    }
-
-    fun isValidEmail(email: String): Boolean {
-        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
-    }
-
-    fun validateProfile(): String? {
-        if (name.value.isBlank()) return "Name cannot be empty"
-        if (email.value.isBlank()) return "Email cannot be empty"
-        if (phone.value.isBlank()) return "Phone Number cannot be empty"
-        if (name.value.length < 5) return "Name cannot be less than 5 letters"
-        if (!isValidEmail(email.value)) return "Invalid Email"
-        if (!isValidPhone(phone.value)) return "Invalid Phone Number"
-
-        return null
-    }
-
     fun loadCurrentUser() {
         viewModelScope.launch {
-            val userId = authPrefs.getUserId() ?: return@launch
+            // Check provider type immediately
+            isGoogleAccount.value = repo.isGoogleUser()
 
+            val userId = authPrefs.getUserId() ?: return@launch
             val user = repo.getCustomerById(userId)
 
             if (user != null) {
-                // Set Current Values
                 name.value = user.name
                 phone.value = user.phone
                 email.value = user.email
                 profilePicture.value = user.profilePictureUrl
                 currentCustomerId = user.customerId
 
-                // Set Original Values
                 originalName = user.name
                 originalPhone = user.phone
                 originalProfilePicture = user.profilePictureUrl
@@ -79,27 +66,39 @@ class EditProfileViewModel(
         }
     }
 
-    fun onImageSelected(uri: Uri) {
-        profilePicture.value = uri.toString()
+    fun onImageSelected(uri: Uri) { profilePicture.value = uri.toString() }
+    fun onPredefinedImageSelected(code: String) { profilePicture.value = code }
+
+    // --- CHANGE PASSWORD LOGIC ---
+    fun resetPasswordFields() {
+        currentPassword.value = ""
+        newPassword.value = ""
+        confirmPassword.value = ""
+        message.value = ""
     }
 
-    fun onPredefinedImageSelected(code: String) {
-        profilePicture.value = code
-    }
+    fun changePassword(onSuccess: () -> Unit) {
+        val current = currentPassword.value
+        val newPass = newPassword.value
+        val confirm = confirmPassword.value
 
-    fun changePassword(currentPass: String, newPass: String, onSuccess: () -> Unit) {
-        if (currentPass.isBlank() || newPass.isBlank()) {
-            message.value = "Passwords cannot be empty"
+        if (current.isBlank() || newPass.isBlank() || confirm.isBlank()) {
+            message.value = "All password fields are required"
             return
         }
         if (newPass.length < 6) {
             message.value = "New password must be at least 6 characters"
             return
         }
+        if (newPass != confirm) {
+            message.value = "New passwords do not match"
+            return
+        }
+
         viewModelScope.launch {
-            val result = repo.changePassword(currentPass, newPass)
+            val result = repo.changePassword(current, newPass)
             if (result.isSuccess) {
-                onSuccess() // Trigger UI to handle logout
+                onSuccess()
             } else {
                 message.value = "Error: ${result.exceptionOrNull()?.message}"
             }
@@ -108,8 +107,8 @@ class EditProfileViewModel(
 
     fun saveProfile(onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
-            // Validation omitted for brevity, assumes standard checks...
             if (name.value.isBlank()) { message.value = "Name required"; onResult(false); return@launch }
+            if (phone.value.isBlank()) { message.value = "Phone required"; onResult(false); return@launch }
 
             var finalImageUrl = profilePicture.value
             if (finalImageUrl != null && finalImageUrl!!.startsWith("content://")) {
