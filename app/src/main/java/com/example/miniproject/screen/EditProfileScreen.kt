@@ -1,6 +1,7 @@
 package com.example.miniproject.screen
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -46,6 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -62,6 +64,8 @@ fun EditProfileScreen(
     loginViewModel: LoginViewModel,
     navController: NavController
 ) {
+    val context = LocalContext.current // --- ADDED CONTEXT
+
     LaunchedEffect(Unit) { viewModel.loadCurrentUser() }
 
     var showImageSourceDialog by remember { mutableStateOf(false) }
@@ -88,7 +92,10 @@ fun EditProfileScreen(
         }
     ) { padding ->
         Column(
-            modifier = Modifier.padding(padding).padding(horizontal = 20.dp, vertical = 16.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(padding)
+                .padding(horizontal = 20.dp, vertical = 16.dp)
+                .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -123,10 +130,10 @@ fun EditProfileScreen(
                 label = { Text("Phone Number") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), modifier = Modifier.fillMaxWidth()
             )
 
-            // --- Change Password Button (Hide if Google Account) ---
+            // --- Change Password Button (Hidden for Google Users) ---
             if (!viewModel.isGoogleAccount.value) {
                 Button(
-                    onClick = { navController.navigate("change_password") }, // <--- Navigate to new screen
+                    onClick = { navController.navigate("change_password") },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray, contentColor = Color.Black),
                     modifier = Modifier.fillMaxWidth()
                 ) { Text("Change Password") }
@@ -134,7 +141,15 @@ fun EditProfileScreen(
 
             // --- Save Button ---
             Button(
-                onClick = { viewModel.saveProfile { if (it) navController.popBackStack() } },
+                onClick = {
+                    viewModel.saveProfile { success ->
+                        if (success) {
+                            // --- SHOW TOAST MESSAGE ON SUCCESS ---
+                            Toast.makeText(context, "Profile Updated Successfully", Toast.LENGTH_SHORT).show()
+                            navController.popBackStack()
+                        }
+                    }
+                },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 enabled = viewModel.isModified,
                 colors = ButtonDefaults.buttonColors(
@@ -145,11 +160,14 @@ fun EditProfileScreen(
                 )
             ) { Text("Save Changes") }
 
-            viewModel.message.value.takeIf { it.isNotEmpty() }?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
+            // Only show errors here (success message is cleared in VM)
+            viewModel.message.value.takeIf { it.isNotEmpty() }?.let {
+                Text(it, color = MaterialTheme.colorScheme.error)
+            }
         }
     }
 
-    // ... (Image dialogs) ...
+    // ... (Image dialogs unchanged) ...
     if (showImageSourceDialog) {
         AlertDialog(
             onDismissRequest = { showImageSourceDialog = false },

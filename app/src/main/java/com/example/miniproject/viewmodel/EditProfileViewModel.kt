@@ -115,7 +115,6 @@ class EditProfileViewModel(
                 else { message.value = "Upload failed"; onResult(false); return@launch }
             }
 
-            // --- FIX IS HERE: Used Named Arguments ---
             val updated = CustomerEntity(
                 customerId = currentCustomerId,
                 name = name.value,
@@ -130,7 +129,7 @@ class EditProfileViewModel(
                 originalName = name.value
                 originalPhone = phone.value
                 originalProfilePicture = finalImageUrl
-                message.value = "Profile Saved"
+                message.value = "" // --- CHANGED: Don't show "Profile Saved" text in UI
                 onResult(true)
             } else {
                 message.value = "Failed: ${result.exceptionOrNull()?.message}"
