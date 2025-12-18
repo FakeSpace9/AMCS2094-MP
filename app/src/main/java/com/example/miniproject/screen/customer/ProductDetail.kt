@@ -22,10 +22,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -36,6 +40,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,6 +53,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -68,6 +76,9 @@ fun ProductDetailScreen(
     val addToCartStatus by viewModel.addToCartStatus.collectAsState()
     val context = LocalContext.current
 
+    // State to control Size Chart Dialog visibility
+    var showSizeChart by remember { mutableStateOf(false) }
+
     LaunchedEffect(addToCartStatus) {
         when (addToCartStatus) {
             is AddToCartStatus.Success -> {
@@ -84,6 +95,14 @@ fun ProductDetailScreen(
 
     LaunchedEffect(productId) {
         viewModel.loadProductData(productId)
+    }
+
+    // Render Size Chart Dialog if state is true
+    if (showSizeChart && product != null) {
+        SizeChartDialog(
+            category = product!!.category,
+            onDismiss = { showSizeChart = false }
+        )
     }
 
     Scaffold(
@@ -139,18 +158,18 @@ fun ProductDetailScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues) // Apply padding from Scaffold
+                    .padding(paddingValues)
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // --- UPDATED IMAGE CONTAINER ---
+                // Product Image
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(350.dp) // Height for full image visibility
+                        .height(350.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color.White), // White background for clean look
+                        .background(Color.White),
                     contentAlignment = Alignment.Center
                 ) {
                     AsyncImage(
@@ -159,12 +178,13 @@ fun ProductDetailScreen(
                             .crossfade(true)
                             .build(),
                         contentDescription = product!!.name,
-                        contentScale = ContentScale.Fit, // Shows the entire image
+                        contentScale = ContentScale.Fit,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
                 Spacer(modifier = Modifier.height(24.dp))
 
+                // Product Name
                 Text(
                     text = product!!.name,
                     fontSize = 24.sp,
@@ -174,6 +194,7 @@ fun ProductDetailScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
+                // Price
                 Text(
                     text = priceRange,
                     fontSize = 18.sp,
@@ -182,6 +203,7 @@ fun ProductDetailScreen(
                 )
                 Spacer(modifier = Modifier.height(24.dp))
 
+                // Size Selection Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -193,17 +215,18 @@ fun ProductDetailScreen(
                         fontWeight = FontWeight.SemiBold,
                         color = Color.Black
                     )
+                    // Updated Clickable Size Guide
                     Text(
                         text = "Size Guide",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = PurpleAccent,
-                        modifier = Modifier.clickable { /*TODO*/ }
+                        modifier = Modifier.clickable { showSizeChart = true }
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Sizes are arranged by ViewModel logic now
+                // Size List
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     items(availableSizes) { size ->
                         SizeCard(
@@ -215,6 +238,7 @@ fun ProductDetailScreen(
                 }
                 Spacer(modifier = Modifier.height(24.dp))
 
+                // Description
                 Text(
                     text = "Description",
                     fontSize = 18.sp,
@@ -259,7 +283,7 @@ fun SizeCard(
             .size(50.dp)
             .clip(CircleShape)
             .background(backgroundColor)
-            .border(1.dp, borderColor, CircleShape) // Added border for better visibility
+            .border(1.dp, borderColor, CircleShape)
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
@@ -268,6 +292,117 @@ fun SizeCard(
             fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold,
             color = textColor
+        )
+    }
+}
+
+// --- New Composable: Size Chart Dialog ---
+@Composable
+fun SizeChartDialog(
+    category: String,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "${category.replaceFirstChar { it.uppercase() }} Size Chart",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Close")
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Content based on Category
+                when (category.lowercase()) {
+                    "tops" -> TopsSizeTable()
+                    "outerwear" -> TopsSizeTable()
+                    "dresses" -> BottomsSizeTable()
+                    "bottoms" -> BottomsSizeTable()
+                    else -> Text("No size guide available for this category.")
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+    }
+}
+
+@Composable
+fun TopsSizeTable() {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        SizeTableRow("Size", "Chest (cm)", "Length (cm)", isHeader = true)
+        HorizontalDivider()
+        SizeTableRow("XS", "80-84", "60")
+        HorizontalDivider()
+        SizeTableRow("S", "84-88", "62")
+        HorizontalDivider()
+        SizeTableRow("M", "88-92", "64")
+        HorizontalDivider()
+        SizeTableRow("L", "92-96", "66")
+        HorizontalDivider()
+        SizeTableRow("XL", "96-100", "68")
+    }
+}
+
+@Composable
+fun BottomsSizeTable() {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        SizeTableRow("Size", "Waist (cm)", "Hip (cm)", isHeader = true)
+        HorizontalDivider()
+        SizeTableRow("XS", "60-64", "86-90")
+        HorizontalDivider()
+        SizeTableRow("S", "64-68", "90-94")
+        HorizontalDivider()
+        SizeTableRow("M", "68-72", "94-98")
+        HorizontalDivider()
+        SizeTableRow("L", "72-76", "98-102")
+        HorizontalDivider()
+        SizeTableRow("XL", "76-80", "102-106")
+    }
+}
+
+@Composable
+fun SizeTableRow(col1: String, col2: String, col3: String, isHeader: Boolean = false) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = col1,
+            modifier = Modifier.weight(1f),
+            fontWeight = if (isHeader) FontWeight.Bold else FontWeight.Normal,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            text = col2,
+            modifier = Modifier.weight(1f),
+            fontWeight = if (isHeader) FontWeight.Bold else FontWeight.Normal,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            text = col3,
+            modifier = Modifier.weight(1f),
+            fontWeight = if (isHeader) FontWeight.Bold else FontWeight.Normal,
+            textAlign = TextAlign.Center
         )
     }
 }
