@@ -25,8 +25,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.Home
@@ -166,14 +164,6 @@ fun NewArrivalScreen(
                     }
                 }
             }
-            // --- ADDED: Dynamic Pagination Row at the bottom ---
-            if (searchResults.isNotEmpty()) {
-                PaginationRow(
-                    currentPage = currentPage,
-                    totalPages = totalPages,
-                    onPageChange = { newPage -> currentPage = newPage }
-                )
-            }
         }
     }
 }
@@ -278,9 +268,9 @@ fun TopHeader(currentTitle:String, onCartClick:()->Unit){
     CenterAlignedTopAppBar(
         title = {
             Text(
-            text = currentTitle,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
+                text = currentTitle,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
             )
         },
         navigationIcon = {
@@ -312,12 +302,12 @@ fun FilterRow(
     selectedFilter: String ,
     onFilterSelected: (String) -> Unit
 ){
+    // REMOVED: "New Arrivals" from this list
     val filters =listOf(
         "All",
-        "New Arrivals",
         "Best Sellers",
         "Tops",
-        "Bottoms",
+        "Bottom",
         "Outerwear",
         "Dresses",
         "Accessories"
@@ -352,8 +342,8 @@ fun FilterRow(
             }
         }
         items(filters){
-            filterName ->
-                val isSelected = filterName == selectedFilter
+                filterName ->
+            val isSelected = filterName == selectedFilter
             Box(
                 modifier = Modifier
                     .height(40.dp)
@@ -379,62 +369,7 @@ fun FilterRow(
     }
 }
 
-@Composable
-fun PaginationRow(
-    currentPage: Int,
-    totalPages: Int,
-    onPageChange: (Int) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(onClick = {if(currentPage > 1) onPageChange(currentPage - 1)}, enabled = currentPage > 1) {
-            Icon(
-                Icons.Default.KeyboardArrowLeft,
-                contentDescription = "Previous",
-                tint = Color.Gray
-            )
-        }
 
-        val startPage = maxOf(1, currentPage - 2)
-        val endPage = minOf(totalPages, startPage + 4)
-
-        for (i in startPage..endPage) {
-            val isSelected = i == currentPage
-            Box(
-                modifier = Modifier
-                    .padding(horizontal = 4.dp)
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(if (isSelected) Purple else Color.Transparent)
-                    .clickable { onPageChange(i) },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "$i",
-                    fontSize = 16.sp,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                    color = if (isSelected) Color.White else Color.Gray
-                )
-            }
-        }
-
-        IconButton(
-            onClick = { if (currentPage < totalPages) onPageChange(currentPage + 1) },
-            enabled = currentPage < totalPages
-        ) {
-            Icon(
-                Icons.Default.KeyboardArrowRight,
-                contentDescription = "Next",
-                tint = if (currentPage < totalPages) Color.Gray else Color.LightGray
-            )
-        }
-    }
-}
 
 @Composable
 fun BottomNavigationBar(navController: NavController){
