@@ -28,11 +28,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.List
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.ShoppingCart
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -296,7 +293,6 @@ fun TopHeader(currentTitle:String, onCartClick:()->Unit){
         )
     )
 }
-
 @Composable
 fun FilterRow(
     selectedFilter: String ,
@@ -320,47 +316,53 @@ fun FilterRow(
         contentPadding = PaddingValues(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ){
-        item{
-            Button(
-                onClick = { /* Open Filter Modal */ },
-                colors = ButtonDefaults.buttonColors(containerColor = DarkButtonColor),
-                shape = RoundedCornerShape(50),
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 0.dp),
-                modifier = Modifier.height(40.dp)
-            ){
-                Icon(
-                    imageVector = Icons.Outlined.List,
-                    contentDescription = "Filter",
-                    modifier = Modifier.size(16.dp),
-                    tint = Color.White
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Filter",
-                    fontSize = 14.sp,
-                )
-            }
-        }
-        items(filters){
-                filterName ->
+
+        items(filters){ filterName ->
             val isSelected = filterName == selectedFilter
+            val isAllButton = filterName == "All"
+
+            // Define colors: Dark Blue for "All" when selected
+            val backgroundColor = if (isAllButton && isSelected) {
+                Color(0xFF001F54) // Dark Blue
+            } else if (isSelected) {
+                Color(0xFFF3F4F6)
+            } else {
+                Color.White
+            }
+
+            val contentColor = if (isAllButton && isSelected) {
+                Color.White
+            } else if (isSelected) {
+                Color.Black
+            } else {
+                Color.Gray
+            }
+
+            val borderColor = if (isAllButton && isSelected) {
+                Color(0xFF001F54) // Match background
+            } else if (isSelected) {
+                Color.Black
+            } else {
+                LightGrayBorder
+            }
+
             Box(
                 modifier = Modifier
                     .height(40.dp)
                     .border(
                         width = 1.dp,
-                        color = if (isSelected) Color.Black else LightGrayBorder,
+                        color = borderColor,
                         shape = RoundedCornerShape(50)
                     )
                     .clip(RoundedCornerShape(50))
                     .clickable { onFilterSelected(filterName) }
-                    .background(if (isSelected) Color(0xFFF3F4F6) else Color.White)
+                    .background(backgroundColor)
                     .padding(horizontal = 20.dp),
                 contentAlignment = Alignment.Center
             ){
                 Text(
                     text = filterName,
-                    color = if (isSelected) Color.Black else Color.Gray,
+                    color = contentColor,
                     fontSize = 14.sp,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                 )
@@ -368,7 +370,6 @@ fun FilterRow(
         }
     }
 }
-
 
 
 @Composable
@@ -397,13 +398,6 @@ fun BottomNavigationBar(navController: NavController){
             onClick = { navController.navigate("search_screen") },
             colors = NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent,selectedIconColor = Color.Black,unselectedIconColor = Color.Gray),
             label = { Text("Search") }
-        )
-        NavigationBarItem(
-            icon={ Icon(Icons.Outlined.List, contentDescription = "List", tint = Color.Gray, modifier = Modifier.size(28.dp))},
-            selected = false,
-            onClick = { /* Handle navigation */ },
-            colors = NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent,selectedIconColor = Color.Black,unselectedIconColor = Color.Gray),
-            label = { Text("List") }
         )
     }
 }

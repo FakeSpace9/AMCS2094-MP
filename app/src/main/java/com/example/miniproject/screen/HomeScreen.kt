@@ -28,8 +28,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Text
@@ -38,10 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -100,12 +95,16 @@ fun HomeScreen(navController: NavController,
     val products by searchViewModel.searchResults.collectAsState()
     val context = LocalContext.current
 
-    // Load data
     LaunchedEffect(Unit) {
         searchViewModel.searchQuery.value = ""
+
+        // Add this line to reset the filter when returning to Home
+        searchViewModel.selectedCategory.value = "All"
+
         promoViewModel.syncPromotions()
         searchViewModel.loadProducts()
     }
+
 
     // --- SECURE CLICK HANDLER ---
     val onProductClick: (String) -> Unit = { productId ->
@@ -133,8 +132,6 @@ fun HomeScreen(navController: NavController,
                 .fillMaxWidth()
                 .weight(1f) // This ensures it fills the space below TopBar
         ) {
-            // MenuTabs scrolls with the content (as it is "above" the banner in code)
-            item { MenuTabs( navController = navController, searchViewModel = searchViewModel) }
 
             // Sales Banner
             item { SalesBanner() }
@@ -210,8 +207,7 @@ fun DrawerMenu(navController: NavController, viewModel: LoginViewModel) {
         }
         Spacer(Modifier.height(20.dp))
 
-        Text("New Arrivals")
-        Spacer(Modifier.height(12.dp))
+
         Text("Categories")
         Spacer(Modifier.height(12.dp))
         Text("Sales")
@@ -267,55 +263,6 @@ fun TopBar(onMenuClick: () -> Unit, viewModel: LoginViewModel, navController: Na
     }
 }
 
-@Composable
-fun MenuTabs(
-    navController: NavController,
-    searchViewModel: ProductSearchViewModel
-) {
-    var showCategories by remember { mutableStateOf(false) }
-    val categories = searchViewModel.getAvailableCategories()
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        Text(
-            text = "New Arrivals",
-            modifier = Modifier.clickable {
-                searchViewModel.selectedCategory.value = "New Arrivals"
-                navController.navigate("menu")
-            },
-            fontWeight = FontWeight.Medium
-        )
-        Box{
-            Text(
-                text = "Categories ▼",
-                modifier = Modifier.clickable {
-                    showCategories = true
-                },
-                fontWeight = FontWeight.Medium
-            )
-            DropdownMenu(
-                expanded = showCategories,
-                onDismissRequest = { showCategories = false },
-                modifier = Modifier.background(Color.White)
-            ) {
-                categories.filter { it != "All" }.forEach { categories ->
-                    DropdownMenuItem(
-                        text = { Text(categories) },
-                        onClick = {
-                            searchViewModel.selectedCategory.value = categories
-                            navController.navigate("menu")
-                            showCategories = false
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
 
 @Composable
 fun SalesBanner() {
