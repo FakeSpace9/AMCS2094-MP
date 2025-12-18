@@ -17,13 +17,15 @@ class OrderRepository(
 ) {
 
     // ... (Keep placeOrder, getOrderById, getOrderItems as they are) ...
-    suspend fun placeOrder(order: OrderEntity, items: List<OrderItemEntity>): Result<Long> {
+    suspend fun placeOrder(order: OrderEntity, items: List<OrderItemEntity>,cartItemIdsToDelete: List<Int>): Result<Long> {
         // (Your existing placeOrder code here...)
         return try {
             val newOrderId = orderDao.insertOrder(order)
             val itemsWithId = items.map { it.copy(orderId = newOrderId) }
             orderDao.insertOrderItem(itemsWithId)
-            cartDao.deleteAllCartItems()
+            cartItemIdsToDelete.forEach { id ->
+                cartDao.deleteCartItemsById(id)
+            }
             items.forEach { item ->
                 productDao.decreaseStock(item.variantSku, item.quantity)
                 updateFirestoreStock(item.productId, item.variantSku, item.quantity)

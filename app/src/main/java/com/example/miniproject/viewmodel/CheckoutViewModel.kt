@@ -190,7 +190,8 @@ class CheckoutViewModel(
                 )
             }
 
-            val result = orderRepo.placeOrder(order, orderItems)
+            val cartItemIds = items.map { it.id }
+            val result = orderRepo.placeOrder(order, orderItems, cartItemIds)
             _orderState.value = result
 
             if (result.isSuccess) {
