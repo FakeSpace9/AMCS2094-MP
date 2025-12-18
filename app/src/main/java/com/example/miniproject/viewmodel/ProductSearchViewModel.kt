@@ -24,7 +24,7 @@ class ProductSearchViewModel(
     // Static categories list
     private val allCategories = listOf("Tops", "Bottoms", "Outerwear", "Dresses", "Accessories", "Shoes")
 
-    fun getAvailableCategories(): List<String> = listOf("All") + allCategories
+    fun getAvailableCategories(): List<String> = listOf("All", "New Arrivals", "Best Sellers") + allCategories
 
     fun loadProducts() {
         viewModelScope.launch {
@@ -47,17 +47,24 @@ class ProductSearchViewModel(
 
         // Apply Memory Filters (Category)
         if (selectedCategory.value != "All") {
-            list = list.filter {
-                it.product.category.equals(selectedCategory.value, ignoreCase = true)
+            if (selectedCategory.value == "New Arrivals") {
+                // New Arrivals: Take top 8
+                list = list.take(8)
+            } else if (selectedCategory.value == "Best Sellers") {
+                // Best Sellers: Take top 6 (Matching Home Screen)
+                list = list.take(6)
+            } else {
+                // Standard Categories: Filter by name
+                list = list.filter {
+                    it.product.category.equals(selectedCategory.value, ignoreCase = true)
+                }
             }
         }
 
         if(categoryFilter != "All" && categoryFilter.isNotEmpty()){
-            list = list.filter {
-                it.product.category.equals(categoryFilter, ignoreCase = true)
-            }
+            // Note: This logic might conflict with selectedCategory above if used simultaneously.
+            // Usually you use one or the other.
         }
-
 
         // Apply Sorting
         list = when (selectedSort.value) {
