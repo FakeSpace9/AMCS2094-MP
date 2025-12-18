@@ -1,6 +1,7 @@
 package com.example.miniproject.screen.customer
 
 import android.widget.Toast
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -63,15 +64,17 @@ import com.example.miniproject.ui.theme.PurpleAccent
 import com.example.miniproject.viewmodel.AddToCartStatus
 import com.example.miniproject.viewmodel.ProductDetailScreenViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ProductDetailScreen(
     navController: NavController,
     productId: String,
     viewModel: ProductDetailScreenViewModel
 ) {
-    val productImages by viewModel.productImages.collectAsState()
     val product by viewModel.product.collectAsState()
+    val productImages by viewModel.productImages.collectAsState()
+    val availableColours by viewModel.availableColours.collectAsState()
+    val selectedColour by viewModel.selectedColour.collectAsState()
     val availableSizes by viewModel.availableSizes.collectAsState()
     val selectedSizes by viewModel.selectedSize.collectAsState()
     val priceRange by viewModel.priceRange.collectAsState()
@@ -79,7 +82,6 @@ fun ProductDetailScreen(
     val addToCartStatus by viewModel.addToCartStatus.collectAsState()
     val context = LocalContext.current
 
-    // State to control Size Chart Dialog visibility
     var showSizeChart by remember { mutableStateOf(false) }
 
     LaunchedEffect(addToCartStatus) {
@@ -100,7 +102,6 @@ fun ProductDetailScreen(
         viewModel.loadProductData(productId)
     }
 
-    // Render Size Chart Dialog if state is true
     if (showSizeChart && product != null) {
         SizeChartDialog(
             category = product!!.category,
@@ -141,7 +142,7 @@ fun ProductDetailScreen(
                         modifier = Modifier.size(24.dp)
                     )
                 } else {
-                    val buttonText = if ((selectedVariant?.stockQuantity ?: 0) <= 0 && selectedSizes.isNotEmpty()) "Out Of Stock" else "Add to cart"
+                    val buttonText = if ((selectedVariant?.stockQuantity ?: 0) <= 0) "Out Of Stock" else "Add to cart"
                     Text(buttonText, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
@@ -166,7 +167,7 @@ fun ProductDetailScreen(
                     .padding(horizontal = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Product Image
+                // --- Image Swipe ---
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -193,7 +194,6 @@ fun ProductDetailScreen(
                         }
                     }
 
-                    // Dot Indicators
                     if (productImages.size > 1) {
                         Row(
                             Modifier
@@ -215,7 +215,7 @@ fun ProductDetailScreen(
                     }
                 }
                 Spacer(modifier = Modifier.height(24.dp))
-                // Product Name
+
                 Text(
                     text = product!!.name,
                     fontSize = 24.sp,
@@ -225,7 +225,6 @@ fun ProductDetailScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Price
                 Text(
                     text = priceRange,
                     fontSize = 18.sp,
@@ -234,7 +233,34 @@ fun ProductDetailScreen(
                 )
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Size Selection Header
+                // --- COLOUR SELECTION ---
+                if (availableColours.isNotEmpty()) {
+                    Text(
+                        text = "Select Colour",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.Black,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.fillMaxWidth() // Added fillMaxWidth for Left Alignment
+                    ) {
+                        items(availableColours) { colour ->
+                            ColourCard(
+                                colourText = colour,
+                                isSelected = colour == selectedColour,
+                                onClick = { viewModel.selectColour(colour) }
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+                // ------------------------
+
+                // --- SIZE SELECTION ---
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -246,7 +272,6 @@ fun ProductDetailScreen(
                         fontWeight = FontWeight.SemiBold,
                         color = Color.Black
                     )
-                    // Updated Clickable Size Guide
                     Text(
                         text = "Size Guide",
                         fontSize = 14.sp,
@@ -257,8 +282,10 @@ fun ProductDetailScreen(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Size List
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxWidth() // Added fillMaxWidth for Left Alignment
+                ) {
                     items(availableSizes) { size ->
                         SizeCard(
                             sizeText = size,
@@ -268,8 +295,8 @@ fun ProductDetailScreen(
                     }
                 }
                 Spacer(modifier = Modifier.height(24.dp))
+                // ---------------------
 
-                // Description
                 Text(
                     text = "Description",
                     fontSize = 18.sp,
@@ -296,6 +323,35 @@ fun ProductDetailScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
         }
+    }
+}
+
+@Composable
+fun ColourCard(
+    colourText: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val backgroundColor = if (isSelected) PurpleAccent else Color.White
+    val textColor = if (isSelected) Color.White else Color.Black
+    val borderColor = if (isSelected) PurpleAccent else Color.LightGray
+
+    Box(
+        modifier = Modifier
+            .height(40.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(backgroundColor)
+            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = colourText,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = textColor
+        )
     }
 }
 
@@ -327,7 +383,6 @@ fun SizeCard(
     }
 }
 
-// --- New Composable: Size Chart Dialog ---
 @Composable
 fun SizeChartDialog(
     category: String,
@@ -343,7 +398,6 @@ fun SizeChartDialog(
                 modifier = Modifier.padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -361,11 +415,8 @@ fun SizeChartDialog(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Content based on Category
                 when (category.lowercase()) {
                     "tops" -> TopsSizeTable()
-                    "outerwear" -> TopsSizeTable()
-                    "dresses" -> BottomsSizeTable()
                     "bottoms" -> BottomsSizeTable()
                     else -> Text("No size guide available for this category.")
                 }
