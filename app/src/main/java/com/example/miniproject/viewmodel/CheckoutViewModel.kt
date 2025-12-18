@@ -34,10 +34,8 @@ class CheckoutViewModel(
     private val receiptRepository: ReceiptRepository
 ) : ViewModel() {
 
-    // --- Filtering Logic ---
     private val _filterIds = MutableStateFlow<Set<Int>?>(null)
 
-    // Only return items that are in the filter list (if set)
     val cartItems: StateFlow<List<CartEntity>> = combine(cartRepo.allCartItems, _filterIds) { allItems, filter ->
         if (filter == null) allItems else allItems.filter { it.id in filter }
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
@@ -88,7 +86,6 @@ class CheckoutViewModel(
         refreshData()
     }
 
-    // Call this from UI with the ID string passed via navigation
     fun setSelectedItemIds(idsString: String?) {
         if (!idsString.isNullOrEmpty()) {
             val ids = idsString.split(",").mapNotNull { it.toIntOrNull() }.toSet()
@@ -195,6 +192,12 @@ class CheckoutViewModel(
             _orderState.value = result
 
             if (result.isSuccess) {
+                // --- FIX: Clear Promo Code on Success ---
+                promoCode.value = ""
+                promoCodeError.value = null
+                _activePromotion.value = null
+                // ----------------------------------------
+
                 val email = authPrefs.getLoggedInEmail() ?: "customer@example.com"
                 val receiptItems = items.map {
                     ReceiptItem(
