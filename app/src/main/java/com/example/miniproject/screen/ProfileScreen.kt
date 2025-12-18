@@ -52,9 +52,10 @@ fun ProfileScreen(
     val username = user?.name ?: ""
     val profilePicUrl = user?.profilePictureUrl
 
-    // Map your predefined avatars here as well (or keep in a common Utils file)
     val predefinedAvatars = mapOf(
-        "default_1" to R.drawable.profile
+        "default_1" to R.drawable.profile,
+        "default_2" to R.drawable.ezgif_5114ed3efc72cedb,
+        "default_3" to R.drawable.ezgif_54e78d35703e3376
     )
 
     Column(
