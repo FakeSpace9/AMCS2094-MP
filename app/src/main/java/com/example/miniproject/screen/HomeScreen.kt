@@ -89,7 +89,6 @@ fun HomeScreenWithDrawer(navController: NavController,
         )
     }
 }
-
 @Composable
 fun HomeScreen(navController: NavController,
                onMenuClick: () -> Unit,
@@ -109,7 +108,6 @@ fun HomeScreen(navController: NavController,
     }
 
     // --- SECURE CLICK HANDLER ---
-    // Checks login status before navigating
     val onProductClick: (String) -> Unit = { productId ->
         if (customerLoginState is LoginStateCustomer.Success) {
             navController.navigate("productDetail/$productId")
@@ -119,66 +117,79 @@ fun HomeScreen(navController: NavController,
         }
     }
 
-    LazyColumn(
+    // --- UPDATED LAYOUT STRUCTURE ---
+    // Use a Column to hold the fixed TopBar and the scrollable list
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
-        item { TopBar(onMenuClick, viewModel = loginViewModel, navController = navController) }
-        item { MenuTabs( navController = navController, searchViewModel = searchViewModel) }
-        item { SalesBanner() }
+        // 1. Fixed TopBar (Stays at the top)
+        TopBar(onMenuClick, viewModel = loginViewModel, navController = navController)
 
-        item {
-            CategoryRow(
-                categories = searchViewModel.getAvailableCategories().filter { it != "All" },
-                onCategoryClick = { category ->
-                    searchViewModel.selectedCategory.value = category
-                    navController.navigate("menu")
-                }
-            )
-        }
+        // 2. Scrollable Content (Takes up remaining space)
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f) // This ensures it fills the space below TopBar
+        ) {
+            // MenuTabs scrolls with the content (as it is "above" the banner in code)
+            item { MenuTabs( navController = navController, searchViewModel = searchViewModel) }
 
-        // --- BEST SELLER GRID (Top 6, 2 per row) ---
-        item {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "Best Seller",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold
+            // Sales Banner
+            item { SalesBanner() }
+
+            item {
+                CategoryRow(
+                    categories = searchViewModel.getAvailableCategories().filter { it != "All" },
+                    onCategoryClick = { category ->
+                        searchViewModel.selectedCategory.value = category
+                        navController.navigate("menu")
+                    }
                 )
-                Spacer(modifier = Modifier.height(12.dp))
             }
-        }
 
-        val bestSellers = products.take(6)
-
-        items(bestSellers.chunked(2)) { rowProducts ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                rowProducts.forEach { product ->
-                    ProductCard(
-                        product = product,
-                        modifier = Modifier.weight(1f),
-                        onClick = {
-                            // Use the secure click handler here
-                            onProductClick(product.product.productId)
-                        }
+            // --- BEST SELLER GRID (Top 6, 2 per row) ---
+            item {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Best Seller",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold
                     )
-                }
-                // Handle odd number of items in the last row for alignment
-                val remainingSlots = 2 - rowProducts.size
-                if (remainingSlots > 0) {
-                    Spacer(modifier = Modifier.weight(remainingSlots.toFloat()))
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
             }
-        }
 
-        // Bottom Spacer
-        item { Spacer(modifier = Modifier.height(20.dp)) }
+            val bestSellers = products.take(6)
+
+            items(bestSellers.chunked(2)) { rowProducts ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    rowProducts.forEach { product ->
+                        ProductCard(
+                            product = product,
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                onProductClick(product.product.productId)
+                            }
+                        )
+                    }
+                    // Handle odd number of items in the last row for alignment
+                    val remainingSlots = 2 - rowProducts.size
+                    if (remainingSlots > 0) {
+                        Spacer(modifier = Modifier.weight(remainingSlots.toFloat()))
+                    }
+                }
+            }
+
+            // Bottom Spacer
+            item { Spacer(modifier = Modifier.height(20.dp)) }
+        }
     }
 }
 
