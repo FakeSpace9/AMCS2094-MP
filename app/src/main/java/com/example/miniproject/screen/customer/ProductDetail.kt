@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -68,6 +70,7 @@ fun ProductDetailScreen(
     productId: String,
     viewModel: ProductDetailScreenViewModel
 ) {
+    val productImages by viewModel.productImages.collectAsState()
     val product by viewModel.product.collectAsState()
     val availableSizes by viewModel.availableSizes.collectAsState()
     val selectedSizes by viewModel.selectedSize.collectAsState()
@@ -169,21 +172,49 @@ fun ProductDetailScreen(
                         .fillMaxWidth()
                         .height(350.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color.White),
-                    contentAlignment = Alignment.Center
+                        .background(Color.White)
                 ) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(product!!.imageUrl)
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = product!!.name,
-                        contentScale = ContentScale.Fit,
+                    val pagerState = rememberPagerState(pageCount = { productImages.size })
+
+                    HorizontalPager(
+                        state = pagerState,
                         modifier = Modifier.fillMaxSize()
-                    )
+                    ) { page ->
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                            AsyncImage(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(productImages[page])
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = product!!.name,
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    }
+
+                    // Dot Indicators
+                    if (productImages.size > 1) {
+                        Row(
+                            Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 16.dp),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            repeat(productImages.size) { iteration ->
+                                val color = if (pagerState.currentPage == iteration) PurpleAccent else Color.LightGray
+                                Box(
+                                    modifier = Modifier
+                                        .padding(4.dp)
+                                        .clip(CircleShape)
+                                        .background(color)
+                                        .size(8.dp)
+                                )
+                            }
+                        }
+                    }
                 }
                 Spacer(modifier = Modifier.height(24.dp))
-
                 // Product Name
                 Text(
                     text = product!!.name,

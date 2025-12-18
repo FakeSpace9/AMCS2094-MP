@@ -21,6 +21,8 @@ class ProductDetailScreenViewModel (
     private val productDao: ProductDao,
     private val cartRepository: CartRepository
 ) : ViewModel() {
+    private val _productImages = MutableStateFlow<List<String>>(emptyList())
+    val productImages: StateFlow<List<String>> = _productImages
     private val _product = MutableStateFlow<ProductEntity?>(null)
     val product: StateFlow<ProductEntity?> = _product
 
@@ -52,6 +54,17 @@ class ProductDetailScreenViewModel (
         viewModelScope.launch {
             val productResult = productDao.getProductById(productId)
             _product.value = productResult
+            if (productResult != null) {
+                val imagesResult = productDao.getImagesForProduct(productId)
+                val urls = imagesResult.map { it.imageUrl }
+
+                // If gallery images exist, use them. Otherwise, use the main image.
+                if (urls.isNotEmpty()) {
+                    _productImages.value = urls
+                } else if (productResult.imageUrl.isNotEmpty()) {
+                    _productImages.value = listOf(productResult.imageUrl)
+                }
+            }
 
             val variantsResult = productDao.getVariantsForProduct(productId)
             _variants.value = variantsResult
