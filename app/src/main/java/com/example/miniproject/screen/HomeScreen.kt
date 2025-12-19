@@ -63,30 +63,16 @@ fun HomeScreenWithDrawer(navController: NavController,
                          searchViewModel: ProductSearchViewModel,
                          promoViewModel: PromotionViewModel
 ) {
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
-
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        scrimColor = Color.Black.copy(alpha = 0.5f), // half transparent background
-        drawerContent = {
-            DrawerMenu(navController = navController, viewModel = viewModel)
-        }
-    ) {
-        HomeScreen(
+    HomeScreen(
             navController = navController,
-            onMenuClick = {
-                scope.launch { drawerState.open() }
-            },
             loginViewModel = viewModel,
             searchViewModel = searchViewModel,
             promoViewModel = promoViewModel
         )
-    }
+
 }
 @Composable
 fun HomeScreen(navController: NavController,
-               onMenuClick: () -> Unit,
                loginViewModel: LoginViewModel,
                searchViewModel: ProductSearchViewModel,
                promoViewModel: PromotionViewModel
@@ -124,7 +110,7 @@ fun HomeScreen(navController: NavController,
             .background(Color.White)
     ) {
         // 1. Fixed TopBar (Stays at the top)
-        TopBar(onMenuClick, viewModel = loginViewModel, navController = navController)
+        TopBar( viewModel = loginViewModel, navController = navController)
 
         // 2. Scrollable Content (Takes up remaining space)
         LazyColumn(
@@ -190,33 +176,9 @@ fun HomeScreen(navController: NavController,
     }
 }
 
-@Composable
-fun DrawerMenu(navController: NavController, viewModel: LoginViewModel) {
-    Column(
-        modifier = Modifier
-            .width(260.dp)
-            .fillMaxHeight()
-            .background(Color.White)
-            .padding(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text("Menu", fontSize = 22.sp, fontWeight = FontWeight.Bold)
-        }
-        Spacer(Modifier.height(20.dp))
-
-
-        Text("Categories")
-        Spacer(Modifier.height(12.dp))
-        Text("Sales")
-        Spacer(Modifier.height(12.dp))
-    }
-}
 
 @Composable
-fun TopBar(onMenuClick: () -> Unit, viewModel: LoginViewModel, navController: NavController) {
+fun TopBar( viewModel: LoginViewModel, navController: NavController) {
     val customerloginState by viewModel.customerState.collectAsState()
 
     // Check if user is logged in
@@ -230,11 +192,6 @@ fun TopBar(onMenuClick: () -> Unit, viewModel: LoginViewModel, navController: Na
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            Icons.Default.Menu,
-            contentDescription = "Menu",
-            modifier = Modifier.clickable { onMenuClick() })
-        Spacer(modifier = Modifier.width(12.dp))
         Icon(Icons.Default.Search, contentDescription = "Search",modifier = Modifier.clickable {
         navController.navigate("search_screen")})
         Spacer(modifier = Modifier.weight(1f))

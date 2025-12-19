@@ -1,7 +1,5 @@
 package com.example.miniproject.screen.customer
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -29,10 +27,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -40,9 +36,6 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -102,11 +95,9 @@ fun NewArrivalScreen(
         topBar = {
             TopHeader(
                 currentTitle = if (selectedFilter == "All") "All Products" else selectedFilter,
-                onCartClick = {navController.navigate("cart")})
+                onCartClick = {navController.navigate("cart")},navController = navController)
         },
-        bottomBar = {
-            BottomNavigationBar(navController = navController)
-        },
+
         containerColor = Color.White
 
     ) { paddingValues ->
@@ -259,7 +250,7 @@ fun CustomerProductCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopHeader(currentTitle:String, onCartClick:()->Unit){
+fun TopHeader(currentTitle:String, onCartClick:()->Unit, navController: NavController){
     CenterAlignedTopAppBar(
         title = {
             Text(
@@ -269,10 +260,12 @@ fun TopHeader(currentTitle:String, onCartClick:()->Unit){
             )
         },
         navigationIcon = {
-            IconButton(onClick = { /* Handle navigation icon click */ }) {
+            IconButton(onClick = { navController.navigate("home") {
+                popUpTo("Login") { inclusive = true }
+            }}) {
                 Icon(
-                    imageVector = Icons.Default.Menu,
-                    contentDescription = "Menu",
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "back",
                     tint = Color.Gray
                 )
             }
@@ -370,35 +363,6 @@ fun FilterRow(
 }
 
 
-@Composable
-fun BottomNavigationBar(navController: NavController){
-    NavigationBar(
-        containerColor = Color.White,
-        tonalElevation = 8.dp
-    ) {
-        NavigationBarItem(
-            icon={
-                Icon(
-                    imageVector = Icons.Outlined.Home,
-                    contentDescription = "Home",
-                    tint = Color.Gray,
-                    modifier = Modifier.size(28.dp)
-                )
-            },
-            selected = false,
-            onClick = { navController.navigate("home"){popUpTo("home"){inclusive = true} } },
-            label = { Text("Home") },
-            colors = NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent,selectedIconColor = Color.Black,unselectedIconColor = Color.Gray)
-        )
-        NavigationBarItem(
-            icon={ Icon(Icons.Outlined.Search, contentDescription = "Search", tint = Color.Gray, modifier = Modifier.size(28.dp)) },
-            selected = false,
-            onClick = { navController.navigate("search_screen") },
-            colors = NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent,selectedIconColor = Color.Black,unselectedIconColor = Color.Gray),
-            label = { Text("Search") }
-        )
-    }
-}
 
 @Composable
 fun Modifier.simpleVerticalScrollbar(
