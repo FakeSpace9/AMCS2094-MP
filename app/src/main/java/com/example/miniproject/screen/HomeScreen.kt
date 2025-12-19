@@ -21,9 +21,17 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.Checkroom
+import androidx.compose.material.icons.filled.Diamond
+import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.VerticalSplit
+import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -35,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -169,7 +178,19 @@ fun HomeScreen(navController: NavController,
     }
 }
 
-
+fun getCategoryIcon(category: String): ImageVector {
+    return when (category) {
+        "All" -> Icons.Default.Apps
+        "Best Sellers" -> Icons.Default.Star
+        "Tops" -> Icons.Default.Checkroom // Looks like a hanger/shirt
+        "Bottom" -> Icons.Default.VerticalSplit // Abstract representation for pants/legs
+        "Outerwear" -> Icons.Default.AcUnit // Represents Cold/Winter wear
+        "Dresses" -> Icons.Default.Face // Represents 'Lady' or similar if specific dress icon missing
+        "Accessories" -> Icons.Default.Watch // Watch or similar accessory
+        "Shoes" -> Icons.Default.Diamond // Or DirectionsWalk
+        else -> Icons.Outlined.Category
+    }
+}
 @Composable
 fun TopBar( viewModel: LoginViewModel, navController: NavController) {
     val customerloginState by viewModel.customerState.collectAsState()
@@ -249,14 +270,14 @@ fun CategoryRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(categories) { category ->
-                CategoryCard(category, onClick = { onCategoryClick(category) })
+                CategoryCard(category, onClick = { onCategoryClick(category) },icon = getCategoryIcon(category),)
             }
         }
     }
 }
 
 @Composable
-fun CategoryCard(title: String, onClick: () -> Unit) {
+fun CategoryCard(title: String, onClick: () -> Unit,icon: ImageVector) {
     Column(
         modifier = Modifier
             .width(100.dp)
@@ -268,7 +289,7 @@ fun CategoryCard(title: String, onClick: () -> Unit) {
         verticalArrangement = Arrangement.Center
     ) {
         Icon(
-            imageVector = Icons.Outlined.Category,
+            imageVector = icon,
             contentDescription = null,
             tint = Color.Gray,
             modifier = Modifier.size(32.dp)

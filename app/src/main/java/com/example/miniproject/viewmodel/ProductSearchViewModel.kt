@@ -22,7 +22,7 @@ class ProductSearchViewModel(
     val categoryFilter = selectedCategory.value
 
 
-    private val allCategories = listOf("Tops", "Bottom", "Outerwear", "Dresses", "Accessories", "Shoes")
+    private val allCategories = listOf("Tops", "Bottom", "Outerwear", "Dresses", "Accessories")
 
 
     fun getAvailableCategories(): List<String> = listOf("All", "Best Sellers") + allCategories
