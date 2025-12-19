@@ -339,13 +339,19 @@ fun PaymentSelectorCard(payment: PaymentEntity?, onClick:()->Unit){
         modifier = Modifier.fillMaxWidth().clickable { onClick() }
     ){
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            val icon = if (payment?.paymentType == "TNG") Icons.Default.QrCode else Icons.Default.CreditCard
+            val icon = if (payment?.paymentType == "Touch n Go") Icons.Default.QrCode else Icons.Default.CreditCard
             Icon(icon, null, modifier = Modifier.size(28.dp), tint = Color.Black)
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 if (payment != null) {
+
                     Text(payment.displayName, fontWeight = FontWeight.SemiBold)
-                    val sub = if(payment.paymentType == "CARD") "**** ${payment.cardNumber?.takeLast(4)}" else payment.walletId ?: ""
+                    val sub = if (!payment.cardNumber.isNullOrEmpty()) {
+                        "**** ${payment.cardNumber.takeLast(4)}"
+                    } else {
+                        payment.walletId ?: ""
+                    }
+
                     Text(sub, color = Color.Gray, fontSize = 12.sp)
                 } else {
                     Text("Select Payment Method", color = Color.Red)
