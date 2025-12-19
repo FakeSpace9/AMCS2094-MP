@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.Card
@@ -95,7 +96,8 @@ fun NewArrivalScreen(
         topBar = {
             TopHeader(
                 currentTitle = if (selectedFilter == "All") "All Products" else selectedFilter,
-                onCartClick = {navController.navigate("cart")},navController = navController)
+                onCartClick = {navController.navigate("cart")},navController = navController,onSearchClick = {navController.navigate("search_screen")})
+
         },
 
         containerColor = Color.White
@@ -250,7 +252,7 @@ fun CustomerProductCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopHeader(currentTitle:String, onCartClick:()->Unit, navController: NavController){
+fun TopHeader(currentTitle:String, onCartClick:()->Unit, navController: NavController,onSearchClick: () -> Unit,){
     CenterAlignedTopAppBar(
         title = {
             Text(
@@ -275,6 +277,13 @@ fun TopHeader(currentTitle:String, onCartClick:()->Unit, navController: NavContr
                 Icon(
                     imageVector = Icons.Outlined.ShoppingCart,
                     contentDescription = "Cart",
+                    tint = Color.Gray
+                )
+            }
+            IconButton(onClick = onSearchClick) {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "Search",
                     tint = Color.Gray
                 )
             }
