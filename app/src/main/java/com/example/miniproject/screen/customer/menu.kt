@@ -88,9 +88,11 @@ fun NewArrivalScreen(
 
     val gridState = rememberLazyGridState()
 
+
     LaunchedEffect(selectedFilter) {
         gridState.scrollToItem(0)
     }
+
 
     LaunchedEffect(Unit) {
         viewModel.loadProducts()
