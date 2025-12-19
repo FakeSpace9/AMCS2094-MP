@@ -1,5 +1,7 @@
 package com.example.miniproject.screen.customer
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,8 +21,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -46,17 +50,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -64,15 +70,6 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.example.miniproject.data.dao.ProductSearchResult
 import com.example.miniproject.viewmodel.ProductSearchViewModel
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.lazy.grid.LazyGridState
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.unit.Dp
 
 val DarkButtonColor = Color(0xFF1F2937)
 val BlueAccentColor = Color(0xFF4F46E5)
@@ -91,23 +88,9 @@ fun NewArrivalScreen(
 
     val gridState = rememberLazyGridState()
 
-    var currentPage by remember { mutableIntStateOf(1) }
-    val itemsPerPage = 8
-
     LaunchedEffect(selectedFilter) {
-        currentPage = 1
-        viewModel.searchQuery.value = ""
-        viewModel.loadProducts()
+        gridState.scrollToItem(0)
     }
-
-    // Calculate Pagination Data
-    val totalItems = searchResults.size
-    val totalPages = if (totalItems > 0) (totalItems + itemsPerPage - 1) / itemsPerPage else 1
-
-    // Slice the list for the current page
-    val currentItems = searchResults
-        .drop((currentPage - 1) * itemsPerPage)
-        .take(itemsPerPage)
 
     LaunchedEffect(Unit) {
         viewModel.loadProducts()
@@ -164,7 +147,7 @@ fun NewArrivalScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    items(currentItems) { product ->
+                    items(searchResults) { product ->
                         CustomerProductCard(
                             product = product,
                             onClick = {
@@ -422,26 +405,25 @@ fun Modifier.simpleVerticalScrollbar(
     color: Color = Color.Gray.copy(alpha = 0.5f),
     padding: Dp = 4.dp
 ): Modifier {
-    val targetAlpha = if (state.isScrollInProgress) 1f else 0f
-    val duration = if (state.isScrollInProgress) 150 else 500
-
-    val alpha by animateFloatAsState(
-        targetValue = targetAlpha,
-        animationSpec = tween(durationMillis = duration),
-        label = "ScrollbarAlpha"
-    )
+    // 1. Force alpha to 1f so it doesn't fade out
+    val alpha = 1f
 
     return drawWithContent {
         drawContent()
 
         val firstVisibleElementIndex = state.layoutInfo.visibleItemsInfo.firstOrNull()?.index ?: 0
-        val needDrawScrollbar = state.layoutInfo.totalItemsCount > state.layoutInfo.visibleItemsInfo.size
+        val totalItemsCount = state.layoutInfo.totalItemsCount
 
-        if (needDrawScrollbar && alpha > 0f) {
-            val elementHeight = this.size.height / state.layoutInfo.totalItemsCount
+        // Prevent division by zero if list is empty
+        if (totalItemsCount > 0) {
+            val elementHeight = this.size.height / totalItemsCount
             val scrollbarOffsetY = firstVisibleElementIndex * elementHeight
-            val scrollbarHeight = state.layoutInfo.visibleItemsInfo.size * elementHeight
+            val visibleItemsCount = state.layoutInfo.visibleItemsInfo.size
 
+            // Calculate height. If all items are visible, this becomes the full height.
+            val scrollbarHeight = visibleItemsCount * elementHeight
+
+            // 2. Removed the "if (needDrawScrollbar)" check. It now draws always.
             drawRoundRect(
                 color = color,
                 topLeft = Offset(this.size.width - width.toPx() - padding.toPx(), scrollbarOffsetY),
