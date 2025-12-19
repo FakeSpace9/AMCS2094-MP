@@ -238,7 +238,7 @@ fun TopBar(onMenuClick: () -> Unit, viewModel: LoginViewModel, navController: Na
         Icon(Icons.Default.Search, contentDescription = "Search",modifier = Modifier.clickable {
         navController.navigate("search_screen")})
         Spacer(modifier = Modifier.weight(1f))
-        Text("Shop Name", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        Text("E-Tire", fontSize = 20.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.weight(1f))
         Icon(Icons.Default.ShoppingCart, contentDescription = "Cart",modifier = Modifier.clickable {
             if (isLoggedIn) {
