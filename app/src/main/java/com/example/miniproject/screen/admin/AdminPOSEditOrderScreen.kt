@@ -171,7 +171,6 @@ fun AdminPOSEditOrderScreen(
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            // --- Customer Info Card ---
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 shape = RoundedCornerShape(16.dp),

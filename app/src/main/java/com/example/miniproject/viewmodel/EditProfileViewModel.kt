@@ -129,7 +129,7 @@ class EditProfileViewModel(
                 originalName = name.value
                 originalPhone = phone.value
                 originalProfilePicture = finalImageUrl
-                message.value = "" // --- CHANGED: Don't show "Profile Saved" text in UI
+                message.value = ""
                 onResult(true)
             } else {
                 message.value = "Failed: ${result.exceptionOrNull()?.message}"

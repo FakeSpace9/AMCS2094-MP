@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.miniproject.repository.ForgotPasswordRepository
 
 
-// ViewModel Factory
 class ForgotPasswordViewModelFactory(
     private val repository: ForgotPasswordRepository
 ) : ViewModelProvider.Factory {

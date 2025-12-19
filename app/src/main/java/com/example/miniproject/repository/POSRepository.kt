@@ -16,11 +16,9 @@ class POSRepository(
     private val firestore: FirebaseFirestore
 ) {
 
-    // --- NEW METHOD ---
     suspend fun getProductById(productId: String): ProductEntity? {
         return productDao.getProductById(productId)
     }
-    // ------------------
 
     suspend fun placePOSOrder(order: POSOrderEntity, items: List<POSOrderItemEntity>): Result<Long> {
         return try {

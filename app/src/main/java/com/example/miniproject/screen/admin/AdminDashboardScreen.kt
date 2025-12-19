@@ -119,7 +119,6 @@ fun AdminDashboardScreen(
         ) {
             when (selectedItem) {
                 0 -> {
-                    // --- POS DASHBOARD TAB ---
                     Scaffold(
                         topBar = {
                             CenterAlignedTopAppBar(
@@ -194,7 +193,6 @@ fun AdminDashboardScreen(
                             )
                             Spacer(Modifier.height(16.dp))
 
-                            // Start POS Button
                             Button(
                                 onClick = { navController.navigate("admin_pos_scan") },
                                 modifier = Modifier
@@ -223,7 +221,6 @@ fun AdminDashboardScreen(
 
                             Spacer(Modifier.height(16.dp))
 
-                            // View History Button (Alternative)
                             Button(
                                 onClick = { navController.navigate("admin_pos_history") },
                                 modifier = Modifier

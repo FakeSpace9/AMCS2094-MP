@@ -18,7 +18,7 @@ interface OrderDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrderItem(orderItem: List<OrderItemEntity>)
 
-    // --- NEW: Batch Operations for Sync ---
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrders(orders: List<OrderEntity>)
 
@@ -30,14 +30,12 @@ interface OrderDao {
 
     @Transaction
     suspend fun syncOrders(orders: List<OrderEntity>, items: List<OrderItemEntity>) {
-        // Optional: Clear old data to ensure we match Firebase exactly
         clearOrders()
         clearOrderItems()
 
         if (orders.isNotEmpty()) insertOrders(orders)
         if (items.isNotEmpty()) insertOrderItem(items)
     }
-    // --------------------------------------
 
     @Query("SELECT * FROM orders WHERE id = :id")
     suspend fun getOrderById(id: Long): OrderEntity
@@ -47,7 +45,7 @@ interface OrderDao {
 
     @Query("""SELECT * FROM orders WHERE customerId = :customerId ORDER BY orderDate DESC""")
     suspend fun getOrdersByCustomer(customerId: String): List<OrderEntity>
-    // --- ANALYTICS QUERIES (Keep existing) ---
+
     @Query("SELECT COALESCE(SUM(grandTotal), 0.0) FROM orders WHERE orderDate BETWEEN :start AND :end")
     suspend fun getRevenueInRange(start: Long, end: Long): Double
 

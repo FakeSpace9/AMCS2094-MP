@@ -45,7 +45,6 @@ class EditProfileRepository(
             customerDao.updateCustomer(customer)
 
             // 2. Update Firestore
-            // FIX: Update directly by ID instead of querying by email
             val data = mapOf(
                 "name" to customer.name,
                 "phone" to customer.phone,

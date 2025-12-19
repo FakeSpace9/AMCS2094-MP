@@ -14,7 +14,6 @@ import kotlinx.coroutines.launch
 import java.math.RoundingMode
 import java.util.Date
 
-// --- UI Wrapper to hold Entity + Image ---
 data class EditedItemUiState(
     val data: POSOrderItemEntity,
     val imageUrl: String
@@ -49,7 +48,6 @@ class SalesHistoryViewModel(
     private val _updateMessage = MutableStateFlow<String?>(null)
     val updateMessage: StateFlow<String?> = _updateMessage
 
-    // --- CHANGED: Now holds EditedItemUiState instead of raw Entity ---
     private val _editingItems = MutableStateFlow<List<EditedItemUiState>>(emptyList())
     val editingItems: StateFlow<List<EditedItemUiState>> = _editingItems
 
@@ -147,7 +145,7 @@ class SalesHistoryViewModel(
     }
 
     private fun calculateEditTotals(updateDiscount: Boolean = true) {
-        // Sum using item.data
+
         val subTotal = _editingItems.value.sumOf { it.data.price * it.data.quantity }
         _editTotal.value = subTotal
 
@@ -170,7 +168,6 @@ class SalesHistoryViewModel(
                 return@launch
             }
 
-            // Extract Entities back from UI State
             val currentItems = currentUiItems.map { it.data }
 
             val newSubTotal = _editTotal.value

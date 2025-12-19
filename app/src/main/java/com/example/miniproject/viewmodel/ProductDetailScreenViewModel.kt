@@ -31,13 +31,11 @@ class ProductDetailScreenViewModel (
     private val _variants = MutableStateFlow<List<ProductVariantEntity>>(emptyList())
     val variants: StateFlow<List<ProductVariantEntity>> = _variants
 
-    // --- NEW: Colour State ---
     private val _availableColours = MutableStateFlow<List<String>>(emptyList())
     val availableColours: StateFlow<List<String>> = _availableColours
 
     private val _selectedColour = MutableStateFlow("")
     val selectedColour: StateFlow<String> = _selectedColour
-    // -------------------------
 
     private val _selectedSize = MutableStateFlow("")
     val selectedSize: StateFlow<String> = _selectedSize
@@ -81,7 +79,6 @@ class ProductDetailScreenViewModel (
             val variantsResult = productDao.getVariantsForProduct(productId)
             _variants.value = variantsResult
 
-            // 1. Extract Unique Colours
             val uniqueColours = variantsResult.map { it.colour }
                 .distinct()
                 .filter { it.isNotEmpty() }
@@ -89,11 +86,9 @@ class ProductDetailScreenViewModel (
 
             _availableColours.value = uniqueColours
 
-            // 2. Default to first colour if available
             if (uniqueColours.isNotEmpty()) {
                 selectColour(uniqueColours.first())
             } else {
-                // Fallback for no-color (or single variant without color property set) products
                 updateAvailableSizesForColour("")
             }
 
@@ -110,7 +105,6 @@ class ProductDetailScreenViewModel (
         }
     }
 
-    // --- NEW: Handle Colour Selection ---
     fun selectColour(colour: String) {
         _selectedColour.value = colour
         updateAvailableSizesForColour(colour)
@@ -119,7 +113,6 @@ class ProductDetailScreenViewModel (
     private fun updateAvailableSizesForColour(colour: String) {
         val allVariants = _variants.value
 
-        // Filter variants that match the selected colour
         val variantsForColour = if (colour.isNotEmpty()) {
             allVariants.filter { it.colour == colour }
         } else {
@@ -136,14 +129,11 @@ class ProductDetailScreenViewModel (
 
         (availableSizes as MutableStateFlow).value = uniqueSizes
 
-        // If currently selected size is not in the new list of sizes, reset it.
-        // Or if nothing selected, auto-select first.
         if (uniqueSizes.isNotEmpty()) {
             if (!_selectedSize.value.isEmpty() && uniqueSizes.contains(_selectedSize.value)) {
-                // Keep current size, update variant ID logic
+
                 updateSelectedVariant()
             } else {
-                // Default to first size
                 _selectedSize.value = uniqueSizes.first()
                 updateSelectedVariant()
             }
@@ -163,7 +153,6 @@ class ProductDetailScreenViewModel (
         val currentColour = _selectedColour.value
         val currentVariants = _variants.value
 
-        // Find variant matching BOTH size and colour
         _selectedVariant.value = currentVariants.find {
             it.size == currentSize && (currentColour.isEmpty() || it.colour == currentColour)
         }
@@ -192,7 +181,7 @@ class ProductDetailScreenViewModel (
                     productName = productVal.name,
                     productImageUrl = productVal.imageUrl,
                     selectedSize = _selectedSize.value,
-                    selectedColour = variantVal.colour, // Uses the actual variant's colour
+                    selectedColour = variantVal.colour,
                     price = variantVal.price,
                     quantity = 1
                 )

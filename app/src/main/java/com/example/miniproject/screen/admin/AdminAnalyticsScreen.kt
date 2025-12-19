@@ -136,7 +136,6 @@ fun AdminAnalyticsScreen(
                 } else {
                     val data = stats!!
 
-                    // Revenue Card
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(20.dp),
@@ -187,7 +186,6 @@ fun AdminAnalyticsScreen(
     }
 }
 
-// ... (Helper functions below remain unchanged)
 
 @Composable
 fun AnalyticsTabs(selected: AnalyticsTab, onSelect: (AnalyticsTab) -> Unit) {

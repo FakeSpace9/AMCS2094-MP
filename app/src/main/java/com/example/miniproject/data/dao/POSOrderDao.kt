@@ -56,7 +56,6 @@ interface POSOrderDao {
     """)
     suspend fun getItemsSoldInRange(start: Date, end: Date): Int
 
-    // Note: We join with 'products' table to get the Image URL
     @Query("""
         SELECT i.productName as name, p.imageUrl, SUM(i.quantity) as totalQty, SUM(i.price * i.quantity) as totalPrice
         FROM pos_order_items i

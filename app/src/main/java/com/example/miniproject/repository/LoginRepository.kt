@@ -24,7 +24,6 @@ class LoginRepository(
         try {
             auth.signOut()
         } catch (e: Exception) {
-            // ignore logout errors
         }
     }
 

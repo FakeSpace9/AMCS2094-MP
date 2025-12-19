@@ -56,7 +56,6 @@ fun AdminProductSection(
         .fillMaxSize()
         .background(Color(0xFFF8F9FA))) {
 
-        // --- IMPROVED TOP BAR ---
         CenterAlignedTopAppBar(
             title = {
                 Text("Manage Products", fontWeight = FontWeight.Bold, fontSize = 20.sp)
@@ -74,7 +73,6 @@ fun AdminProductSection(
             colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color(0xFFF8F9FA))
         )
 
-        // --- CUSTOM TAB SELECTOR ---
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -118,7 +116,6 @@ fun AdminProductSection(
             }
         }
 
-        // Tab Content
         Box(modifier = Modifier
             .fillMaxSize()
             .background(Color.White)) {

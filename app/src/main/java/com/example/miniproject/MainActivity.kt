@@ -200,11 +200,10 @@ fun App(
     val productFormViewModel: ProductFormViewModel = viewModel(factory = productFactory)
     val productSearchViewModel: ProductSearchViewModel = viewModel(factory = productFactory)
 
-    // --- FIX IS HERE: Added auth argument ---
     val editProfileRepo = EditProfileRepository(
         customerDao = db.CustomerDao(),
         firestore = FirebaseFirestore.getInstance(),
-        auth = FirebaseAuth.getInstance() // <--- ADDED THIS LINE
+        auth = FirebaseAuth.getInstance()
     )
 
     val editProfileViewModel: EditProfileViewModel = viewModel(
@@ -247,13 +246,13 @@ fun App(
     val orderRepo = OrderRepository(
         orderDao = db.OrderDao(),
         cartDao = db.CartDao(),
-        productDao = db.ProductDao(), // PASS PRODUCT DAO HERE
+        productDao = db.ProductDao(),
         firestore = FirebaseFirestore.getInstance()
     )
 
     val posRepository = POSRepository(
         posOrderDao = db.POSOrderDao(),
-        productDao = db.ProductDao(), // PASS PRODUCT DAO HERE
+        productDao = db.ProductDao(),
         firestore = FirebaseFirestore.getInstance()
     )
 //for email function
@@ -343,7 +342,6 @@ fun App(
             )
         }
 
-        // --- ADMIN ROUTES ---
         composable("admin_signup") {
             AdminSignupScreen(navController = navController, viewModel = signupViewModel)
         }
@@ -423,7 +421,7 @@ fun App(
         composable("change_password") {
             ChangePasswordScreen(
                 navController = navController,
-                viewModel = editProfileViewModel, // Reuse existing VM
+                viewModel = editProfileViewModel,
                 loginViewModel = loginViewModel
             )
         }
@@ -451,7 +449,6 @@ fun App(
             )
         }
 
-        // ADD payment
         composable("add_payment") {
             AddEditPaymentScreen(
                 navController = navController,
@@ -521,7 +518,7 @@ fun App(
         composable("select_shipping_address") {
             SelectShippingAddressScreen(
                 navController = navController,
-                viewModel = addressViewModel // Reuse the existing AddressViewModel
+                viewModel = addressViewModel
             )
         }
 

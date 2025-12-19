@@ -32,9 +32,7 @@ class LoginViewModel(
 
     private var customerObserverJob: Job? = null
 
-    // --- HELPER FUNCTION TO OBSERVE DATA ---
     private fun observeCustomerData(customerId: String) {
-        // Cancel any previous observation to avoid leaks
         customerObserverJob?.cancel()
 
         customerObserverJob = viewModelScope.launch {
@@ -42,7 +40,6 @@ class LoginViewModel(
                 if (updatedUser != null) {
                     _customerState.value = LoginStateCustomer.Success(updatedUser)
                 } else {
-                    // Handle case where user is deleted or null
                     _customerState.value = LoginStateCustomer.Error("User data not found")
                 }
             }
@@ -123,7 +120,7 @@ class LoginViewModel(
 
     fun signInWithGoogle(activity: Activity) {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken("541829479012-sbpl0qkshld60vp42p8ep3q7he4fsg7h.apps.googleusercontent.com") // replace with your Firebase web client ID
+            .requestIdToken("541829479012-sbpl0qkshld60vp42p8ep3q7he4fsg7h.apps.googleusercontent.com")
             .requestEmail()
             .build()
 
@@ -159,7 +156,6 @@ class LoginViewModel(
         viewModelScope.launch {
             if (!authPrefs.shouldAutoLogin()) return@launch
 
-            // UPDATE: Get UID instead of just Email
             val uid = authPrefs.getUserId() ?: return@launch
             val userType = authPrefs.getUserType() ?: return@launch
 
@@ -177,7 +173,6 @@ class LoginViewModel(
             } else if (userType == "admin") {
                 _adminState.value = LoginStateAdmin.Loading
 
-                // UPDATE: Use getAdminById(uid)
                 val result = repository.getAdminById(uid)
 
                 _adminState.value = if (result.isSuccess) {

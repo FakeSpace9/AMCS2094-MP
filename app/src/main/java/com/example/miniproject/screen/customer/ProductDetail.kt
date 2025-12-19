@@ -258,9 +258,6 @@ fun ProductDetailScreen(
                     }
                     Spacer(modifier = Modifier.height(24.dp))
                 }
-                // ------------------------
-
-                // --- SIZE SELECTION ---
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -295,8 +292,6 @@ fun ProductDetailScreen(
                     }
                 }
                 Spacer(modifier = Modifier.height(24.dp))
-                // ---------------------
-
                 Text(
                     text = "Description",
                     fontSize = 18.sp,

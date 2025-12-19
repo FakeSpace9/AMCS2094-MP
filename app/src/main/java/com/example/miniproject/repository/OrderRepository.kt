@@ -16,9 +16,7 @@ class OrderRepository(
     private val firestore: FirebaseFirestore
 ) {
 
-    // ... (Keep placeOrder, getOrderById, getOrderItems as they are) ...
     suspend fun placeOrder(order: OrderEntity, items: List<OrderItemEntity>,cartItemIdsToDelete: List<Int>): Result<Long> {
-        // (Your existing placeOrder code here...)
         return try {
             val newOrderId = orderDao.insertOrder(order)
             val itemsWithId = items.map { it.copy(orderId = newOrderId) }
@@ -87,7 +85,6 @@ class OrderRepository(
     suspend fun getOrderById(id: Long): OrderEntity = orderDao.getOrderById(id)
     suspend fun getOrderItems(orderId: Long): List<OrderItemEntity> = orderDao.getOrderItems(orderId)
 
-    // --- NEW SYNC FUNCTION ---
     suspend fun syncOrders() {
         try {
             val snapshot = firestore.collection("orders").get().await()

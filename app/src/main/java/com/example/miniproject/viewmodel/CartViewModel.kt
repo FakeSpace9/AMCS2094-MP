@@ -23,7 +23,6 @@ class CartViewModel(
     private val _selectedItemIds = MutableStateFlow<Set<Int>>(emptySet())
     val selectedItemIds: StateFlow<Set<Int>> = _selectedItemIds
 
-    // Calculate total ONLY for selected items (Excluding shipping)
     val selectedTotal: StateFlow<Double> = combine(cartItems, _selectedItemIds) { items, selectedIds ->
         items.filter { it.id in selectedIds }.sumOf { it.price * it.quantity }
     }.stateIn(viewModelScope, SharingStarted.Lazily, 0.0)
@@ -56,7 +55,6 @@ class CartViewModel(
     fun removeFromCart(item: CartEntity){
         viewModelScope.launch {
             repository.removeCartItem(item)
-            // Also remove from selection if present
             val current = _selectedItemIds.value.toMutableSet()
             if(current.contains(item.id)){
                 current.remove(item.id)

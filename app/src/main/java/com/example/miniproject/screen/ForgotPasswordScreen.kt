@@ -55,8 +55,6 @@ fun ForgotPasswordScreen(
     val isLoading by forgotPasswordViewModel.isLoading.collectAsState()
     val successMessage by forgotPasswordViewModel.successMessage.collectAsState()
     val errorMessage by forgotPasswordViewModel.errorMessage.collectAsState()
-
-    // UI Colors
     val primaryColor = Color(0xFF573BFF)
 
     Box(
@@ -64,7 +62,6 @@ fun ForgotPasswordScreen(
             .fillMaxSize()
             .background(Color.White)
     ) {
-        // 1. MAIN CONTENT (Put this FIRST so it is at the bottom layer)
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -74,7 +71,6 @@ fun ForgotPasswordScreen(
             verticalArrangement = Arrangement.Center
         ) {
 
-            // --- Header ---
             Text(
                 text = "Reset Password",
                 fontSize = 32.sp,
@@ -94,7 +90,6 @@ fun ForgotPasswordScreen(
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            // --- Email Input ---
             OutlinedTextField(
                 value = email,
                 onValueChange = { forgotPasswordViewModel.onEmailChange(it) },
@@ -115,7 +110,6 @@ fun ForgotPasswordScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- Action Button ---
             Button(
                 onClick = { forgotPasswordViewModel.sendResetEmail() },
                 enabled = !isLoading,
@@ -138,7 +132,6 @@ fun ForgotPasswordScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- Back to Login Text ---
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = "Remember password? ",
@@ -155,7 +148,6 @@ fun ForgotPasswordScreen(
             }
         }
 
-        // 2. BACK BUTTON (Put this LAST so it floats ON TOP)
         IconButton(
             onClick = { navController.popBackStack() },
             modifier = Modifier
@@ -164,8 +156,6 @@ fun ForgotPasswordScreen(
         ) {
             Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.Black)
         }
-
-        // --- Logic / Side Effects ---
         if (!successMessage.isNullOrEmpty()) {
             LaunchedEffect(successMessage) {
                 Toast.makeText(context, successMessage, Toast.LENGTH_SHORT).show()

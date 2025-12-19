@@ -56,7 +56,6 @@ class AdminOrderViewModel(
 
                 if (order.customerEmail.isNotEmpty()) {
 
-                    // Map Entity -> ReceiptItem
                     val receiptItems = orderItems.map {
                         ReceiptItem(
                             name = it.productName,
@@ -73,7 +72,7 @@ class AdminOrderViewModel(
                         toEmail = order.customerEmail,
                         orderId = orderId.toString(),
                         newStatus = newStatus,
-                        items = receiptItems // <--- Pass items here
+                        items = receiptItems
                     )
                 }
             }

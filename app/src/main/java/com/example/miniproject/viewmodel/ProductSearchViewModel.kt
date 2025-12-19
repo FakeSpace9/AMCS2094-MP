@@ -61,8 +61,6 @@ class ProductSearchViewModel(
         }
 
         if(categoryFilter != "All" && categoryFilter.isNotEmpty()){
-            // Note: This logic might conflict with selectedCategory above if used simultaneously.
-            // Usually you use one or the other.
         }
 
         // Apply Sorting

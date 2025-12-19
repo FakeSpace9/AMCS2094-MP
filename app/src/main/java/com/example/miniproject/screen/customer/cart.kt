@@ -67,7 +67,6 @@ fun CartScreen(
     val selectedIds by viewModel.selectedItemIds.collectAsState()
     val selectedTotal by viewModel.selectedTotal.collectAsState()
 
-    val context = LocalContext.current
 
     Scaffold(
         topBar = {

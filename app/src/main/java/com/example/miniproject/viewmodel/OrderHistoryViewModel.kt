@@ -16,7 +16,6 @@ class OrderHistoryViewModel(
     private val authPrefs: AuthPreferences
 ) : ViewModel() {
 
-    /* ---------- ORDER LIST ---------- */
 
     var orders by mutableStateOf<List<OrderEntity>>(emptyList())
         private set
@@ -28,7 +27,6 @@ class OrderHistoryViewModel(
         }
     }
 
-    /* ---------- RECEIPT STATE ---------- */
 
     var selectedOrder by mutableStateOf<OrderEntity?>(null)
         private set
@@ -36,16 +34,13 @@ class OrderHistoryViewModel(
     var orderItems by mutableStateOf<List<OrderItemEntity>>(emptyList())
         private set
 
-    /* ---------- LOAD ORDER RECEIPT ---------- */
 
     fun loadOrderDetail(orderId: Long) {
         viewModelScope.launch {
 
-            // 1️⃣ Load order (contains total, address, payment method, etc.)
             val order = repo.getOrderById(orderId)
             selectedOrder = order
 
-            // 2️⃣ Load order items
             orderItems = repo.getOrderItems(orderId.toLong())
         }
     }

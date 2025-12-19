@@ -192,11 +192,9 @@ class CheckoutViewModel(
             _orderState.value = result
 
             if (result.isSuccess) {
-                // --- FIX: Clear Promo Code on Success ---
                 promoCode.value = ""
                 promoCodeError.value = null
                 _activePromotion.value = null
-                // ----------------------------------------
 
                 val email = authPrefs.getLoggedInEmail() ?: "customer@example.com"
                 val receiptItems = items.map {

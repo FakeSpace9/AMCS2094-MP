@@ -19,10 +19,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -47,16 +45,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -76,12 +69,8 @@ fun NewArrivalScreen(
     navController: NavController,
     viewModel: ProductSearchViewModel
 ){
-
     val searchResults by viewModel.searchResults.collectAsState()
     val selectedFilter by viewModel.selectedCategory.collectAsState()
-
-
-
     LaunchedEffect(Unit) {
         viewModel.loadProducts()
     }
@@ -290,7 +279,6 @@ fun FilterRow(
     selectedFilter: String ,
     onFilterSelected: (String) -> Unit
 ){
-    // REMOVED: "New Arrivals" from this list
     val filters =listOf(
         "All",
         "Best Sellers",
@@ -313,7 +301,6 @@ fun FilterRow(
             val isSelected = filterName == selectedFilter
             val isAllButton = filterName == "All"
 
-            // Define colors: Dark Blue for "All" when selected
             val backgroundColor = if (isAllButton && isSelected) {
                 Color(0xFF001F54) // Dark Blue
             } else if (isSelected) {

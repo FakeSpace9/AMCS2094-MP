@@ -12,7 +12,6 @@ interface AdminDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAdmin(admin: AdminEntity): Long
 
-    // --- NEW: Update Admin ---
     @Update
     suspend fun updateAdmin(admin: AdminEntity)
 }

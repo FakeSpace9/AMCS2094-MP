@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.util.Date
 
-// Updated Data Class with maxStock
 data class POSItem(
     val variantId: Int,
     val productId: String,
@@ -26,7 +25,7 @@ data class POSItem(
     val price: Double,
     val imageUrl: String,
     var quantity: Int,
-    val maxStock: Int // Added to track available stock
+    val maxStock: Int
 )
 
 class AdminPOSViewModel(
@@ -105,7 +104,7 @@ class AdminPOSViewModel(
                     price = variant.price,
                     imageUrl = product.imageUrl,
                     quantity = 1,
-                    maxStock = variant.stockQuantity // Store the limit
+                    maxStock = variant.stockQuantity
                 )
             )
             calculateTotal()
@@ -134,7 +133,6 @@ class AdminPOSViewModel(
         val sub = _posItems.sumOf { it.price * it.quantity }
         _subTotal.value = sub
 
-        // Recalculate discount if a code is already applied
         if (promoCode.value.isNotEmpty()) {
             _totalAmount.value = sub - _discountAmount.value
         } else {
@@ -212,7 +210,6 @@ class AdminPOSViewModel(
             _checkoutState.value = result
 
 
-            // Inside fun completeOrder() in AdminPOSViewModel
 
             if (result.isSuccess) {
                 val email = customerEmail.value

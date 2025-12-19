@@ -75,12 +75,10 @@ fun AdminProfileScreen(
     val updateMessage by viewModel.updateMessage.collectAsState()
     val context = LocalContext.current
 
-    // UI State
     var isEditing by remember { mutableStateOf(false) }
     var editName by remember { mutableStateOf("") }
     var editPhone by remember { mutableStateOf("") }
 
-    // Listen for update success message
     LaunchedEffect(updateMessage) {
         updateMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()

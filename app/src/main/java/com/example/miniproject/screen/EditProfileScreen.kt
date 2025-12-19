@@ -64,7 +64,7 @@ fun EditProfileScreen(
     loginViewModel: LoginViewModel,
     navController: NavController
 ) {
-    val context = LocalContext.current // --- ADDED CONTEXT
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) { viewModel.loadCurrentUser() }
 
@@ -99,7 +99,6 @@ fun EditProfileScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // --- Profile Picture Section ---
             Box(modifier = Modifier.size(100.dp).clickable { showImageSourceDialog = true }) {
                 val currentPic = viewModel.profilePicture.value
                 val modifier = Modifier.fillMaxSize().clip(CircleShape).border(2.dp, Color.Gray, CircleShape)
@@ -116,7 +115,6 @@ fun EditProfileScreen(
                 }
             }
 
-            // --- Form Fields ---
             OutlinedTextField(
                 value = viewModel.name.value, onValueChange = { viewModel.name.value = it },
                 label = { Text("Username") }, singleLine = true, modifier = Modifier.fillMaxWidth()
@@ -139,12 +137,10 @@ fun EditProfileScreen(
                 ) { Text("Change Password") }
             }
 
-            // --- Save Button ---
             Button(
                 onClick = {
                     viewModel.saveProfile { success ->
                         if (success) {
-                            // --- SHOW TOAST MESSAGE ON SUCCESS ---
                             Toast.makeText(context, "Profile Updated Successfully", Toast.LENGTH_SHORT).show()
                             navController.popBackStack()
                         }
@@ -160,14 +156,12 @@ fun EditProfileScreen(
                 )
             ) { Text("Save Changes") }
 
-            // Only show errors here (success message is cleared in VM)
             viewModel.message.value.takeIf { it.isNotEmpty() }?.let {
                 Text(it, color = MaterialTheme.colorScheme.error)
             }
         }
     }
 
-    // ... (Image dialogs unchanged) ...
     if (showImageSourceDialog) {
         AlertDialog(
             onDismissRequest = { showImageSourceDialog = false },

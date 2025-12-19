@@ -90,7 +90,6 @@ fun AdminOrdersScreen(
                 .padding(padding)
                 .background(Color(0xFFF8F9FA))
         ) {
-            // --- Status Tabs ---
             ScrollableTabRow(
                 selectedTabIndex = selectedTabIndex,
                 containerColor = Color.White,
@@ -118,7 +117,6 @@ fun AdminOrdersScreen(
                 }
             }
 
-            // --- Orders List ---
             if (orders.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("No orders found for this status.", color = Color.Gray)

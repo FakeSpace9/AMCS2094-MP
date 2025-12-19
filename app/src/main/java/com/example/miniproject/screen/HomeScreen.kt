@@ -86,7 +86,6 @@ fun HomeScreen(navController: NavController,
     LaunchedEffect(Unit) {
         searchViewModel.searchQuery.value = ""
 
-        // Add this line to reset the filter when returning to Home
         searchViewModel.selectedCategory.value = "All"
 
         promoViewModel.syncPromotions()
@@ -94,7 +93,6 @@ fun HomeScreen(navController: NavController,
     }
 
 
-    // --- SECURE CLICK HANDLER ---
     val onProductClick: (String) -> Unit = { productId ->
         if (customerLoginState is LoginStateCustomer.Success) {
             navController.navigate("productDetail/$productId")
@@ -104,24 +102,19 @@ fun HomeScreen(navController: NavController,
         }
     }
 
-    // --- UPDATED LAYOUT STRUCTURE ---
-    // Use a Column to hold the fixed TopBar and the scrollable list
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
-        // 1. Fixed TopBar (Stays at the top)
         TopBar( viewModel = loginViewModel, navController = navController)
 
-        // 2. Scrollable Content (Takes up remaining space)
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f) // This ensures it fills the space below TopBar
+                .weight(1f)
         ) {
 
-            // Sales Banner
             item { SalesBanner() }
 
             item {
@@ -134,7 +127,6 @@ fun HomeScreen(navController: NavController,
                 )
             }
 
-            // --- BEST SELLER GRID (Top 6, 2 per row) ---
             item {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
@@ -164,7 +156,6 @@ fun HomeScreen(navController: NavController,
                             }
                         )
                     }
-                    // Handle odd number of items in the last row for alignment
                     val remainingSlots = 2 - rowProducts.size
                     if (remainingSlots > 0) {
                         Spacer(modifier = Modifier.weight(remainingSlots.toFloat()))
@@ -172,7 +163,6 @@ fun HomeScreen(navController: NavController,
                 }
             }
 
-            // Bottom Spacer
             item { Spacer(modifier = Modifier.height(20.dp)) }
         }
     }
@@ -182,12 +172,12 @@ fun getCategoryIcon(category: String): ImageVector {
     return when (category) {
         "All" -> Icons.Default.Apps
         "Best Sellers" -> Icons.Default.Star
-        "Tops" -> Icons.Default.Checkroom // Looks like a hanger/shirt
-        "Bottom" -> Icons.Default.VerticalSplit // Abstract representation for pants/legs
-        "Outerwear" -> Icons.Default.AcUnit // Represents Cold/Winter wear
-        "Dresses" -> Icons.Default.Face // Represents 'Lady' or similar if specific dress icon missing
-        "Accessories" -> Icons.Default.Watch // Watch or similar accessory
-        "Shoes" -> Icons.Default.Diamond // Or DirectionsWalk
+        "Tops" -> Icons.Default.Checkroom
+        "Bottom" -> Icons.Default.VerticalSplit
+        "Outerwear" -> Icons.Default.AcUnit
+        "Dresses" -> Icons.Default.Face
+        "Accessories" -> Icons.Default.Watch
+        "Shoes" -> Icons.Default.Diamond
         else -> Icons.Outlined.Category
     }
 }
@@ -195,7 +185,6 @@ fun getCategoryIcon(category: String): ImageVector {
 fun TopBar( viewModel: LoginViewModel, navController: NavController) {
     val customerloginState by viewModel.customerState.collectAsState()
 
-    // Check if user is logged in
     val isLoggedIn = customerloginState is LoginStateCustomer.Success
 
     Spacer(modifier = Modifier.height(16.dp))
@@ -282,7 +271,7 @@ fun CategoryCard(title: String, onClick: () -> Unit,icon: ImageVector) {
         modifier = Modifier
             .width(100.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFFF3F4F6)) // Light Gray Background
+            .background(Color(0xFFF3F4F6))
             .clickable { onClick() }
             .padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -307,34 +296,6 @@ fun CategoryCard(title: String, onClick: () -> Unit,icon: ImageVector) {
 }
 
 @Composable
-fun ProductSection(title: String, onClick: () -> Unit = {}, products: List<ProductSearchResult>, navController: NavController) {
-    Column(modifier = Modifier.padding(16.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(title, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-        }
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            products.forEach { product ->
-                ProductCard(
-                    product = product,
-                    modifier = Modifier.weight(1f),
-                    onClick = {
-                        navController.navigate("productDetail/${product.product.productId}")
-                    }
-                )
-            }
-        }
-    }
-}
-
-@Composable
 fun ProductCard(
     product: ProductSearchResult,
     modifier: Modifier = Modifier,
@@ -350,7 +311,7 @@ fun ProductCard(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(1f) // Square image
+                .aspectRatio(1f)
                 .clip(RoundedCornerShape(6.dp))
                 .background(Color.White),
             contentAlignment = Alignment.Center

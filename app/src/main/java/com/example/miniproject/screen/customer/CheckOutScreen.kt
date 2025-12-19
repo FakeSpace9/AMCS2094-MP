@@ -46,12 +46,9 @@ fun CheckOutScreen(
     viewModel: CheckoutViewModel
 ){
     val context = LocalContext.current
-
-    // Extract passed item IDs from navigation arguments
     val currentBackStackEntry = navController.currentBackStackEntry
     val itemIdsString = currentBackStackEntry?.arguments?.getString("itemIds")
 
-    // Filter logic
     LaunchedEffect(itemIdsString) {
         viewModel.setSelectedItemIds(itemIdsString)
     }
