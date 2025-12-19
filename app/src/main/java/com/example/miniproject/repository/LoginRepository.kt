@@ -53,6 +53,7 @@ class LoginRepository(
                 email = snapshot.getString("email") ?: "",
                 name = snapshot.getString("name") ?: "",
                 phone = snapshot.getString("phone") ?: "",
+                profilePictureUrl = snapshot.getString("profilePictureUrl")
             )
 
             // 3. Save to Room local database
@@ -138,7 +139,9 @@ class LoginRepository(
                     customerId = uid,
                     email = snapshot.getString("email") ?: "",
                     name = snapshot.getString("name") ?: "",
-                    phone = snapshot.getString("phone") ?: ""
+                    phone = snapshot.getString("phone") ?: "",
+                    profilePictureUrl = snapshot.getString("profilePictureUrl")
+
                 )
             }
 
@@ -181,7 +184,8 @@ class LoginRepository(
                 customerId = snapshot.id,
                 email = snapshot.getString("email") ?: "",
                 name = snapshot.getString("name") ?: "",
-                phone = snapshot.getString("phone") ?: ""
+                phone = snapshot.getString("phone") ?: "",
+                profilePictureUrl = snapshot.getString("profilePictureUrl")
             )
             Result.success(customer)
         } catch (e: Exception) {
