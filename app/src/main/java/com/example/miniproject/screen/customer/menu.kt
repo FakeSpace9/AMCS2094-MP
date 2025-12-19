@@ -79,12 +79,6 @@ fun NewArrivalScreen(
     val searchResults by viewModel.searchResults.collectAsState()
     val selectedFilter by viewModel.selectedCategory.collectAsState()
 
-    val gridState = rememberLazyGridState()
-
-
-    LaunchedEffect(selectedFilter) {
-        gridState.scrollToItem(0)
-    }
 
 
     LaunchedEffect(Unit) {
@@ -132,11 +126,9 @@ fun NewArrivalScreen(
             } else {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
-                    state = gridState,
                     modifier = Modifier
                         .weight(1f)
-                        .padding(16.dp)
-                        .simpleVerticalScrollbar(gridState),
+                        .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
@@ -364,39 +356,3 @@ fun FilterRow(
 
 
 
-@Composable
-fun Modifier.simpleVerticalScrollbar(
-    state: LazyGridState,
-    width: Dp = 6.dp,
-    color: Color = Color.Gray.copy(alpha = 0.5f),
-    padding: Dp = 4.dp
-): Modifier {
-    // 1. Force alpha to 1f so it doesn't fade out
-    val alpha = 1f
-
-    return drawWithContent {
-        drawContent()
-
-        val firstVisibleElementIndex = state.layoutInfo.visibleItemsInfo.firstOrNull()?.index ?: 0
-        val totalItemsCount = state.layoutInfo.totalItemsCount
-
-        // Prevent division by zero if list is empty
-        if (totalItemsCount > 0) {
-            val elementHeight = this.size.height / totalItemsCount
-            val scrollbarOffsetY = firstVisibleElementIndex * elementHeight
-            val visibleItemsCount = state.layoutInfo.visibleItemsInfo.size
-
-            // Calculate height. If all items are visible, this becomes the full height.
-            val scrollbarHeight = visibleItemsCount * elementHeight
-
-            // 2. Removed the "if (needDrawScrollbar)" check. It now draws always.
-            drawRoundRect(
-                color = color,
-                topLeft = Offset(this.size.width - width.toPx() - padding.toPx(), scrollbarOffsetY),
-                size = Size(width.toPx(), scrollbarHeight),
-                alpha = alpha,
-                cornerRadius = CornerRadius(width.toPx() / 2, width.toPx() / 2)
-            )
-        }
-    }
-}
