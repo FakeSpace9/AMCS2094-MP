@@ -3,15 +3,44 @@ package com.example.miniproject.screen.admin
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,11 +69,23 @@ fun AdminAnalyticsScreen(
     val currentMonth by viewModel.selectedMonth.collectAsState()
     val currentYear by viewModel.selectedYear.collectAsState()
 
+    // 1. Scroll State for the content column
+    val scrollState = rememberScrollState()
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Analytics", fontWeight = FontWeight.Bold) },
-
+                actions = {
+                    IconButton(onClick = { navController.navigate("admin_profile") }) {
+                        Icon(
+                            Icons.Default.AccountCircle,
+                            contentDescription = "Profile",
+                            tint = Color(0xFF573BFF),
+                            modifier = Modifier.size(30.dp)
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
             )
         },
@@ -54,85 +95,97 @@ fun AdminAnalyticsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp)
+                .padding(horizontal = 16.dp)
         ) {
-            // 1. Tab Selector
+            Spacer(Modifier.height(16.dp))
+
+            // 2. Tab Selector (Fixed at the top)
             AnalyticsTabs(currentTab) { viewModel.setTab(it) }
 
             Spacer(Modifier.height(16.dp))
 
-            // 2. Date Filters
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                DropdownSelector(
-                    value = viewModel.months[currentMonth],
-                    options = viewModel.months,
-                    onSelect = { idx -> viewModel.setDate(idx, currentYear) },
-                    modifier = Modifier.weight(1f)
-                )
-                DropdownSelector(
-                    value = currentYear.toString(),
-                    options = viewModel.years,
-                    onSelect = { idx -> viewModel.setDate(currentMonth, viewModel.years[idx].toInt()) },
-                    modifier = Modifier.weight(0.5f)
-                )
-            }
-
-            Spacer(Modifier.height(24.dp))
-
-            if (stats == null) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = PurpleAccent)
-                }
-            } else {
-                val data = stats!!
-
-                // 3. Revenue Card
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color.Black, RoundedCornerShape(16.dp))
-                        .padding(24.dp)
-                ) {
-                    Column {
-                        Text("Total Revenue", color = Color.Gray, fontSize = 14.sp)
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            "RM ${String.format("%.2f", data.revenue)}",
-                            color = Color.White,
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(16.dp))
-
-                // 4. Orders & Items Row
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    AnalyticsStatCard("Total Orders", data.orders.toString(), "Orders Placed", Modifier.weight(1f))
-                    AnalyticsStatCard("Item Sold", data.itemsSold.toString(), "Units Shipped", Modifier.weight(1f))
+            // 3. Scrollable Content Area (Starts from Date Selectors)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f) // Takes up remaining screen space
+                    .verticalScroll(scrollState) // Enables scrolling for everything below
+            ) {
+                // Date Filters
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    DropdownSelector(
+                        value = viewModel.months[currentMonth],
+                        options = viewModel.months,
+                        onSelect = { idx -> viewModel.setDate(idx, currentYear) },
+                        modifier = Modifier.weight(1f)
+                    )
+                    DropdownSelector(
+                        value = currentYear.toString(),
+                        options = viewModel.years,
+                        onSelect = { idx -> viewModel.setDate(currentMonth, viewModel.years[idx].toInt()) },
+                        modifier = Modifier.weight(0.5f)
+                    )
                 }
 
                 Spacer(Modifier.height(24.dp))
 
-                // 5. Best Sellers
-                Text("Best Sellers", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Spacer(Modifier.height(8.dp))
-
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(data.bestSellers) { item ->
-                        BestSellerCard(item)
+                if (stats == null) {
+                    Box(Modifier.fillMaxWidth().height(300.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = PurpleAccent)
                     }
+                } else {
+                    val data = stats!!
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.Black),
+                        elevation = CardDefaults.cardElevation(8.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(24.dp)) {
+                            Text("Total Revenue", color = Color.Gray, fontSize = 14.sp)
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "RM ${String.format("%.2f", data.revenue)}",
+                                color = Color.White,
+                                fontSize = 36.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    // Orders & Items Row
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        AnalyticsStatCard("Total Orders", data.orders.toString(), "Orders Placed", Modifier.weight(1f))
+                        AnalyticsStatCard("Item Sold", data.itemsSold.toString(), "Units Shipped", Modifier.weight(1f))
+                    }
+
+                    Spacer(Modifier.height(24.dp))
+
+                    // Best Sellers Title
+                    Text("Best Sellers", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Spacer(Modifier.height(12.dp))
+
+                    // Best Sellers List (Replaced LazyColumn with simple Loop for nested scrolling)
                     if (data.bestSellers.isEmpty()) {
-                        item {
-                            Text("No sales data for this period", color = Color.Gray, fontSize = 14.sp)
+                        Text("No sales data for this period", color = Color.Gray, fontSize = 14.sp)
+                    } else {
+                        data.bestSellers.forEach { item ->
+                            BestSellerCard(item)
+                            Spacer(Modifier.height(12.dp)) // Spacing between items
                         }
                     }
                 }
+
+                // Bottom padding for comfortable scrolling
+                Spacer(Modifier.height(24.dp))
             }
         }
     }
 }
+
 
 @Composable
 fun AnalyticsTabs(selected: AnalyticsTab, onSelect: (AnalyticsTab) -> Unit) {
@@ -168,12 +221,13 @@ fun AnalyticsTabs(selected: AnalyticsTab, onSelect: (AnalyticsTab) -> Unit) {
 fun AnalyticsStatCard(title: String, value: String, sub: String, modifier: Modifier) {
     Card(
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         border = BorderStroke(1.dp, Color(0xFFEEEEEE)),
         modifier = modifier
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(title, fontSize = 12.sp, color = Color.Gray)
+            Spacer(Modifier.height(4.dp))
             Text(value, fontSize = 24.sp, fontWeight = FontWeight.Bold)
             Text(sub, fontSize = 10.sp, color = Color.Gray)
         }
@@ -185,6 +239,7 @@ fun BestSellerCard(item: BestSellerItem) {
     Card(
         colors = CardDefaults.cardColors(containerColor = Color(0xFFF9FAFB)),
         shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, Color(0xFFF0F0F0)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -210,7 +265,8 @@ fun BestSellerCard(item: BestSellerItem) {
             Text(
                 "RM ${String.format("%.2f", item.totalPrice)}",
                 fontWeight = FontWeight.Bold,
-                fontSize = 14.sp
+                fontSize = 14.sp,
+                color = Color(0xFF573BFF)
             )
         }
     }
@@ -230,7 +286,7 @@ fun DropdownSelector(value: String, options: List<String>, onSelect: (Int) -> Un
             Text(value, modifier = Modifier.weight(1f), fontSize = 12.sp)
             Icon(Icons.Default.ArrowDropDown, null)
         }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.background(Color.White)) {
             options.forEachIndexed { index, option ->
                 DropdownMenuItem(
                     text = { Text(option) },

@@ -8,6 +8,7 @@ import com.example.miniproject.data.entity.CustomerEntity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.tasks.await
 
 
@@ -23,7 +24,6 @@ class LoginRepository(
         try {
             auth.signOut()
         } catch (e: Exception) {
-            // ignore logout errors
         }
     }
 
@@ -52,6 +52,7 @@ class LoginRepository(
                 email = snapshot.getString("email") ?: "",
                 name = snapshot.getString("name") ?: "",
                 phone = snapshot.getString("phone") ?: "",
+                profilePictureUrl = snapshot.getString("profilePictureUrl")
             )
 
             // 3. Save to Room local database
@@ -137,11 +138,13 @@ class LoginRepository(
                     customerId = uid,
                     email = snapshot.getString("email") ?: "",
                     name = snapshot.getString("name") ?: "",
-                    phone = snapshot.getString("phone") ?: ""
+                    phone = snapshot.getString("phone") ?: "",
+                    profilePictureUrl = snapshot.getString("profilePictureUrl")
+
                 )
             }
 
-
+            customerDao.insertCustomer(customerEntity)
 
             Result.success(customerEntity)
 
@@ -149,7 +152,28 @@ class LoginRepository(
             Result.failure(e)
         }
     }
+    suspend fun updateAdmin(admin: AdminEntity): Result<Boolean> {
+        return try {
+            // 1. Update Firestore
+            val updates = mapOf(
+                "name" to admin.name,
+                "phone" to admin.phone
+            )
+            firestore.collection("admins").document(admin.adminId)
+                .update(updates)
+                .await()
 
+            // 2. Update Local Room
+            adminDao.updateAdmin(admin)
+
+            Result.success(true)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    fun getCustomerFlow(id: String): Flow<CustomerEntity?> {
+        return customerDao.getCustomerFlow(id)
+    }
     suspend fun getCustomerById(uid: String): Result<CustomerEntity> {
         return try {
             val snapshot = firestore.collection("customers").document(uid).get().await()
@@ -159,7 +183,8 @@ class LoginRepository(
                 customerId = snapshot.id,
                 email = snapshot.getString("email") ?: "",
                 name = snapshot.getString("name") ?: "",
-                phone = snapshot.getString("phone") ?: ""
+                phone = snapshot.getString("phone") ?: "",
+                profilePictureUrl = snapshot.getString("profilePictureUrl")
             )
             Result.success(customer)
         } catch (e: Exception) {

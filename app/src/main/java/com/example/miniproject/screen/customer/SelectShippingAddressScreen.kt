@@ -3,7 +3,18 @@ package com.example.miniproject.screen.customer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,8 +23,19 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,7 +55,6 @@ fun SelectShippingAddressScreen(
 ) {
     val addresses by viewModel.addresses.collectAsState()
 
-    // Ensure we have the latest data
     LaunchedEffect(Unit) {
         viewModel.loadAddresses()
     }
@@ -48,7 +69,6 @@ fun SelectShippingAddressScreen(
                     }
                 },
                 actions = {
-                    // Optional: Shortcut to Add Address if the list is empty or user wants a new one
                     IconButton(onClick = {
                         viewModel.newAddress()
                         navController.navigate("add_address")
@@ -84,12 +104,10 @@ fun SelectShippingAddressScreen(
                     SelectableAddressCard(
                         address = address,
                         onSelect = {
-                            // 1. Pass the Selected ID back to Checkout
                             navController.previousBackStackEntry
                                 ?.savedStateHandle
                                 ?.set("selected_address_id", address.addressId)
 
-                            // 2. Pop back to Checkout
                             navController.popBackStack()
                         }
                     )
@@ -166,7 +184,7 @@ fun SelectableAddressCard(
             Icon(
                 imageVector = Icons.Default.CheckCircle,
                 contentDescription = "Select",
-                tint = Color.LightGray.copy(alpha = 0.5f) // Subtle hint that it's clickable
+                tint = Color.LightGray.copy(alpha = 0.5f)
             )
         }
     }

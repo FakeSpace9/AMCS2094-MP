@@ -11,6 +11,7 @@ import com.example.miniproject.repository.LoginRepository
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -26,7 +27,46 @@ class LoginViewModel(
 
     private val _adminState = MutableStateFlow<LoginStateAdmin>(LoginStateAdmin.Idle)
     val adminState: StateFlow<LoginStateAdmin> = _adminState
+    private val _updateMessage = MutableStateFlow<String?>(null)
+    val updateMessage: StateFlow<String?> = _updateMessage
 
+    private var customerObserverJob: Job? = null
+
+    private fun observeCustomerData(customerId: String) {
+        customerObserverJob?.cancel()
+
+        customerObserverJob = viewModelScope.launch {
+            repository.getCustomerFlow(customerId).collect { updatedUser ->
+                if (updatedUser != null) {
+                    _customerState.value = LoginStateCustomer.Success(updatedUser)
+                } else {
+                    _customerState.value = LoginStateCustomer.Error("User data not found")
+                }
+            }
+        }
+    }
+
+    fun updateAdminProfile(name: String, phone: String) {
+        val currentState = _adminState.value
+        if (currentState is LoginStateAdmin.Success) {
+            viewModelScope.launch {
+                val currentAdmin = currentState.admin
+                val updatedAdmin = currentAdmin.copy(name = name, phone = phone)
+
+                val result = repository.updateAdmin(updatedAdmin)
+
+                if (result.isSuccess) {
+                    _adminState.value = LoginStateAdmin.Success(updatedAdmin)
+                    _updateMessage.value = "Profile Updated Successfully"
+                } else {
+                    _updateMessage.value = "Update Failed: ${result.exceptionOrNull()?.message}"
+                }
+            }
+        }
+    }
+    fun clearUpdateMessage() {
+        _updateMessage.value = null
+    }
     fun login(email: String, password: String) {
         viewModelScope.launch {
             _customerState.value = LoginStateCustomer.Loading
@@ -37,7 +77,7 @@ class LoginViewModel(
 
                 // UPDATE: Save 'user.customerId'
                 authPrefs.saveLogin("customer", user.customerId,email)
-
+                observeCustomerData(user.customerId)
                 _customerState.value = LoginStateCustomer.Success(user)
             } else {
                 _customerState.value =
@@ -67,6 +107,7 @@ class LoginViewModel(
 
     fun logout() {
         viewModelScope.launch {
+            customerObserverJob?.cancel()
             repository.logoutFirebase()
             authPrefs.clearLogin()
 
@@ -79,7 +120,7 @@ class LoginViewModel(
 
     fun signInWithGoogle(activity: Activity) {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken("541829479012-sbpl0qkshld60vp42p8ep3q7he4fsg7h.apps.googleusercontent.com") // replace with your Firebase web client ID
+            .requestIdToken("541829479012-sbpl0qkshld60vp42p8ep3q7he4fsg7h.apps.googleusercontent.com")
             .requestEmail()
             .build()
 
@@ -103,7 +144,7 @@ class LoginViewModel(
                 val user = result.getOrNull()!!
 
                 authPrefs.saveLogin("customer", user.customerId,user.email)
-
+                observeCustomerData(user.customerId)
                 _customerState.value = LoginStateCustomer.Success(user)
             } else {
                 _customerState.value = LoginStateCustomer.Error("Google login failed")
@@ -115,13 +156,12 @@ class LoginViewModel(
         viewModelScope.launch {
             if (!authPrefs.shouldAutoLogin()) return@launch
 
-            // UPDATE: Get UID instead of just Email
             val uid = authPrefs.getUserId() ?: return@launch
             val userType = authPrefs.getUserType() ?: return@launch
 
             if (userType == "customer") {
                 _customerState.value = LoginStateCustomer.Loading
-
+                observeCustomerData(uid)
                 // UPDATE: Use getCustomerById(uid)
                 val result = repository.getCustomerById(uid)
 
@@ -133,7 +173,6 @@ class LoginViewModel(
             } else if (userType == "admin") {
                 _adminState.value = LoginStateAdmin.Loading
 
-                // UPDATE: Use getAdminById(uid)
                 val result = repository.getAdminById(uid)
 
                 _adminState.value = if (result.isSuccess) {

@@ -1,6 +1,5 @@
 package com.example.miniproject.repository
 
-import android.util.Log
 import com.example.miniproject.data.dao.AddressDao
 import com.example.miniproject.data.entity.AddressEntity
 import com.google.firebase.firestore.FirebaseFirestore
@@ -96,9 +95,7 @@ class AddressRepository(
             val addresses = snapshot.documents.mapNotNull { doc ->
                 doc.toObject(AddressEntity::class.java)
             }
-
             addressDao.deleteAddressByCustomerId(customerId)
-
             addressDao.insertAllAddress(addresses)
 
         } catch (e: Exception) {

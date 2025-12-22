@@ -53,7 +53,6 @@ class ForgotPasswordViewModel(
         }
     }
 
-    // Clear messages after showing
     fun clearMessages() {
         _successMessage.value = null
         _errorMessage.value = null

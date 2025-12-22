@@ -84,10 +84,9 @@ fun AdminSignupScreen(navController: NavController, viewModel: SignupViewModel) 
     val isPasswordValid = hasLength && hasUppercase && hasLowercase && hasDigit && hasSymbol
 
     val isPhoneValid = phone.matches(Regex("^01[0-9]{8,9}$"))
-    // ------------------------
 
     val primaryColor = Color(0xFF573BFF)
-    val successColor = Color(0xFF4CAF50) // Green
+    val successColor = Color(0xFF4CAF50)
 
     Box(
         modifier = Modifier
@@ -332,7 +331,6 @@ fun AdminSignupScreen(navController: NavController, viewModel: SignupViewModel) 
     }
 }
 
-// --- HELPER COMPOSABLE ---
 @Composable
 fun PasswordRequirementRow(text: String, isMet: Boolean, successColor: Color) {
     Row(

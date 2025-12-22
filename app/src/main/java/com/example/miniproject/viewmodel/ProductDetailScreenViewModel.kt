@@ -1,6 +1,5 @@
 package com.example.miniproject.viewmodel
 
-import android.os.Message
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.miniproject.data.dao.ProductDao
@@ -18,6 +17,7 @@ sealed class AddToCartStatus{
     object Success : AddToCartStatus()
     data class Error(val message: String) : AddToCartStatus()
 }
+
 class ProductDetailScreenViewModel (
     private val productDao: ProductDao,
     private val cartRepository: CartRepository
@@ -25,13 +25,22 @@ class ProductDetailScreenViewModel (
     private val _product = MutableStateFlow<ProductEntity?>(null)
     val product: StateFlow<ProductEntity?> = _product
 
+    private val _productImages = MutableStateFlow<List<String>>(emptyList())
+    val productImages: StateFlow<List<String>> = _productImages
+
     private val _variants = MutableStateFlow<List<ProductVariantEntity>>(emptyList())
     val variants: StateFlow<List<ProductVariantEntity>> = _variants
+
+    private val _availableColours = MutableStateFlow<List<String>>(emptyList())
+    val availableColours: StateFlow<List<String>> = _availableColours
+
+    private val _selectedColour = MutableStateFlow("")
+    val selectedColour: StateFlow<String> = _selectedColour
 
     private val _selectedSize = MutableStateFlow("")
     val selectedSize: StateFlow<String> = _selectedSize
 
-    private val _sizeOrder = listOf("XS","S","M","L","XL")
+    private val _sizeOrder = listOf("XS","S","M","L","XL","XXL")
     val availableSizes: StateFlow<List<String>> = MutableStateFlow(emptyList())
 
     private val _selectedVariant = MutableStateFlow<ProductVariantEntity?>(null)
@@ -43,32 +52,44 @@ class ProductDetailScreenViewModel (
     val priceRange: StateFlow<String> = MutableStateFlow("")
 
     fun loadProductData(productId: String) {
-
         _product.value = null
         _variants.value = emptyList()
         _selectedVariant.value = null
-        _selectedSize.value = "" // Reset size so it doesn't carry over
+        _selectedSize.value = ""
+        _selectedColour.value = ""
         (availableSizes as MutableStateFlow).value = emptyList()
+        _availableColours.value = emptyList()
+        _productImages.value = emptyList()
 
         viewModelScope.launch {
             val productResult = productDao.getProductById(productId)
             _product.value = productResult
 
+            if (productResult != null) {
+                val imagesResult = productDao.getImagesForProduct(productId)
+                val urls = imagesResult.map { it.imageUrl }
+
+                if (urls.isNotEmpty()) {
+                    _productImages.value = urls
+                } else if (productResult.imageUrl.isNotEmpty()) {
+                    _productImages.value = listOf(productResult.imageUrl)
+                }
+            }
+
             val variantsResult = productDao.getVariantsForProduct(productId)
             _variants.value = variantsResult
 
-            val uniqueSizes = variantsResult.map { it.size }
+            val uniqueColours = variantsResult.map { it.colour }
                 .distinct()
                 .filter { it.isNotEmpty() }
-                .sortedBy { _sizeOrder.indexOf(it) }
-            (availableSizes as MutableStateFlow).value = uniqueSizes
+                .sorted()
 
-            if (uniqueSizes.isNotEmpty()) {
-                _selectedSize.value = uniqueSizes.first()
-                updateSelectedVariant()
+            _availableColours.value = uniqueColours
+
+            if (uniqueColours.isNotEmpty()) {
+                selectColour(uniqueColours.first())
             } else {
-                _selectedSize.value = ""
-                _selectedVariant.value = null
+                updateAvailableSizesForColour("")
             }
 
             if(variantsResult.isNotEmpty()){
@@ -84,6 +105,44 @@ class ProductDetailScreenViewModel (
         }
     }
 
+    fun selectColour(colour: String) {
+        _selectedColour.value = colour
+        updateAvailableSizesForColour(colour)
+    }
+
+    private fun updateAvailableSizesForColour(colour: String) {
+        val allVariants = _variants.value
+
+        val variantsForColour = if (colour.isNotEmpty()) {
+            allVariants.filter { it.colour == colour }
+        } else {
+            allVariants
+        }
+
+        val uniqueSizes = variantsForColour.map { it.size }
+            .distinct()
+            .filter { it.isNotEmpty() }
+            .sortedBy { size ->
+                val index = _sizeOrder.indexOf(size)
+                if (index == -1) Int.MAX_VALUE else index
+            }
+
+        (availableSizes as MutableStateFlow).value = uniqueSizes
+
+        if (uniqueSizes.isNotEmpty()) {
+            if (!_selectedSize.value.isEmpty() && uniqueSizes.contains(_selectedSize.value)) {
+
+                updateSelectedVariant()
+            } else {
+                _selectedSize.value = uniqueSizes.first()
+                updateSelectedVariant()
+            }
+        } else {
+            _selectedSize.value = ""
+            _selectedVariant.value = null
+        }
+    }
+
     fun selectSize(size:String){
         _selectedSize.value = size
         updateSelectedVariant()
@@ -91,10 +150,14 @@ class ProductDetailScreenViewModel (
 
     private fun updateSelectedVariant() {
         val currentSize = _selectedSize.value
+        val currentColour = _selectedColour.value
         val currentVariants = _variants.value
 
-        _selectedVariant.value = currentVariants.find { it.size == currentSize }
+        _selectedVariant.value = currentVariants.find {
+            it.size == currentSize && (currentColour.isEmpty() || it.colour == currentColour)
+        }
     }
+
     fun addToCart(){
         val productVal = _product.value ?: return
         val variantVal = _selectedVariant.value ?: return
@@ -106,6 +169,7 @@ class ProductDetailScreenViewModel (
 
         if(variantVal.stockQuantity <=0 ){
             _addToCartStatus.value = AddToCartStatus.Error("Out of Stock")
+            return
         }
 
         viewModelScope.launch {
@@ -133,4 +197,3 @@ class ProductDetailScreenViewModel (
         _addToCartStatus.value = AddToCartStatus.Idle
     }
 }
-

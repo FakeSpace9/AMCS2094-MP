@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.example.miniproject.data.entity.CustomerEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CustomerDao {
@@ -17,13 +18,16 @@ interface CustomerDao {
     suspend fun login(email: String): CustomerEntity?
 
     @Query("SELECT * FROM customers WHERE customerId = :id")
-    suspend fun getCustomerById(id: String): CustomerEntity
+    suspend fun getCustomerById(id: String): CustomerEntity?
 
     @Query("SELECT EXISTS(SELECT 1 FROM customers WHERE email = :email)")
     suspend fun isEmailRegistered(email: String): Boolean
 
     @Query("SELECT * FROM customers WHERE email = :email LIMIT 1")
     suspend fun getCustomerByEmail(email: String): CustomerEntity
+
+    @Query("SELECT * FROM customers WHERE customerId = :id")
+    fun getCustomerFlow(id: String): Flow<CustomerEntity?>
 
     @Update
     suspend fun updateCustomer(customer: CustomerEntity)

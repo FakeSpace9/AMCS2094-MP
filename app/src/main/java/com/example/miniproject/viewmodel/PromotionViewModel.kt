@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.miniproject.data.AuthPreferences
-import com.example.miniproject.data.entity.PromotionEntity
 import com.example.miniproject.repository.PromotionRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -47,7 +46,6 @@ class PromotionViewModel(
             return
         }
 
-        // Simple date logic: Starts Now, Ends in X days
         val start = System.currentTimeMillis()
         val end = start + (daysValid * 24 * 60 * 60 * 1000L)
 

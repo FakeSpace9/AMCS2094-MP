@@ -56,7 +56,6 @@ interface POSOrderDao {
     """)
     suspend fun getItemsSoldInRange(start: Date, end: Date): Int
 
-    // Note: We join with 'products' table to get the Image URL
     @Query("""
         SELECT i.productName as name, p.imageUrl, SUM(i.quantity) as totalQty, SUM(i.price * i.quantity) as totalPrice
         FROM pos_order_items i
@@ -68,4 +67,13 @@ interface POSOrderDao {
         LIMIT 3
     """)
     suspend fun getBestSellersInRange(start: Date, end: Date): List<BestSellerItem>
+
+    @Query("DELETE FROM pos_order_items WHERE posOrderId = :orderId")
+    suspend fun deleteItemsByOrderId(orderId: Long)
+
+    @Query("SELECT * FROM pos_orders WHERE id = :id LIMIT 1")
+    suspend fun getOrderById(id: Long): POSOrderEntity?
+
+    @Query("SELECT * FROM pos_orders WHERE orderDate BETWEEN :start AND :end ORDER BY orderDate DESC")
+    suspend fun getOrdersInRange(start: Date, end: Date): List<POSOrderEntity>
 }

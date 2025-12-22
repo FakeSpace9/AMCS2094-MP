@@ -1,15 +1,26 @@
+// app/src/main/java/com/example/miniproject/screen/ProfileScreen.kt
 package com.example.miniproject.screen
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material3.Divider
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -25,6 +36,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.example.miniproject.R
 import com.example.miniproject.viewmodel.LoginStateCustomer
 import com.example.miniproject.viewmodel.LoginViewModel
@@ -36,10 +48,15 @@ fun ProfileScreen(
 ) {
     val customerProfileState = viewModel.customerState.collectAsState().value
 
-    val username = (customerProfileState as? LoginStateCustomer.Success)
-        ?.user
-        ?.name
-        ?: ""
+    val user = (customerProfileState as? LoginStateCustomer.Success)?.user
+    val username = user?.name ?: ""
+    val profilePicUrl = user?.profilePictureUrl
+
+    val predefinedAvatars = mapOf(
+        "default_1" to R.drawable.profile,
+        "default_2" to R.drawable.ezgif_5114ed3efc72cedb,
+        "default_3" to R.drawable.ezgif_54e78d35703e3376
+    )
 
     Column(
         modifier = Modifier
@@ -53,7 +70,7 @@ fun ProfileScreen(
                 .padding(top = 4.dp)
         ) {
             IconButton(
-                onClick = { navController.popBackStack() },
+                onClick = { navController.navigate("home") },
                 modifier = Modifier.align(Alignment.CenterStart)
             ) {
                 Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -72,15 +89,42 @@ fun ProfileScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.profile),
-                contentDescription = "Profile",
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(CircleShape)
-                    .border(2.dp, Color.Black, CircleShape),
-                contentScale = ContentScale.Crop
-            )
+
+            if (profilePicUrl != null) {
+                if (predefinedAvatars.containsKey(profilePicUrl)) {
+                    Image(
+                        painter = painterResource(id = predefinedAvatars[profilePicUrl]!!),
+                        contentDescription = "Profile",
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(CircleShape)
+                            .border(2.dp, Color.Black, CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    AsyncImage(
+                        model = profilePicUrl,
+                        contentDescription = "Profile",
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(CircleShape)
+                            .border(2.dp, Color.Black, CircleShape),
+                        contentScale = ContentScale.Crop,
+                        placeholder = painterResource(R.drawable.profile),
+                        error = painterResource(R.drawable.profile)
+                    )
+                }
+            } else {
+                Image(
+                    painter = painterResource(id = R.drawable.profile),
+                    contentDescription = "Profile",
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape)
+                        .border(2.dp, Color.Black, CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            }
 
             Spacer(modifier = Modifier.height(10.dp))
 
@@ -92,7 +136,7 @@ fun ProfileScreen(
         Spacer(modifier = Modifier.height(10.dp))
 
         ProfileMenuItem("My Orders") { navController.navigate("order_history") }
-        ProfileMenuItem("Edit Profile") { navController.navigate("edit") }
+        ProfileMenuItem("Edit Profile") { navController.navigate("edit_profile") }
         ProfileMenuItem("Shipping Address") { navController.navigate("address") }
         ProfileMenuItem("Payment Methods") { navController.navigate("payment") }
 

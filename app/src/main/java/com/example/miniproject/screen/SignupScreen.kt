@@ -83,7 +83,6 @@ fun SignupScreen(navController: NavController, viewModel: SignupViewModel) {
 
     // 2. Malaysia Phone Number Validation (Starts with 01, 10-11 digits)
     val isPhoneValid = phone.matches(Regex("^01[0-9]{8,9}$"))
-    // ------------------------
 
     val primaryColor = Color(0xFF573BFF)
     val successColor = Color(0xFF4CAF50)

@@ -1,7 +1,5 @@
 package com.example.miniproject.screen.customer
 
-import android.R
-import android.R.attr.fontWeight
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -9,26 +7,21 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.QrCode
-import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -39,15 +32,12 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.miniproject.ui.theme.PurpleAccent
 import com.example.miniproject.viewmodel.CheckoutViewModel
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.text.style.TextOverflow
-import coil.util.CoilUtils.result
 import com.example.miniproject.data.entity.AddressEntity
 import com.example.miniproject.data.entity.CartEntity
 import com.example.miniproject.data.entity.PaymentEntity
-import okhttp3.internal.format
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,12 +46,21 @@ fun CheckOutScreen(
     viewModel: CheckoutViewModel
 ){
     val context = LocalContext.current
+    val currentBackStackEntry = navController.currentBackStackEntry
+    val itemIdsString = currentBackStackEntry?.arguments?.getString("itemIds")
+
+    LaunchedEffect(itemIdsString) {
+        viewModel.setSelectedItemIds(itemIdsString)
+    }
 
     val cartItems by viewModel.cartItems.collectAsState()
     val subtotal by viewModel.subtotal.collectAsState()
     val grandTotal by viewModel.grandTotal.collectAsState()
     val shippingFee = viewModel.shippingFee
     val discount by viewModel.discountAmount.collectAsState()
+
+    val promoCode by viewModel.promoCode.collectAsState()
+    val promoCodeError by viewModel.promoCodeError.collectAsState()
 
     val selectedAddress by viewModel.selectedAddress.collectAsState()
     val selectedPayment by viewModel.selectedPayment.collectAsState()
@@ -71,9 +70,8 @@ fun CheckOutScreen(
         viewModel.refreshData()
     }
 
-    val currentBackStack = navController.currentBackStackEntry
-    val savedStateHandle = currentBackStack?.savedStateHandle
-    // Observe Address Selection
+    // Handle Address/Payment result from Selection Screens
+    val savedStateHandle = currentBackStackEntry?.savedStateHandle
     val selectedAddrId by savedStateHandle?.getStateFlow<Long?>("selected_address_id", null)?.collectAsState() ?: mutableStateOf(null)
     LaunchedEffect(selectedAddrId) {
         selectedAddrId?.let { id ->
@@ -81,8 +79,6 @@ fun CheckOutScreen(
             savedStateHandle?.remove<Long>("selected_address_id")
         }
     }
-
-    // Observe Payment Selection
     val selectedPayId by savedStateHandle?.getStateFlow<Long?>("selected_payment_id", null)?.collectAsState() ?: mutableStateOf(null)
     LaunchedEffect(selectedPayId) {
         selectedPayId?.let { id ->
@@ -96,8 +92,6 @@ fun CheckOutScreen(
             if (result.isSuccess) {
                 val orderId = result.getOrNull() ?: 0L
                 viewModel.resetOrderState()
-
-                // Navigate using ID
                 navController.navigate("order_success/$orderId") {
                     popUpTo("home") { inclusive = false }
                 }
@@ -107,6 +101,7 @@ fun CheckOutScreen(
             }
         }
     }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -171,8 +166,7 @@ fun CheckOutScreen(
             }
         },
         containerColor = Color(0xFFF9FAFB)
-    ){
-        paddingValues ->
+    ){ paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -184,6 +178,19 @@ fun CheckOutScreen(
                 CheckOutProductCard(items)
             }
 
+            // Promo Code Section
+            item {
+                Text("Promo Code", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Spacer(modifier = Modifier.height(8.dp))
+                PromoCodeSection(
+                    promoCode = promoCode,
+                    onPromoCodeChange = { viewModel.onPromoCodeChange(it) },
+                    onApplyClick = { viewModel.applyPromoCode() },
+                    error = promoCodeError
+                )
+            }
+
+            // Price Breakdown
             item {
                 Column(modifier = Modifier.padding(vertical = 16.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -210,7 +217,6 @@ fun CheckOutScreen(
                 PaymentSelectorCard(
                     payment = selectedPayment,
                     onClick = {
-                        // Navigate to Payment Screen in SELECTION mode
                         navController.navigate("payment?selectMode=true")
                     }
                 )
@@ -222,12 +228,65 @@ fun CheckOutScreen(
                 AddressSelectorCard(
                     address = selectedAddress,
                     onClick = {
-                        // Navigate to Address Screen in SELECTION mode
                         navController.navigate("select_shipping_address")
                     }
                 )
                 Spacer(modifier = Modifier.height(100.dp))
             }
+        }
+    }
+}
+
+// Reused Component from original CartScreen
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PromoCodeSection(
+    promoCode: String,
+    onPromoCodeChange:(String)-> Unit,
+    onApplyClick:()-> Unit,
+    error: String?
+) {
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedTextField(
+                value = promoCode,
+                onValueChange = onPromoCodeChange,
+                placeholder = {Text("Enter promo code", color = Color.Gray)},
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedContainerColor = Color.White,
+                    focusedContainerColor = Color.White,
+                    unfocusedBorderColor = Color.Transparent,
+                    focusedBorderColor = PurpleAccent,
+                    errorTextColor = Color.Red
+                ),
+                isError = error != null,
+                singleLine = true
+            )
+            Button(
+                onClick = onApplyClick,
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.height(56.dp)
+            ){
+                Text(
+                    text = "APPLY",
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+        if(error != null) {
+            Text(
+                text = error,
+                color = Color.Red,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(start = 16.dp,top=4.dp)
+            )
         }
     }
 }
@@ -241,12 +300,11 @@ fun CheckOutProductCard(item: CartEntity){
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ){
-        //image
         Box(
-          modifier = Modifier
-              .size(80.dp)
-              .clip(RoundedCornerShape(12.dp))
-              .background(Color(0xFFF3F4F6)),
+            modifier = Modifier
+                .size(80.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color(0xFFF3F4F6)),
             contentAlignment = Alignment.Center
         ){
             AsyncImage(
@@ -262,22 +320,10 @@ fun CheckOutProductCard(item: CartEntity){
         Column(
             modifier = Modifier.weight(1f)
         ){
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ){
-                Text(item.productName,fontWeight=FontWeight.Bold,fontSize = 16.sp)
-                Icon(Icons.Default.DeleteOutline,null,tint = Color.LightGray, modifier = Modifier.size(20.dp))
-            }
+            Text(item.productName,fontWeight=FontWeight.Bold,fontSize = 16.sp)
             Text(item.selectedColour,color=Color.Gray, fontSize = 14.sp)
             Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ){
-                Text("x${item.quantity}", fontWeight = FontWeight.Medium, fontSize = 14.sp)
-            }
+            Text("x${item.quantity}", fontWeight = FontWeight.Medium, fontSize = 14.sp)
         }
     }
 }
@@ -289,29 +335,33 @@ fun PaymentSelectorCard(payment: PaymentEntity?, onClick:()->Unit){
         colors = CardDefaults.cardColors(containerColor = Color.White),
         modifier = Modifier.fillMaxWidth().clickable { onClick() }
     ){
-        // Icon
-        val icon = if (payment?.paymentType == "TNG") Icons.Default.QrCode else Icons.Default.CreditCard
-        Icon(icon, null, modifier = Modifier.size(28.dp), tint = Color.Black)
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            val icon = if (payment?.paymentType == "Touch n Go") Icons.Default.QrCode else Icons.Default.CreditCard
+            Icon(icon, null, modifier = Modifier.size(28.dp), tint = Color.Black)
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                if (payment != null) {
 
-        Spacer(modifier = Modifier.width(16.dp))
+                    Text(payment.displayName, fontWeight = FontWeight.SemiBold)
+                    val sub = if (!payment.cardNumber.isNullOrEmpty()) {
+                        "**** ${payment.cardNumber.takeLast(4)}"
+                    } else {
+                        payment.walletId ?: ""
+                    }
 
-        Column(modifier = Modifier.weight(1f)) {
-            if (payment != null) {
-                Text(payment.displayName, fontWeight = FontWeight.SemiBold)
-                val sub = if(payment.paymentType == "CARD") "**** ${payment.cardNumber?.takeLast(4)}" else payment.walletId ?: ""
-                Text(sub, color = Color.Gray, fontSize = 12.sp)
-            } else {
-                Text("Select Payment Method", color = Color.Red)
+                    Text(sub, color = Color.Gray, fontSize = 12.sp)
+                } else {
+                    Text("Select Payment Method", color = Color.Red)
+                }
             }
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .clip(androidx.compose.foundation.shape.CircleShape)
+                    .background(if (payment != null) Color.LightGray else Color.Transparent)
+                    .border(1.dp, Color.LightGray, androidx.compose.foundation.shape.CircleShape)
+            )
         }
-
-        Box(
-            modifier = Modifier
-                .size(24.dp)
-                .clip(androidx.compose.foundation.shape.CircleShape)
-                .background(if (payment != null) Color.LightGray else Color.Transparent)
-                .border(1.dp, Color.LightGray, androidx.compose.foundation.shape.CircleShape)
-        )
     }
 }
 

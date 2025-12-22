@@ -31,7 +31,6 @@ class AnalyticsViewModel(
     val years = (2024..2030).map { it.toString() }
 
     init {
-        // --- CHANGE: Trigger Sync First ---
         viewModelScope.launch {
             repository.refreshData() // Download latest data
             loadData()               // Load from Room

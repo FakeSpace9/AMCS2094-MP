@@ -21,11 +21,8 @@ class ProductFormViewModel(
     private val storage: FirebaseStorage,
     private val productDao: ProductDao
 ) : ViewModel() {
-
-    // --- FORM DATA STATE ---
     var currentProductId: String? = null
 
-    // Encapsulate productName to control updates
     private val _productName = MutableStateFlow("")
     val productName: StateFlow<String> = _productName
 
@@ -59,8 +56,6 @@ class ProductFormViewModel(
         "Brown", "Grey", "Beige", "Navy", "Maroon", "Teal", "Olive", "Gold", "Silver", "Multi"
     )
 
-    // --- LOGIC: Auto-Generate SKU ---
-    // Rule: Name(3)-Color(3)-Size
     private fun generateSku(name: String, color: String, size: String): String {
         if (name.isBlank() || color.isBlank() || size.isBlank()) return ""
 
@@ -71,11 +66,9 @@ class ProductFormViewModel(
         return "$namePart-$colorPart-$sizePart"
     }
 
-    // Call this from UI when Product Name changes
     fun updateProductName(newName: String) {
         _productName.value = newName
 
-        // Regenerate SKU for ALL variants
         val currentList = _variants.value.map { it.copy() }
         currentList.forEach { variant ->
             val newSku = generateSku(newName, variant.colour, variant.size)
@@ -272,7 +265,6 @@ class ProductFormViewModel(
         if (fetchSkus) fetchTakenSkus()
     }
 
-    // ... (Other helpers remain unchanged: fetchTakenSkus, onImagesSelected, etc.) ...
     fun fetchTakenSkus() {
         viewModelScope.launch {
             try {

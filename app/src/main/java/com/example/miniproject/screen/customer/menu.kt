@@ -1,50 +1,62 @@
 package com.example.miniproject.screen.customer
 
-import android.R.attr.fontWeight
-import android.R.attr.text
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.List
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.List
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.ShoppingCart
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.room.util.appendPlaceholders
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.material.icons.outlined.ShoppingCart
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.style.TextOverflow
-import com.example.miniproject.data.dao.ProductSearchResult
-import com.example.miniproject.screen.ProductCard
-import com.example.miniproject.viewmodel.ProductSearchViewModel
-import androidx.compose.ui.platform.LocalContext
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
+import com.example.miniproject.data.dao.ProductSearchResult
+import com.example.miniproject.viewmodel.ProductSearchViewModel
 
 val DarkButtonColor = Color(0xFF1F2937)
 val BlueAccentColor = Color(0xFF4F46E5)
@@ -57,27 +69,8 @@ fun NewArrivalScreen(
     navController: NavController,
     viewModel: ProductSearchViewModel
 ){
-
     val searchResults by viewModel.searchResults.collectAsState()
     val selectedFilter by viewModel.selectedCategory.collectAsState()
-
-    var currentPage by remember { mutableIntStateOf(1) }
-    val itemsPerPage = 8
-
-    LaunchedEffect(selectedFilter) {
-        currentPage = 1
-        viewModel.loadProducts()
-    }
-
-    // Calculate Pagination Data
-    val totalItems = searchResults.size
-    val totalPages = if (totalItems > 0) (totalItems + itemsPerPage - 1) / itemsPerPage else 1
-
-    // Slice the list for the current page
-    val currentItems = searchResults
-        .drop((currentPage - 1) * itemsPerPage)
-        .take(itemsPerPage)
-
     LaunchedEffect(Unit) {
         viewModel.loadProducts()
     }
@@ -86,11 +79,10 @@ fun NewArrivalScreen(
         topBar = {
             TopHeader(
                 currentTitle = if (selectedFilter == "All") "All Products" else selectedFilter,
-                onCartClick = {navController.navigate("cart")})
+                onCartClick = {navController.navigate("cart")},navController = navController,onSearchClick = {navController.navigate("search_screen")})
+
         },
-        bottomBar = {
-            BottomNavigationBar(navController = navController)
-        },
+
         containerColor = Color.White
 
     ) { paddingValues ->
@@ -135,20 +127,11 @@ fun NewArrivalScreen(
                         CustomerProductCard(
                             product = product,
                             onClick = {
-                                //Navigate to product detail
                                 navController.navigate("productDetail/${product.product.productId}")
                             }
                         )
                     }
                 }
-            }
-            // --- ADDED: Dynamic Pagination Row at the bottom ---
-            if (searchResults.isNotEmpty()) {
-                PaginationRow(
-                    currentPage = currentPage,
-                    totalPages = totalPages,
-                    onPageChange = { newPage -> currentPage = newPage }
-                )
             }
         }
     }
@@ -250,20 +233,22 @@ fun CustomerProductCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopHeader(currentTitle:String, onCartClick:()->Unit){
+fun TopHeader(currentTitle:String, onCartClick:()->Unit, navController: NavController,onSearchClick: () -> Unit,){
     CenterAlignedTopAppBar(
         title = {
             Text(
-            text = currentTitle,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
+                text = currentTitle,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
             )
         },
         navigationIcon = {
-            IconButton(onClick = { /* Handle navigation icon click */ }) {
+            IconButton(onClick = { navController.navigate("home") {
+                popUpTo("Login") { inclusive = true }
+            }}) {
                 Icon(
-                    imageVector = Icons.Default.Menu,
-                    contentDescription = "Menu",
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "back",
                     tint = Color.Gray
                 )
             }
@@ -276,13 +261,19 @@ fun TopHeader(currentTitle:String, onCartClick:()->Unit){
                     tint = Color.Gray
                 )
             }
+            IconButton(onClick = onSearchClick) {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "Search",
+                    tint = Color.Gray
+                )
+            }
         },
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
             containerColor = Color.White,
         )
     )
 }
-
 @Composable
 fun FilterRow(
     selectedFilter: String ,
@@ -290,10 +281,9 @@ fun FilterRow(
 ){
     val filters =listOf(
         "All",
-        "New Arrivals",
         "Best Sellers",
         "Tops",
-        "Bottoms",
+        "Bottom",
         "Outerwear",
         "Dresses",
         "Accessories"
@@ -306,47 +296,52 @@ fun FilterRow(
         contentPadding = PaddingValues(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ){
-        item{
-            Button(
-                onClick = { /* Open Filter Modal */ },
-                colors = ButtonDefaults.buttonColors(containerColor = DarkButtonColor),
-                shape = RoundedCornerShape(50),
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 0.dp),
-                modifier = Modifier.height(40.dp)
-            ){
-                Icon(
-                    imageVector = Icons.Outlined.List,
-                    contentDescription = "Filter",
-                    modifier = Modifier.size(16.dp),
-                    tint = Color.White
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Filter",
-                    fontSize = 14.sp,
-                )
+
+        items(filters){ filterName ->
+            val isSelected = filterName == selectedFilter
+            val isAllButton = filterName == "All"
+
+            val backgroundColor = if (isAllButton && isSelected) {
+                Color(0xFF001F54) // Dark Blue
+            } else if (isSelected) {
+                Color(0xFFF3F4F6)
+            } else {
+                Color.White
             }
-        }
-        items(filters){
-            filterName ->
-                val isSelected = filterName == selectedFilter
+
+            val contentColor = if (isAllButton && isSelected) {
+                Color.White
+            } else if (isSelected) {
+                Color.Black
+            } else {
+                Color.Gray
+            }
+
+            val borderColor = if (isAllButton && isSelected) {
+                Color(0xFF001F54) // Match background
+            } else if (isSelected) {
+                Color.Black
+            } else {
+                LightGrayBorder
+            }
+
             Box(
                 modifier = Modifier
                     .height(40.dp)
                     .border(
                         width = 1.dp,
-                        color = if (isSelected) Color.Black else LightGrayBorder,
+                        color = borderColor,
                         shape = RoundedCornerShape(50)
                     )
                     .clip(RoundedCornerShape(50))
                     .clickable { onFilterSelected(filterName) }
-                    .background(if (isSelected) Color(0xFFF3F4F6) else Color.White)
+                    .background(backgroundColor)
                     .padding(horizontal = 20.dp),
                 contentAlignment = Alignment.Center
             ){
                 Text(
                     text = filterName,
-                    color = if (isSelected) Color.Black else Color.Gray,
+                    color = contentColor,
                     fontSize = 14.sp,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                 )
@@ -355,96 +350,5 @@ fun FilterRow(
     }
 }
 
-@Composable
-fun PaginationRow(
-    currentPage: Int,
-    totalPages: Int,
-    onPageChange: (Int) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(onClick = {if(currentPage > 1) onPageChange(currentPage - 1)}, enabled = currentPage > 1) {
-            Icon(
-                Icons.Default.KeyboardArrowLeft,
-                contentDescription = "Previous",
-                tint = Color.Gray
-            )
-        }
 
-        val startPage = maxOf(1, currentPage - 2)
-        val endPage = minOf(totalPages, startPage + 4)
 
-        for (i in startPage..endPage) {
-            val isSelected = i == currentPage
-            Box(
-                modifier = Modifier
-                    .padding(horizontal = 4.dp)
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(if (isSelected) Purple else Color.Transparent)
-                    .clickable { onPageChange(i) },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "$i",
-                    fontSize = 16.sp,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                    color = if (isSelected) Color.White else Color.Gray
-                )
-            }
-        }
-
-        IconButton(
-            onClick = { if (currentPage < totalPages) onPageChange(currentPage + 1) },
-            enabled = currentPage < totalPages
-        ) {
-            Icon(
-                Icons.Default.KeyboardArrowRight,
-                contentDescription = "Next",
-                tint = if (currentPage < totalPages) Color.Gray else Color.LightGray
-            )
-        }
-    }
-}
-
-@Composable
-fun BottomNavigationBar(navController: NavController){
-    NavigationBar(
-        containerColor = Color.White,
-        tonalElevation = 8.dp
-    ) {
-        NavigationBarItem(
-            icon={
-                Icon(
-                    imageVector = Icons.Outlined.Home,
-                    contentDescription = "Home",
-                    tint = Color.Gray,
-                    modifier = Modifier.size(28.dp)
-                )
-            },
-            selected = false,
-            onClick = { navController.navigate("home"){popUpTo("home"){inclusive = true} } },
-            label = { Text("Home") },
-            colors = NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent,selectedIconColor = Color.Black,unselectedIconColor = Color.Gray)
-        )
-        NavigationBarItem(
-            icon={ Icon(Icons.Outlined.Search, contentDescription = "Search", tint = Color.Gray, modifier = Modifier.size(28.dp)) },
-            selected = false,
-            onClick = { /* Handle navigation */ },
-            colors = NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent,selectedIconColor = Color.Black,unselectedIconColor = Color.Gray),
-            label = { Text("Search") }
-        )
-        NavigationBarItem(
-            icon={ Icon(Icons.Outlined.List, contentDescription = "List", tint = Color.Gray, modifier = Modifier.size(28.dp))},
-            selected = false,
-            onClick = { /* Handle navigation */ },
-            colors = NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent,selectedIconColor = Color.Black,unselectedIconColor = Color.Gray),
-            label = { Text("List") }
-        )
-    }
-}

@@ -67,7 +67,7 @@ fun OrderSuccessScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Button(
-                    onClick = { /* TODO: Track Order */ },
+                    onClick = { navController.navigate("order_history") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),

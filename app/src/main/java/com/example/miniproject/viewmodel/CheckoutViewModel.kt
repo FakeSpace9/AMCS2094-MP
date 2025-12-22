@@ -34,9 +34,11 @@ class CheckoutViewModel(
     private val receiptRepository: ReceiptRepository
 ) : ViewModel() {
 
-    // --- Data Streams ---
-    val cartItems: StateFlow<List<CartEntity>> = cartRepo.allCartItems
-        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    private val _filterIds = MutableStateFlow<Set<Int>?>(null)
+
+    val cartItems: StateFlow<List<CartEntity>> = combine(cartRepo.allCartItems, _filterIds) { allItems, filter ->
+        if (filter == null) allItems else allItems.filter { it.id in filter }
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     private val _userAddresses = MutableStateFlow<List<AddressEntity>>(emptyList())
     val userAddresses: StateFlow<List<AddressEntity>> = _userAddresses
@@ -44,7 +46,6 @@ class CheckoutViewModel(
     private val _userPayments = MutableStateFlow<List<PaymentEntity>>(emptyList())
     val userPayments: StateFlow<List<PaymentEntity>> = _userPayments
 
-    // --- Selection State ---
     private val _selectedAddress = MutableStateFlow<AddressEntity?>(null)
     val selectedAddress: StateFlow<AddressEntity?> = _selectedAddress
 
@@ -56,10 +57,8 @@ class CheckoutViewModel(
 
     private val _activePromotion = MutableStateFlow<PromotionEntity?>(null)
 
-    // --- Totals Calculation ---
     val shippingFee = 10.0
 
-    // FIXED: Use .map instead of combine for single flow transformation
     val subtotal: StateFlow<Double> = cartItems.map { items ->
         items.sumOf { it.price * it.quantity }
     }.stateIn(viewModelScope, SharingStarted.Lazily, 0.0)
@@ -71,12 +70,11 @@ class CheckoutViewModel(
             if (promo.isPercentage) {
                 sub * (promo.discountRate / 100)
             } else {
-                promo.discountRate // Fixed amount
+                promo.discountRate
             }
         }
     }.stateIn(viewModelScope, SharingStarted.Lazily, 0.0)
 
-    // FIXED: Use .map instead of combine
     val grandTotal: StateFlow<Double> = combine(subtotal, discountAmount) { sub, disc ->
         (sub + shippingFee - disc).coerceAtLeast(0.0)
     }.stateIn(viewModelScope, SharingStarted.Lazily, 0.0)
@@ -88,50 +86,46 @@ class CheckoutViewModel(
         refreshData()
     }
 
-    // Call this when entering the screen to ensure latest data (Auto-fill logic)
-    fun refreshData() {
-        viewModelScope.launch {
-            val userId = authPrefs.getUserId() ?: return@launch
-
-            // 1. Load Addresses
-            val addresses = addressRepo.getAddressesByCustomerId(userId)
-            _userAddresses.value = addresses
-
-            // 2. Load Payments
-            val payments = paymentRepo.getPayments(userId)
-            _userPayments.value = payments
-
+    fun setSelectedItemIds(idsString: String?) {
+        if (!idsString.isNullOrEmpty()) {
+            val ids = idsString.split(",").mapNotNull { it.toIntOrNull() }.toSet()
+            _filterIds.value = ids
         }
     }
 
-    // Called when returning from AddressScreen with a selection
+    fun refreshData() {
+        viewModelScope.launch {
+            val userId = authPrefs.getUserId() ?: return@launch
+            val addresses = addressRepo.getAddressesByCustomerId(userId)
+            _userAddresses.value = addresses
+            val payments = paymentRepo.getPayments(userId)
+            _userPayments.value = payments
+        }
+    }
+
     fun selectAddressById(id: Long) {
         val addr = _userAddresses.value.find { it.addressId == id }
         if (addr != null) _selectedAddress.value = addr
     }
 
-    // Called when returning from PaymentMethodScreen with a selection
     fun selectPaymentById(id: Long) {
         val pay = _userPayments.value.find { it.paymentId == id }
         if (pay != null) _selectedPayment.value = pay
     }
 
-    // Add this method inside CheckoutViewModel class
-
-    fun setInitialPromoCode(code: String) {
-        if (promoCode.value.isEmpty()) { // Only set if not already set
-            promoCode.value = code
-            applyPromoCode() // Reuse the logic we created in the previous step
+    fun onPromoCodeChange(newCode:String){
+        promoCode.value = newCode
+        if(promoCodeError.value != null){
+            promoCodeError.value = null
         }
     }
 
     fun applyPromoCode() {
-        val code = promoCode.value
+        val code = promoCode.value.trim()
         if (code.isEmpty()) return
 
         viewModelScope.launch {
             val promo = promotionRepo.getPromotionByCode(code)
-
             if (promo == null) {
                 promoCodeError.value = "Invalid promo code"
                 _activePromotion.value = null
@@ -141,17 +135,8 @@ class CheckoutViewModel(
                     promoCodeError.value = "Promotion expired"
                     _activePromotion.value = null
                 } else {
-                    promoCodeError.value = "Code Applied: ${promo.name}"
-
-                    // --- FIX 1: Calculate the discount here ---
-                    val sub = subtotal.value
-                    val calculatedDiscount = if (promo.isPercentage) {
-                        sub * (promo.discountRate / 100)
-                    } else {
-                        promo.discountRate // Fixed amount
-                    }
+                    promoCodeError.value = null
                     _activePromotion.value = promo
-                    // ------------------------------------------
                 }
             }
         }
@@ -202,14 +187,16 @@ class CheckoutViewModel(
                 )
             }
 
-            val result = orderRepo.placeOrder(order, orderItems)
+            val cartItemIds = items.map { it.id }
+            val result = orderRepo.placeOrder(order, orderItems, cartItemIds)
             _orderState.value = result
 
-            // 2. Trigger Email Receipt (Fixed Logic)
             if (result.isSuccess) {
-                val email = authPrefs.getLoggedInEmail() ?: "customer@example.com"
+                promoCode.value = ""
+                promoCodeError.value = null
+                _activePromotion.value = null
 
-                // 1. Convert CartItems to ReceiptItems
+                val email = authPrefs.getLoggedInEmail() ?: "customer@example.com"
                 val receiptItems = items.map {
                     ReceiptItem(
                         name = it.productName,
@@ -220,17 +207,14 @@ class CheckoutViewModel(
                         imageUrl = it.productImageUrl
                     )
                 }
-
-                // 2. Call Repo with detailed breakdown
                 receiptRepository.triggerEmail(
                     toEmail = email,
                     orderId = result.getOrNull().toString(),
                     customerName = address.fullName,
-                    items = receiptItems,          // Pass the list
-                    subTotal = currentSubtotal,     // Pass subtotal
-                    deliveryFee = shippingFee,     // Pass 10.0
-                    discountAmount = currentDiscount, // Pass discount,
-
+                    items = receiptItems,
+                    subTotal = currentSubtotal,
+                    deliveryFee = shippingFee,
+                    discountAmount = currentDiscount,
                 )
             }
         }

@@ -20,8 +20,8 @@ class AnalyticsRepository(
     }
     suspend fun getStats(tab: AnalyticsTab, monthIndex: Int, year: Int): DashboardStats {
         val (start, end) = getMonthRange(monthIndex, year)
-        val startDate = Date(start) // For POS DAO
-        val endDate = Date(end)     // For POS DAO
+        val startDate = Date(start)
+        val endDate = Date(end)
 
         return when (tab) {
             AnalyticsTab.ONLINE -> {
@@ -54,7 +54,6 @@ class AnalyticsRepository(
                 val onlineBest = orderDao.getBestSellersInRange(start, end)
                 val posBest = posDao.getBestSellersInRange(startDate, endDate)
 
-                // Combine Best Sellers manually
                 val combinedBest = (onlineBest + posBest)
                     .groupBy { it.name }
                     .map { (name, list) ->
@@ -81,7 +80,7 @@ class AnalyticsRepository(
     private fun getMonthRange(month: Int, year: Int): Pair<Long, Long> {
         val calendar = Calendar.getInstance()
         calendar.set(Calendar.YEAR, year)
-        calendar.set(Calendar.MONTH, month) // 0 = Jan
+        calendar.set(Calendar.MONTH, month)
 
         // Start of month
         calendar.set(Calendar.DAY_OF_MONTH, 1)

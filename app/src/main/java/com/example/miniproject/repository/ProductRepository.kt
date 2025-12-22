@@ -46,7 +46,7 @@ class ProductRepository(
             val allImages = mutableListOf<ProductImageEntity>()
 
             for (doc in snapshot.documents) {
-                val id = doc.getString("productId") ?: continue
+                val id = doc.getString("productId") ?: doc.id
                 val name = doc.getString("name") ?: ""
                 val desc = doc.getString("description") ?: ""
                 val cat = doc.getString("category") ?: ""

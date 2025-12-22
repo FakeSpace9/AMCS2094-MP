@@ -1,5 +1,8 @@
 package com.example.miniproject.viewmodel
 
+import android.net.Uri
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,67 +16,120 @@ class EditProfileViewModel(
     private val authPrefs: AuthPreferences
 ) : ViewModel() {
 
+    // Profile State
+    var profilePicture = mutableStateOf<String?>(null)
     var name = mutableStateOf("")
     var phone = mutableStateOf("")
     var email = mutableStateOf("")
-    var message = mutableStateOf("")
 
+    // Password Change State
+    var currentPassword = mutableStateOf("")
+    var newPassword = mutableStateOf("")
+    var confirmPassword = mutableStateOf("")
+
+    // UI State
+    var message = mutableStateOf("")
+    var isGoogleAccount = mutableStateOf(false)
+
+    private var originalProfilePicture: String? = null
+    private var originalName: String = ""
+    private var originalPhone: String = ""
     private var currentCustomerId: String = ""
 
-    fun isValidPhone(phone: String): Boolean {
-        return Regex("^01\\d{8,9}$").matches(phone)
+    val isModified by derivedStateOf {
+        name.value != originalName ||
+                phone.value != originalPhone ||
+                profilePicture.value != originalProfilePicture
     }
 
-    fun isValidEmail(email: String): Boolean {
-        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    // Password Validation
+    val hasLength by derivedStateOf { newPassword.value.length >= 6 }
+    val hasUppercase by derivedStateOf { newPassword.value.any { it.isUpperCase() } }
+    val hasLowercase by derivedStateOf { newPassword.value.any { it.isLowerCase() } }
+    val hasDigit by derivedStateOf { newPassword.value.any { it.isDigit() } }
+    val hasSymbol by derivedStateOf { newPassword.value.any { !it.isLetterOrDigit() } }
+
+    val isPasswordValid by derivedStateOf {
+        hasLength && hasUppercase && hasLowercase && hasDigit && hasSymbol &&
+                (newPassword.value == confirmPassword.value) && currentPassword.value.isNotEmpty()
     }
-
-    fun validateProfile(): String? {
-        if (name.value.isBlank()) return "Name cannot be empty"
-        if (email.value.isBlank()) return "Email cannot be empty"
-        if (phone.value.isBlank()) return "Phone Number cannot be empty"
-        if (name.value.length < 5) return "Name cannot be less than 5 letters"
-        if (!isValidEmail(email.value)) return "Invalid Email"
-        if (!isValidPhone(phone.value)) return "Invalid Phone Number"
-
-        return null
-    }
-
 
     fun loadCurrentUser() {
         viewModelScope.launch {
-            val userId = authPrefs.getUserId() ?: return@launch
+            isGoogleAccount.value = repo.isGoogleUser()
 
+            val userId = authPrefs.getUserId() ?: return@launch
             val user = repo.getCustomerById(userId)
 
-            name.value = user.name
-            phone.value = user.phone
-            email.value = user.email
-            currentCustomerId = user.customerId
+            if (user != null) {
+                name.value = user.name
+                phone.value = user.phone
+                email.value = user.email
+                profilePicture.value = user.profilePictureUrl
+                currentCustomerId = user.customerId
+
+                originalName = user.name
+                originalPhone = user.phone
+                originalProfilePicture = user.profilePictureUrl
+            } else {
+                message.value = "User data not found"
+            }
+        }
+    }
+
+    fun onImageSelected(uri: Uri) { profilePicture.value = uri.toString() }
+    fun onPredefinedImageSelected(code: String) { profilePicture.value = code }
+
+    fun resetPasswordFields() {
+        currentPassword.value = ""
+        newPassword.value = ""
+        confirmPassword.value = ""
+        message.value = ""
+    }
+
+    fun changePassword(onSuccess: () -> Unit) {
+        if (!isPasswordValid) {
+            message.value = "Please ensure all requirements are met."
+            return
+        }
+
+        viewModelScope.launch {
+            val result = repo.changePassword(currentPassword.value, newPassword.value)
+            if (result.isSuccess) {
+                onSuccess()
+            } else {
+                message.value = "Error: ${result.exceptionOrNull()?.message}"
+            }
         }
     }
 
     fun saveProfile(onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
+            if (name.value.isBlank()) { message.value = "Name required"; onResult(false); return@launch }
+            if (phone.value.isBlank()) { message.value = "Phone required"; onResult(false); return@launch }
 
-            val error = validateProfile()
-            if (error != null) {
-                message.value = error
-                onResult(false)
-                return@launch
+            var finalImageUrl = profilePicture.value
+            if (finalImageUrl != null && finalImageUrl!!.startsWith("content://")) {
+                val upload = repo.uploadProfilePicture(Uri.parse(finalImageUrl))
+                if (upload.isSuccess) finalImageUrl = upload.getOrNull()
+                else { message.value = "Upload failed"; onResult(false); return@launch }
             }
 
             val updated = CustomerEntity(
                 customerId = currentCustomerId,
                 name = name.value,
+                email = email.value,
                 phone = phone.value,
-                email = email.value
+                profilePictureUrl = finalImageUrl
             )
 
             val result = repo.updateProfile(updated)
 
             if (result.isSuccess) {
-                message.value = "Profile Saved"
+                originalName = name.value
+                originalPhone = phone.value
+                originalProfilePicture = finalImageUrl
+                message.value = ""
                 onResult(true)
             } else {
                 message.value = "Failed: ${result.exceptionOrNull()?.message}"

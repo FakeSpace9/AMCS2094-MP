@@ -63,7 +63,6 @@ fun AdminLoginScreen(
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
-    // UI Colors
     val primaryColor = Color(0xFF573BFF)
 
     Box(
@@ -192,11 +191,8 @@ fun AdminLoginScreen(
                 popUpTo("Login") { inclusive = true }
             }
         } else if (adminLoginState is LoginStateAdmin.Error) {
-            // --- NEW: Handle Error State ---
             val errorMsg = (adminLoginState as LoginStateAdmin.Error).message
             Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
-
-            // Optional: Clear the error state so it doesn't show again on rotation
             loginViewModel.clearMessages()
         }
     }

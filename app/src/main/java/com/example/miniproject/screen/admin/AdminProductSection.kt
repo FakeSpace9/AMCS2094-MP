@@ -15,10 +15,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,26 +55,24 @@ fun AdminProductSection(
     Column(modifier = Modifier
         .fillMaxSize()
         .background(Color(0xFFF8F9FA))) {
-        // Top Bar
-        TopAppBar(
-            title = { Text("Product", fontWeight = FontWeight.Bold, fontSize = 24.sp)
-                },
 
-            actions = {
-                Icon(
-                    Icons.Default.AccountCircle,
-                    contentDescription = "Profile",
-                    modifier = Modifier
-                        .padding(end = 16.dp)
-                        .size(32.dp)
-                    .clickable { navController.navigate("admin_profile") },
-                    tint = Color.Gray
-                )
+        CenterAlignedTopAppBar(
+            title = {
+                Text("Manage Products", fontWeight = FontWeight.Bold, fontSize = 20.sp)
             },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFF8F9FA))
+            actions = {
+                IconButton(onClick = { navController.navigate("admin_profile") }) {
+                    Icon(
+                        Icons.Default.AccountCircle,
+                        contentDescription = "Profile",
+                        tint = Color(0xFF573BFF),
+                        modifier = Modifier.size(30.dp)
+                    )
+                }
+            },
+            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color(0xFFF8F9FA))
         )
 
-        // --- CUSTOM TAB SELECTOR ---
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -99,7 +98,7 @@ fun AdminProductSection(
                             .padding(4.dp)
                             .clip(RoundedCornerShape(21.dp))
                             .background(
-                                if (selected) Color(0xFFF0F0F0) else Color.Transparent
+                                if (selected) Color(0xFF573BFF).copy(alpha = 0.1f) else Color.Transparent
                             )
                             .clickable(enabled = canClick) {
                                 selectedTab = index
@@ -109,47 +108,39 @@ fun AdminProductSection(
                         Text(
                             text = title,
                             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = 16.sp,
-                            color = if (isEditTab && !selected) Color.LightGray else Color.Black
+                            fontSize = 14.sp,
+                            color = if (selected) Color(0xFF573BFF) else if (isEditTab) Color.LightGray else Color.Gray
                         )
                     }
                 }
             }
         }
 
-        // Tab Content
         Box(modifier = Modifier
             .fillMaxSize()
             .background(Color.White)) {
             when (selectedTab) {
                 0 -> AdminSearchScreen(
-                    viewModel = searchViewModel, // Using Search VM
+                    viewModel = searchViewModel,
                     onProductClick = { product ->
-                        // 1. Load data into Form VM
                         formViewModel.loadProductForEdit(product)
-                        // 2. Switch to Edit Tab
                         selectedTab = 2
                     }
                 )
-
                 1 -> {
-                    // Reset Form VM
                     LaunchedEffect(Unit) { formViewModel.resetState() }
                     AdminAddProductForm(navController, formViewModel)
                 }
-
                 2 -> {
-                    // Edit Form VM
                     AdminEditProductForm(
                         navController,
                         formViewModel,
                         onUpdateSuccess = {
-                            selectedTab = 0 // Switch back to Search Tab
-                            searchViewModel.loadProducts() // Refresh the list to show changes
+                            selectedTab = 0
+                            searchViewModel.loadProducts()
                         }
                     )
                 }
-
                 3 -> {
                     AdminPromotionScreen(viewModel = promoViewModel)
                 }
