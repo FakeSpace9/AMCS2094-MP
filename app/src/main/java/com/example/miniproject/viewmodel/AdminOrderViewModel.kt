@@ -42,20 +42,17 @@ class AdminOrderViewModel(
         currentStatus.value = statusOptions[index]
     }
 
-    fun updateStatus(orderId: Int, newStatus: String) { // orderId is Int
+    fun updateStatus(orderId: Int, newStatus: String) {
         viewModelScope.launch {
             // 1. Update Database & Firestore
             val result = orderRepository.updateOrderStatus(orderId, newStatus)
 
             // 2. If successful, send email
             if (result.isSuccess) {
-                // We need to fetch the order to get the customer's email
                 val order = orderRepository.getOrderById(orderId.toLong())
-
                 val orderItems = orderRepository.getOrderItems(orderId.toLong())
 
                 if (order.customerEmail.isNotEmpty()) {
-
                     val receiptItems = orderItems.map {
                         ReceiptItem(
                             name = it.productName,
@@ -67,12 +64,17 @@ class AdminOrderViewModel(
                         )
                     }
 
-                    // 4. Send Email with Items
+                    // 3. Send Email with all details
                     receiptRepository.sendStatusUpdateEmail(
                         toEmail = order.customerEmail,
                         orderId = orderId.toString(),
                         newStatus = newStatus,
-                        items = receiptItems
+                        items = receiptItems,
+                        // Pass the financial info from the order object
+                        subTotal = order.totalAmount,
+                        deliveryFee = order.shippingFee,
+                        discountAmount = order.discount,
+                        grandTotal = order.grandTotal
                     )
                 }
             }
