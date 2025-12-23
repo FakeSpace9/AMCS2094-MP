@@ -25,7 +25,7 @@ class ProductSearchViewModel(
     private val allCategories = listOf("Tops", "Bottom", "Outerwear", "Dresses", "Accessories")
 
 
-    fun getAvailableCategories(): List<String> = listOf("All", "Best Sellers") + allCategories
+    fun getAvailableCategories(): List<String> = listOf("All") + allCategories
 
     fun loadProducts() {
         viewModelScope.launch {
