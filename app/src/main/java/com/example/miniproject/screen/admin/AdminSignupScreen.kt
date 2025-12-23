@@ -317,9 +317,11 @@ fun AdminSignupScreen(navController: NavController, viewModel: SignupViewModel) 
         when (signupState) {
             is SignupState.Success -> {
                 Toast.makeText(context, "Admin Signup Successful", Toast.LENGTH_SHORT).show()
+                viewModel.clearMessages()
                 navController.popBackStack()
             }
             is SignupState.Error -> {
+                viewModel.clearMessages()
                 Toast.makeText(
                     context,
                     (signupState as SignupState.Error).message,

@@ -212,20 +212,7 @@ fun CustomerProductCard(
                     color = Color.Black
                 )
 
-                //Cart Button
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFFF3F4F6))
-                ){
-                    Icon(
-                        imageVector = Icons.Default.ShoppingCart,
-                        contentDescription = "Cart",
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
+
             }
         }
     }

@@ -38,6 +38,7 @@ class SignupViewModel(private val repository: SignupRepository) : ViewModel() {
             val result = repository.adminSignup(email, password,name,phone)
             _signupState.value = if (result.isSuccess && result.getOrNull() != null) {
                 SignupState.Success(result.getOrNull()!!)
+                
             } else {
                 SignupState.Error(result.exceptionOrNull()?.localizedMessage ?: "Unknown error")
             }
