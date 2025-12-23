@@ -450,7 +450,7 @@ fun VariantCard(
                     isError = isPriceError,
                     supportingText = {
                         if (isPriceError) Text(
-                            if (priceVal == null) "Invalid" else "Not 0",
+                            if (priceVal == null) "Invalid" else "Invalid",
                             color = MaterialTheme.colorScheme.error
                         )
                     },

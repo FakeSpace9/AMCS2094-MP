@@ -132,7 +132,7 @@ class ProductFormViewModel(
                 return@launch
             }
             if (_variants.value.any { (it.price.toDoubleOrNull() ?: 0.0) <= 0.0 }) {
-                _saveState.value = ProductState.Error("Price cannot be 0.")
+                _saveState.value = ProductState.Error("Invalid Price")
                 return@launch
             }
             if (_variants.value.any { (it.quantity.toIntOrNull() ?: -1) < 0 }) {

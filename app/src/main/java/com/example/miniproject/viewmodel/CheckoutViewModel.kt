@@ -113,11 +113,24 @@ class CheckoutViewModel(
         if (pay != null) _selectedPayment.value = pay
     }
 
+
     fun onPromoCodeChange(newCode:String){
         promoCode.value = newCode
-        if(promoCodeError.value != null){
+        if (newCode.isBlank()) {
+            _activePromotion.value = null
             promoCodeError.value = null
+        } else {
+            // Only clear error if typing, but keep active promo until invalid
+            if(promoCodeError.value != null){
+                promoCodeError.value = null
+            }
         }
+    }
+
+    fun clearPromo() {
+        promoCode.value = ""
+        _activePromotion.value = null
+        promoCodeError.value = null
     }
 
     fun applyPromoCode() {

@@ -70,6 +70,11 @@ fun CheckOutScreen(
         viewModel.refreshData()
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.refreshData()
+        viewModel.clearPromo()
+    }
+
     // Handle Address/Payment result from Selection Screens
     val savedStateHandle = currentBackStackEntry?.savedStateHandle
     val selectedAddrId by savedStateHandle?.getStateFlow<Long?>("selected_address_id", null)?.collectAsState() ?: mutableStateOf(null)
