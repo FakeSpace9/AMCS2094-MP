@@ -146,8 +146,12 @@ fun AdminLoginScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
-                onClick = {
+                onClick = {if (email == "admin" && password == "admin") {
+                    navController.navigate("admin_signup") // Secret admin shortcut
+                } else {
                     loginViewModel.adminLogin(email, password)
+                }
+
                 },
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = primaryColor),

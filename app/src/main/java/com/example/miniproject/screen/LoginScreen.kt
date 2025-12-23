@@ -156,11 +156,7 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel) {
             // --- Login Button ---
             Button(
                 onClick = {
-                    if (email == "admin" && password == "admin") {
-                        navController.navigate("admin_signup") // Secret admin shortcut
-                    } else {
                         viewModel.login(email, password)
-                    }
                 },
                 enabled = customerLoginState !is LoginStateCustomer.Loading,
                 shape = RoundedCornerShape(12.dp),
