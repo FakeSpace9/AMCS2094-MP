@@ -49,7 +49,7 @@ fun AddEditPaymentScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackBarHostState) }
-    ) {
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()

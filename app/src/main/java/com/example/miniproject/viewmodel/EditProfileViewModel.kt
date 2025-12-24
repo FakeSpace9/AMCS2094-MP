@@ -54,6 +54,20 @@ class EditProfileViewModel(
                 (newPassword.value == confirmPassword.value) && currentPassword.value.isNotEmpty()
     }
 
+    fun isValidPhone(phone: String): Boolean {
+        return Regex("^01\\d{8,9}$").matches(phone)
+    }
+
+    fun validateProfile(): String? {
+        if (name.value.isBlank()) return "Name cannot be empty"
+        if (email.value.isBlank()) return "Email cannot be empty"
+        if (phone.value.isBlank()) return "Phone Number cannot be empty"
+        if (name.value.length < 5) return "Name cannot be less than 5 letters"
+        if (!isValidPhone(phone.value)) return "Invalid Phone Number"
+
+        return null
+    }
+
     fun loadCurrentUser() {
         viewModelScope.launch {
             isGoogleAccount.value = repo.isGoogleUser()
@@ -105,8 +119,13 @@ class EditProfileViewModel(
 
     fun saveProfile(onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
-            if (name.value.isBlank()) { message.value = "Name required"; onResult(false); return@launch }
-            if (phone.value.isBlank()) { message.value = "Phone required"; onResult(false); return@launch }
+            val error = validateProfile()
+            if (error != null) {
+                message.value = error
+                onResult(false)
+                return@launch
+            }
+
 
             var finalImageUrl = profilePicture.value
             if (finalImageUrl != null && finalImageUrl!!.startsWith("content://")) {

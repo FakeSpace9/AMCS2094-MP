@@ -117,7 +117,7 @@ fun OrderDetailScreen(
                 HorizontalDivider(Modifier.padding(vertical = 12.dp))
 
                 ReceiptRow("Subtotal", order.totalAmount)
-                ReceiptRow("Shipping Fee", order.shippingFee)
+                ReceiptRow("Shipping Fee", 10.00)
                 ReceiptRow("Discount", -order.discount)
 
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
