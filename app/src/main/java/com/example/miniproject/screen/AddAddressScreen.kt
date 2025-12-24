@@ -66,7 +66,7 @@ fun AddressFormContent(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackBarHostState) }
-    ) {
+    ) { padding ->
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
