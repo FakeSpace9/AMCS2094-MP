@@ -31,9 +31,17 @@ class AnalyticsViewModel(
     val years = (2024..2030).map { it.toString() }
 
     init {
+        refreshPage()
+    }
+
+    fun refreshPage() {
         viewModelScope.launch {
-            repository.refreshData() // Download latest data
-            loadData()               // Load from Room
+            try {
+                repository.refreshData()
+                loadData()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
